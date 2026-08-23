@@ -1225,6 +1225,8 @@
       return;
     }
 
+    console.log("VERUN AUTH USER:", user);
+
     const xUsername =
       user.user_metadata?.user_name ||
       user.user_metadata?.preferred_username ||
@@ -1244,11 +1246,19 @@
         .maybeSingle();
 
     if (profileError) {
-      console.error("Profile error:", profileError);
+      console.error("Profile lookup error:", profileError);
+      alert("Profile lookup failed: " + profileError.message);
       return;
     }
 
     if (!profile) {
+
+      console.log("Creating VERUN profile:", {
+        id: user.id,
+        x_username: xUsername,
+        x_user_id: xUserId
+      });
+
       const { data: newProfile, error: insertError } =
         await supabaseClient
           .from("profiles")
@@ -1256,6 +1266,7 @@
             id: user.id,
             x_username: xUsername,
             x_user_id: xUserId,
+            x_followers: 0,
             xp: 0,
             xp_multiplier: 1,
             current_streak: 0,
@@ -1267,23 +1278,36 @@
 
       if (insertError) {
         console.error("Profile creation error:", insertError);
-        alert("Profile could not be created: " + insertError.message);
+        alert(
+          "Profile could not be created: " +
+          insertError.message
+        );
         return;
       }
 
       updateDashboard(newProfile);
+
     } else {
+
       updateDashboard(profile);
+
     }
   }
 
   function updateDashboard(profile) {
-    const profileName = document.getElementById("profileName");
-    const profileStatus = document.getElementById("profileStatus");
-    const profileAvatar = document.getElementById("profileAvatar");
+
+    const profileName =
+      document.getElementById("profileName");
+
+    const profileStatus =
+      document.getElementById("profileStatus");
+
+    const profileAvatar =
+      document.getElementById("profileAvatar");
 
     if (profileName) {
-      profileName.textContent = "@" + (profile.x_username || "VERUN User");
+      profileName.textContent =
+        "@" + (profile.x_username || "VERUN User");
     }
 
     if (profileStatus) {
@@ -1292,19 +1316,27 @@
 
     if (profileAvatar) {
       profileAvatar.textContent =
-        (profile.x_username || "V").charAt(0).toUpperCase();
+        (profile.x_username || "V")
+          .charAt(0)
+          .toUpperCase();
     }
 
     connectXButton.textContent = "Connected";
     connectXButton.disabled = true;
 
-    document.querySelector(".balance").innerHTML =
-      `${profile.xp || 0} <span>XP</span>`;
+    const balance =
+      document.querySelector(".balance");
+
+    if (balance) {
+      balance.innerHTML =
+        `${profile.xp || 0} <span>XP</span>`;
+    }
 
     const overviewValues =
       document.querySelectorAll(".overview-value");
 
     if (overviewValues.length >= 3) {
+
       overviewValues[0].textContent =
         `${profile.current_streak || 0} days`;
 
@@ -1322,6 +1354,7 @@
   }
 
   connectXButton.addEventListener("click", async () => {
+
     connectXButton.disabled = true;
     connectXButton.textContent = "Connecting...";
 
@@ -1335,15 +1368,27 @@
       });
 
     if (error) {
-      console.error(error);
+
+      console.error("X login error:", error);
+
       connectXButton.disabled = false;
       connectXButton.textContent = "Connect X";
-      alert("Unable to connect X: " + error.message);
+
+      alert(
+        "Unable to connect X: " +
+        error.message
+      );
     }
   });
 
   supabaseClient.auth.onAuthStateChange(
     async (event, session) => {
+
+      console.log(
+        "VERUN AUTH EVENT:",
+        event
+      );
+
       if (session) {
         await loadUserProfile();
       } else {
@@ -1354,6 +1399,6 @@
   );
 
   loadUserProfile();
-  </script>
+</script>
 </body>
 </html>
