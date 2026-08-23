@@ -1403,7 +1403,14 @@ async function loadTasks() {
       <div class="task-icon">
         ${getTaskIcon(task.task_type)}
       </div>
-
+${task.task_type === "profile_badge" ? `
+  <button
+    class="copy-emoji-button"
+    onclick="navigator.clipboard.writeText('✌️').then(() => this.textContent='✓ Copied!')"
+  >
+    ✌️ Copy
+  </button>
+` : ""}
       <div class="task-info">
 
         <div class="task-name">
