@@ -1414,9 +1414,14 @@ async function loadTasks() {
         +${task.xp_reward} XP
       </div>
 
-      <button class="task-button">
-        Start
-      </button>
+      <a
+  class="task-button"
+  href="${task.target_url}"
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  Start
+</a>
     `;
 
     const button =
