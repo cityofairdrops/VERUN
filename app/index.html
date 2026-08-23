@@ -1474,15 +1474,18 @@ async function loadTasks() {
 
     } else if (verification.status === "approved") {
 
-      // Admin approved the task
-      buttonHtml = `
-        <button
-          class="claim-task-button"
-          data-task-id="${task.id}"
-        >
-          🎁 Claim XP
-        </button>
-      `;
+  // Admin approved the task
+  buttonHtml = `
+    <button
+      class="claim-task-button"
+      data-task-id="${task.id}"
+      onclick="claimTaskXP(this, '${task.id}')"
+    >
+      🎁 Claim XP
+    </button>
+  `;
+
+    }
 
     } else if (verification.status === "rejected") {
 
