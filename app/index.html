@@ -1218,7 +1218,7 @@
     connectXButton.textContent = "Connecting...";
 
     const { error } = await supabaseClient.auth.signInWithOAuth({
-      provider: "twitter",
+      provider: "x",
       options: {
         redirectTo: "https://cityofairdrops.github.io/VERUN/"
       }
