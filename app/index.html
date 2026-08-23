@@ -1074,60 +1074,120 @@
       </section>
 
 
-      <!-- STREAK -->
+      <!-- DAILY LOGIN + STREAK -->
 
-      <section class="section" id="streak">
+<section class="section" id="streak">
 
-        <div class="section-head">
+  <div class="section-head">
+    <div>
+      <h2 class="section-title">Daily Login</h2>
+      <p class="section-description">
+        Come back every day to increase your streak and earn more XP.
+      </p>
+    </div>
+  </div>
 
-          <div>
+  <div class="streak-card">
 
-            <h2 class="section-title">
-              Your streak
-            </h2>
+    <div class="fire">
+      🔥
+    </div>
 
-            <p class="section-description">
-              Stay active and build your streak.
-            </p>
+    <div>
+      <div class="streak-title" id="dailyLoginTitle">
+        Daily participation
+      </div>
 
-          </div>
+      <div class="streak-text" id="dailyLoginText">
+        Claim today's XP to continue your streak.
+      </div>
+    </div>
 
-        </div>
+    <div class="streak-count">
+      <div class="streak-number" id="dailyStreakNumber">
+        0
+      </div>
 
+      <div class="streak-days">
+        DAYS
+      </div>
+    </div>
 
-        <div class="streak-card">
+  </div>
 
-          <div class="fire">
-            🔥
-          </div>
+  <div
+    id="dailyLoginReward"
+    style="
+      margin-top:10px;
+      padding:15px;
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:12px;
+    "
+  >
 
-          <div>
+    <div
+      style="
+        color:var(--muted2);
+        font-size:9px;
+        font-weight:800;
+        letter-spacing:1.2px;
+        text-transform:uppercase;
+      "
+    >
+      Today's reward
+    </div>
 
-            <div class="streak-title">
-              Daily participation
-            </div>
+    <div
+      id="dailyRewardText"
+      style="
+        margin-top:6px;
+        font-size:18px;
+        font-weight:850;
+      "
+    >
+      Connect X to see your reward
+    </div>
 
-            <div class="streak-text">
-              Come back every day to continue your streak.
-            </div>
+    <button
+      id="dailyLoginButton"
+      type="button"
+      class="task-button"
+      style="margin-top:12px;"
+    >
+      Claim Daily XP
+    </button>
 
-          </div>
+    <button
+      id="restoreStreakButton"
+      type="button"
+      class="task-button"
+      style="
+        display:none;
+        margin-top:8px;
+        border-color:rgba(255,180,80,0.35);
+      "
+    >
+      Restore Streak — 1,000 XP
+    </button>
 
-          <div class="streak-count">
+  </div>
 
-            <div class="streak-number">
-              0
-            </div>
+  <div
+    id="dailyLoginMessage"
+    style="
+      display:none;
+      margin-top:10px;
+      padding:12px 14px;
+      border:1px solid var(--green-border);
+      background:var(--green-soft);
+      border-radius:9px;
+      color:var(--green);
+      font-size:10px;
+    "
+  ></div>
 
-            <div class="streak-days">
-              DAYS
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
+</section>
 
 
       <!-- REFERRALS -->
@@ -1691,6 +1751,398 @@ function escapeHtml(value) {
 
   loadUserProfile();
 loadTasks();
+    // ============================================
+// VERUN DAILY LOGIN + STREAK
+// ============================================
+
+const dailyLoginButton =
+  document.getElementById("dailyLoginButton");
+
+const restoreStreakButton =
+  document.getElementById("restoreStreakButton");
+
+const dailyRewardText =
+  document.getElementById("dailyRewardText");
+
+const dailyLoginMessage =
+  document.getElementById("dailyLoginMessage");
+
+const dailyStreakNumber =
+  document.getElementById("dailyStreakNumber");
+
+const dailyLoginText =
+  document.getElementById("dailyLoginText");
+
+
+function showDailyMessage(message) {
+
+  if (!dailyLoginMessage) return;
+
+  dailyLoginMessage.textContent = message;
+  dailyLoginMessage.style.display = "block";
+
+}
+
+
+function updateDailyRewardPreview(streak) {
+
+  if (!dailyRewardText) return;
+
+  const nextDay =
+    Math.max(1, Number(streak || 0) + 1);
+
+  const baseXP = nextDay * 10;
+
+  const weeklyBonus =
+    nextDay % 7 === 0 ? 100 : 0;
+
+  const mysteryBox =
+    nextDay % 30 === 0;
+
+  let text =
+    `Day ${nextDay} — +${baseXP + weeklyBonus} XP`;
+
+  if (weeklyBonus) {
+    text += " 🎉 +100 weekly bonus";
+  }
+
+  if (mysteryBox) {
+    text += " 🎁 Mystery Box";
+  }
+
+  dailyRewardText.textContent = text;
+
+}
+
+
+async function loadDailyLoginStatus() {
+
+  const {
+    data: { session }
+  } = await supabaseClient.auth.getSession();
+
+  if (!session) {
+
+    if (dailyLoginButton) {
+      dailyLoginButton.disabled = true;
+      dailyLoginButton.textContent =
+        "Connect X First";
+    }
+
+    return;
+  }
+
+
+  const { data: profile, error } =
+    await supabaseClient
+      .from("profiles")
+      .select("xp,current_streak,longest_streak")
+      .eq("id", session.user.id)
+      .maybeSingle();
+
+
+  if (error || !profile) {
+    console.error(
+      "Daily login profile error:",
+      error
+    );
+    return;
+  }
+
+
+  const streak =
+    Number(profile.current_streak || 0);
+
+
+  if (dailyStreakNumber) {
+    dailyStreakNumber.textContent = streak;
+  }
+
+
+  updateDailyRewardPreview(streak);
+
+
+  const today =
+    new Date().toISOString().slice(0, 10);
+
+
+  const { data: todayLogin } =
+    await supabaseClient
+      .from("daily_logins")
+      .select(
+        "id,day_number,xp_awarded,bonus_xp,mystery_box"
+      )
+      .eq("user_id", session.user.id)
+      .eq("login_date", today)
+      .maybeSingle();
+
+
+  if (todayLogin) {
+
+    if (dailyLoginButton) {
+      dailyLoginButton.disabled = true;
+      dailyLoginButton.textContent =
+        "✓ Claimed Today";
+    }
+
+    if (dailyLoginText) {
+      dailyLoginText.textContent =
+        `Day ${todayLogin.day_number} completed today.`;
+    }
+
+    let text =
+      `+${todayLogin.xp_awarded + todayLogin.bonus_xp} XP earned`;
+
+    if (todayLogin.bonus_xp > 0) {
+      text += " 🎉 +100 bonus";
+    }
+
+    if (todayLogin.mystery_box) {
+      text += " 🎁 Mystery Box unlocked";
+    }
+
+    if (dailyRewardText) {
+      dailyRewardText.textContent = text;
+    }
+
+    return;
+  }
+
+
+  // Check whether streak is broken
+
+  const { data: lastLogin } =
+    await supabaseClient
+      .from("daily_logins")
+      .select("login_date")
+      .eq("user_id", session.user.id)
+      .order("login_date", {
+        ascending: false
+      })
+      .limit(1)
+      .maybeSingle();
+
+
+  if (lastLogin) {
+
+    const lastDate =
+      new Date(
+        lastLogin.login_date + "T00:00:00"
+      );
+
+    const todayDate =
+      new Date(
+        today + "T00:00:00"
+      );
+
+    const difference =
+      Math.floor(
+        (todayDate - lastDate) /
+        (1000 * 60 * 60 * 24)
+      );
+
+
+    if (difference > 1) {
+
+      if (dailyLoginText) {
+        dailyLoginText.textContent =
+          "Your streak was broken.";
+      }
+
+      if (restoreStreakButton) {
+        restoreStreakButton.style.display =
+          "block";
+      }
+
+    }
+
+  }
+
+}
+
+
+async function claimDailyLogin() {
+
+  if (!dailyLoginButton) return;
+
+  dailyLoginButton.disabled = true;
+  dailyLoginButton.textContent =
+    "Claiming...";
+
+
+  const { data, error } =
+    await supabaseClient.rpc(
+      "claim_daily_login"
+    );
+
+
+  if (error) {
+
+    console.error(
+      "Daily login error:",
+      error
+    );
+
+    showDailyMessage(
+      "Unable to claim daily XP: " +
+      error.message
+    );
+
+    dailyLoginButton.disabled = false;
+    dailyLoginButton.textContent =
+      "Claim Daily XP";
+
+    return;
+  }
+
+
+  if (!data || !data.success) {
+
+    showDailyMessage(
+      data?.message ||
+      "Daily login cannot be claimed."
+    );
+
+    await loadDailyLoginStatus();
+
+    return;
+  }
+
+
+  let message =
+    `Day ${data.day_number} complete! +${data.xp_awarded} XP`;
+
+  if (data.bonus_xp > 0) {
+    message += " 🎉 +100 bonus";
+  }
+
+  if (data.mystery_box) {
+    message +=
+      " 🎁 Mystery Box unlocked!";
+  }
+
+
+  showDailyMessage(message);
+
+
+  dailyLoginButton.textContent =
+    "✓ Claimed Today";
+
+
+  if (dailyStreakNumber) {
+    dailyStreakNumber.textContent =
+      data.current_streak;
+  }
+
+
+  if (dailyRewardText) {
+    dailyRewardText.textContent =
+      `+${data.xp_awarded} XP earned`;
+  }
+
+
+  await loadUserProfile();
+
+}
+
+
+async function restoreStreak() {
+
+  if (!restoreStreakButton) return;
+
+
+  const confirmed =
+    confirm(
+      "Restore your streak for 1,000 XP?\n\n" +
+      "1,000 XP will be deducted from your balance."
+    );
+
+
+  if (!confirmed) return;
+
+
+  restoreStreakButton.disabled = true;
+  restoreStreakButton.textContent =
+    "Restoring...";
+
+
+  const { data, error } =
+    await supabaseClient.rpc(
+      "restore_streak"
+    );
+
+
+  if (error) {
+
+    console.error(
+      "Restore streak error:",
+      error
+    );
+
+    showDailyMessage(
+      "Unable to restore streak: " +
+      error.message
+    );
+
+    restoreStreakButton.disabled = false;
+    restoreStreakButton.textContent =
+      "Restore Streak — 1,000 XP";
+
+    return;
+  }
+
+
+  if (!data || !data.success) {
+
+    showDailyMessage(
+      data?.message ||
+      "Streak could not be restored."
+    );
+
+    restoreStreakButton.disabled = false;
+    restoreStreakButton.textContent =
+      "Restore Streak — 1,000 XP";
+
+    return;
+  }
+
+
+  showDailyMessage(
+    "🔥 Streak restored for 1,000 XP!"
+  );
+
+
+  restoreStreakButton.style.display =
+    "none";
+
+
+  await loadUserProfile();
+  await loadDailyLoginStatus();
+
+}
+
+
+if (dailyLoginButton) {
+
+  dailyLoginButton.addEventListener(
+    "click",
+    claimDailyLogin
+  );
+
+}
+
+
+if (restoreStreakButton) {
+
+  restoreStreakButton.addEventListener(
+    "click",
+    restoreStreak
+  );
+
+}
+
+
+loadDailyLoginStatus();
   </script>
 </body>
 </html>
