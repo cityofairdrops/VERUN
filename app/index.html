@@ -1421,13 +1421,13 @@ async function loadTasks() {
       </div>
 
       <a
-        class="task-button"
-        href="${escapeHtml(task.target_url || "#")}"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Start
-      </a>
+  class="task-button"
+  href="${task.target_url}"
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  Start
+</a>
     `;
 
     container.appendChild(taskElement);
