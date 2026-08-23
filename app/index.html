@@ -1425,19 +1425,21 @@ async function loadTasks() {
   href="${task.target_url}"
   target="_blank"
   rel="noopener noreferrer"
+  onclick="this.nextElementSibling.style.display='inline-block';"
 >
   Start
 </a>
+
 <button
   class="claim-task-button"
   data-task-id="${task.id}"
+  style="display: none;"
 >
   Claim XP
 </button>
     `;
 
     container.appendChild(taskElement);
-
   });
 }
 
