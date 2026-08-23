@@ -1277,12 +1277,28 @@
           .single();
 
       if (insertError) {
-        console.error("Profile creation error:", insertError);
-        alert(
-          "Profile could not be created: " +
-          insertError.message
-        );
-        return;
+
+  console.error("Profile creation error:", insertError);
+
+  // The profile may have been created by another
+  // authentication event. Try loading it again.
+  const { data: existingProfile, error: retryError } =
+    await supabaseClient
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .maybeSingle();
+
+  if (retryError || !existingProfile) {
+    alert(
+      "Profile could not be loaded: " +
+      (retryError?.message || insertError.message)
+    );
+    return;
+  }
+
+  updateDashboard(existingProfile);
+  return;
       }
 
       updateDashboard(newProfile);
