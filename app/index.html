@@ -1392,6 +1392,36 @@ async function loadTasks() {
 
   container.innerHTML = "";
 
+  // Get the current logged-in user
+  const {
+    data: { session }
+  } = await supabaseClient.auth.getSession();
+
+  let verifications = [];
+
+  // Load this user's verification status
+  if (session && tasks.length > 0) {
+
+    const taskIds =
+      tasks.map(task => task.id);
+
+    const { data, error: verificationError } =
+      await supabaseClient
+        .from("task_verifications")
+        .select("task_id, status")
+        .eq("user_id", session.user.id)
+        .in("task_id", taskIds);
+
+    if (verificationError) {
+      console.error(
+        "Verification loading error:",
+        verificationError
+      );
+    } else {
+      verifications = data || [];
+    }
+  }
+
   tasks.forEach(task => {
 
     const taskElement =
@@ -1399,18 +1429,95 @@ async function loadTasks() {
 
     taskElement.className = "task";
 
+    const verification =
+      verifications.find(
+        item => Number(item.task_id) === Number(task.id)
+      );
+
+    let buttonHtml = "";
+
+    if (!verification) {
+
+      // No verification started yet
+      buttonHtml = `
+        <a
+          class="task-button"
+          href="${task.target_url}"
+          target="_blank"
+          rel="noopener noreferrer"
+          onclick="startTaskVerification(event, this, '${task.id}')"
+        >
+          Start
+        </a>
+
+        <button
+          class="claim-task-button"
+          data-task-id="${task.id}"
+          style="display: none;"
+        >
+          Claim XP
+        </button>
+      `;
+
+    } else if (verification.status === "pending") {
+
+      // Verification is waiting for admin approval
+      buttonHtml = `
+        <button
+          class="task-button"
+          disabled
+          style="opacity: 0.7; cursor: not-allowed;"
+        >
+          ⏳ Verification in progress...
+        </button>
+      `;
+
+    } else if (verification.status === "approved") {
+
+      // Admin approved the task
+      buttonHtml = `
+        <button
+          class="claim-task-button"
+          data-task-id="${task.id}"
+        >
+          🎁 Claim XP
+        </button>
+      `;
+
+    } else if (verification.status === "rejected") {
+
+      // Admin rejected the task
+      buttonHtml = `
+        <div class="task-verification-rejected">
+          ❌ Verification failed
+        </div>
+
+        <a
+          class="task-button"
+          href="${task.target_url}"
+          target="_blank"
+          rel="noopener noreferrer"
+          onclick="startTaskVerification(event, this, '${task.id}')"
+        >
+          Try Again
+        </a>
+      `;
+    }
+
     taskElement.innerHTML = `
       <div class="task-icon">
         ${getTaskIcon(task.task_type)}
       </div>
-${task.task_type === "profile_badge" ? `
-  <button
-    class="copy-emoji-button"
-    onclick="navigator.clipboard.writeText('✌️').then(() => this.textContent='✓ Copied!')"
-  >
-    ✌️ Copy
-  </button>
-` : ""}
+
+      ${task.task_type === "profile_badge" ? `
+        <button
+          class="copy-emoji-button"
+          onclick="navigator.clipboard.writeText('✌️').then(() => this.textContent='✓ Copied!')"
+        >
+          ✌️ Copy
+        </button>
+      ` : ""}
+
       <div class="task-info">
 
         <div class="task-name">
@@ -1427,23 +1534,7 @@ ${task.task_type === "profile_badge" ? `
         +${task.xp_reward} XP
       </div>
 
-      <a
-  class="task-button"
-  href="${task.target_url}"
-  target="_blank"
-  rel="noopener noreferrer"
-  onclick="startTaskVerification(event, this, '${task.id}')"
->
-  Start
-</a>
-
-<button
-  class="claim-task-button"
-  data-task-id="${task.id}"
-  style="display: none;"
->
-  Claim XP
-</button>
+      ${buttonHtml}
     `;
 
     container.appendChild(taskElement);
