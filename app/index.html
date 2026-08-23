@@ -1210,5 +1210,27 @@
 
   console.log("VERUN: Supabase connected");
 </script>
+  <script>
+  const connectXButton = document.getElementById("connectXButton");
+
+  connectXButton.addEventListener("click", async () => {
+    connectXButton.disabled = true;
+    connectXButton.textContent = "Connecting...";
+
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: "twitter",
+      options: {
+        redirectTo: "https://cityofairdrops.github.io/VERUN/"
+      }
+    });
+
+    if (error) {
+      console.error(error);
+      connectXButton.disabled = false;
+      connectXButton.textContent = "Connect X";
+      alert("Unable to connect X: " + error.message);
+    }
+  });
+</script>
 </body>
 </html>
