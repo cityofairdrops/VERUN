@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Connect X — VERUN</title>
+  <meta name="theme-color" content="#070909">
+
+  <style>
+    :root {
+      --bg: #070909;
+      --panel: #0d1110;
+      --border: rgba(255,255,255,0.09);
+      --text: #f4f7f5;
+      --muted: #89948e;
+      --green: #8dffb7;
+      --green-soft: rgba(141,255,183,0.09);
+      --green-border: rgba(141,255,183,0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(
+          circle at 50% 35%,
+          rgba(141,255,183,0.06),
+          transparent 35%
+        ),
+        var(--bg);
+
+      color: var(--text);
+
+      font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+      display: flex;
+      flex-direction: column;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* NAV */
+
+    .nav {
+      height: 68px;
+      border-bottom: 1px solid var(--border);
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-inner {
+      width: calc(100% - 30px);
+      max-width: 1180px;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      font-size: 19px;
+      font-weight: 900;
+      letter-spacing: 3px;
+    }
+
+    .mark {
+      width: 21px;
+      height: 21px;
+
+      border: 1px solid var(--green);
+
+      transform: rotate(45deg);
+
+      position: relative;
+    }
+
+    .mark::after {
+      content: "";
+
+      position: absolute;
+
+      width: 7px;
+      height: 7px;
+
+      background: var(--green);
+
+      top: 6px;
+      left: 6px;
+    }
+
+    .back {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .back:hover {
+      color: var(--green);
+    }
+
+    /* MAIN */
+
+    .main {
+      flex: 1;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 40px 15px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 440px;
+
+      background: rgba(13,17,16,0.94);
+
+      border: 1px solid var(--border);
+      border-radius: 18px;
+
+      padding: 38px 30px;
+
+      text-align: center;
+
+      box-shadow:
+        0 25px 80px rgba(0,0,0,0.35);
+    }
+
+    /* X LOGO */
+
+    .x-logo {
+      width: 64px;
+      height: 64px;
+
+      margin: 0 auto 25px;
+
+      border-radius: 50%;
+
+      background: #000;
+
+      border: 1px solid rgba(255,255,255,0.12);
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      font-size: 28px;
+      font-weight: 900;
+    }
+
+    .eyebrow {
+      color: var(--green);
+
+      font-size: 9px;
+      font-weight: 850;
+
+      letter-spacing: 1.8px;
+
+      text-transform: uppercase;
+
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-size: 30px;
+      line-height: 1.05;
+
+      letter-spacing: -1.3px;
+    }
+
+    .description {
+      color: var(--muted);
+
+      font-size: 12px;
+      line-height: 1.7;
+
+      max-width: 350px;
+
+      margin: 13px auto 25px;
+    }
+
+    /* BENEFITS */
+
+    .benefits {
+      display: grid;
+      gap: 8px;
+
+      margin: 0 0 25px;
+
+      text-align: left;
+    }
+
+    .benefit {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      padding: 11px 12px;
+
+      border: 1px solid var(--border);
+      border-radius: 9px;
+
+      background: rgba(255,255,255,0.015);
+
+      color: var(--muted);
+
+      font-size: 10px;
+    }
+
+    .check {
+      width: 18px;
+      height: 18px;
+
+      border-radius: 50%;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      background: var(--green-soft);
+      border: 1px solid var(--green-border);
+
+      color: var(--green);
+
+      font-size: 9px;
+      font-weight: 900;
+
+      flex-shrink: 0;
+    }
+
+    /* CONNECT BUTTON */
+
+    .connect-button {
+      width: 100%;
+
+      border: 0;
+
+      border-radius: 9px;
+
+      background: var(--green);
+      color: #071009;
+
+      padding: 14px 18px;
+
+      font-size: 12px;
+      font-weight: 900;
+
+      cursor: pointer;
+
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .connect-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .connect-button:active {
+      transform: translateY(0);
+    }
+
+    .connect-button:disabled {
+      opacity: 0.65;
+      cursor: wait;
+    }
+
+    .security {
+      color: #59635e;
+
+      font-size: 9px;
+      line-height: 1.6;
+
+      margin-top: 16px;
+    }
+
+    /* SUCCESS */
+
+    .success {
+      display: none;
+    }
+
+    .success-icon {
+      width: 64px;
+      height: 64px;
+
+      margin: 0 auto 22px;
+
+      border-radius: 50%;
+
+      background: var(--green-soft);
+      border: 1px solid var(--green-border);
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      color: var(--green);
+
+      font-size: 25px;
+      font-weight: 900;
+    }
+
+    .username {
+      color: var(--green);
+
+      font-size: 14px;
+      font-weight: 800;
+
+      margin-top: 8px;
+    }
+
+    .continue {
+      display: block;
+
+      width: 100%;
+
+      margin-top: 25px;
+
+      background: var(--green);
+      color: #071009;
+
+      border-radius: 9px;
+
+      padding: 14px;
+
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    /* FOOTER */
+
+    footer {
+      text-align: center;
+
+      padding: 20px 15px;
+
+      color: #4f5954;
+
+      font-size: 9px;
+    }
+
+    @media (max-width: 480px) {
+
+      .card {
+        padding: 32px 20px;
+      }
+
+      h1 {
+        font-size: 27px;
+      }
+
+      .x-logo,
+      .success-icon {
+        width: 58px;
+        height: 58px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header class="nav">
+
+    <div class="nav-inner">
+
+      <a href="../" class="brand">
+        <span class="mark"></span>
+        VERUN
+      </a>
+
+      <a href="./" class="back">
+        Back to app
+      </a>
+
+    </div>
+
+  </header>
+
+
+  <main class="main">
+
+    <div class="card">
+
+
+      <!-- CONNECT STATE -->
+
+      <div id="connectState">
+
+        <div class="x-logo">
+          𝕏
+        </div>
+
+        <div class="eyebrow">
+          Account verification
+        </div>
+
+        <h1>
+          Connect X
+        </h1>
+
+        <p class="description">
+          Connect your X account to participate in VERUN,
+          complete campaigns and build your XP.
+        </p>
+
+
+        <div class="benefits">
+
+          <div class="benefit">
+            <span class="check">✓</span>
+            Verify your X account
+          </div>
+
+          <div class="benefit">
+            <span class="check">✓</span>
+            Participate in X campaigns
+          </div>
+
+          <div class="benefit">
+            <span class="check">✓</span>
+            Track your XP and participation
+          </div>
+
+          <div class="benefit">
+            <span class="check">✓</span>
+            Become eligible for future rewards
+          </div>
+
+        </div>
+
+
+        <button
+          class="connect-button"
+          id="connectButton"
+          onclick="connectX()"
+        >
+          Continue with X
+        </button>
+
+
+        <div class="security">
+          X authentication will be handled securely.
+          VERUN will not ask for your X password.
+        </div>
+
+      </div>
+
+
+      <!-- SUCCESS STATE -->
+
+      <div id="successState" class="success">
+
+        <div class="success-icon">
+          ✓
+        </div>
+
+        <div class="eyebrow">
+          Connected
+        </div>
+
+        <h1>
+          X account connected
+        </h1>
+
+        <div class="username" id="username">
+          @verun_user
+        </div>
+
+        <p class="description">
+          Your account is ready. Continue to your VERUN
+          dashboard to start participating.
+        </p>
+
+        <a href="./" class="continue">
+          Enter VERUN App →
+        </a>
+
+      </div>
+
+
+    </div>
+
+  </main>
+
+
+  <footer>
+    VERUN · Community participation platform
+  </footer>
+
+
+  <script>
+
+    function connectX() {
+
+      const button =
+        document.getElementById("connectButton");
+
+      button.disabled = true;
+
+      button.textContent =
+        "Connecting…";
+
+
+      /*
+        DEMO ONLY
+
+        This does NOT connect to X.
+
+        Real X OAuth will be implemented later
+        using a secure backend.
+
+        Never place an X API secret/client secret
+        inside this HTML file.
+      */
+
+      setTimeout(function() {
+
+        document.getElementById("connectState")
+          .style.display = "none";
+
+        document.getElementById("successState")
+          .style.display = "block";
+
+      }, 900);
+
+    }
+
+  </script>
+
+</body>
+</html>
