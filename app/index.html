@@ -1422,15 +1422,57 @@ async function loadTasks() {
     const button =
       taskElement.querySelector(".task-button");
 
-    button.addEventListener("click", () => {
-      if (task.target_url) {
-        window.open(
-          task.target_url,
-          "_blank",
-          "noopener,noreferrer"
-        );
+    button.addEventListener("click", async () => {
+
+  if (!task.target_url) return;
+
+  // Open the task first
+  window.open(
+    task.target_url,
+    "_blank",
+    "noopener,noreferrer"
+  );
+
+  // Ask the user to confirm after completing the task
+  const confirmed = confirm(
+    "After completing the task on X, press OK to claim your XP."
+  );
+
+  if (!confirmed) return;
+
+  button.disabled = true;
+  button.textContent = "Checking...";
+
+  const { data, error } =
+    await supabaseClient.rpc(
+      "complete_task",
+      {
+        p_task_id: task.id
       }
-    });
+    );
+
+  if (error) {
+    console.error("Task completion error:", error);
+
+    alert(error.message);
+
+    button.disabled = false;
+    button.textContent = "Start";
+
+    return;
+  }
+
+  alert(
+    "Task completed! +" +
+    data.xp_awarded +
+    " XP"
+  );
+
+  button.textContent = "Completed";
+  button.disabled = true;
+
+  await loadUserProfile();
+});
 
     container.appendChild(taskElement);
   });
