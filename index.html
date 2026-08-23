@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>VERUN — Earn Your Place</title>
+  <meta name="description" content="VERUN is a community-driven crypto ecosystem where participation becomes value.">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #07080d;
+      color: #ffffff;
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      width: min(1120px, 92%);
+      margin: auto;
+    }
+
+    /* NAVBAR */
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(7, 8, 13, 0.9);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid #1b1e29;
+    }
+
+    .nav-inner {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .logo {
+      font-size: 25px;
+      font-weight: 900;
+      letter-spacing: 3px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 25px;
+      color: #a8adbd;
+      font-size: 14px;
+    }
+
+    .nav-links a:hover {
+      color: white;
+    }
+
+    .nav-button {
+      background: white;
+      color: #07080d;
+      padding: 10px 18px;
+      border-radius: 9px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    /* HERO */
+
+    .hero {
+      padding: 110px 0 100px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-block;
+      border: 1px solid #292e3c;
+      background: #10121a;
+      color: #b9bfd0;
+      padding: 7px 13px;
+      border-radius: 30px;
+      font-size: 12px;
+      margin-bottom: 25px;
+    }
+
+    .hero h1 {
+      font-size: clamp(52px, 9vw, 105px);
+      line-height: 0.95;
+      letter-spacing: -5px;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    .hero h1 span {
+      color: #9da4b8;
+    }
+
+    .hero p {
+      max-width: 650px;
+      margin: 30px auto;
+      color: #9ca2b3;
+      font-size: 18px;
+    }
+
+    .hero-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 30px;
+    }
+
+    .primary {
+      background: white;
+      color: #07080d;
+      padding: 14px 24px;
+      border-radius: 10px;
+      font-weight: 800;
+    }
+
+    .secondary {
+      border: 1px solid #2b3040;
+      padding: 14px 24px;
+      border-radius: 10px;
+      color: #d9dce5;
+    }
+
+    /* SECTIONS */
+
+    section {
+      padding: 90px 0;
+      border-top: 1px solid #151821;
+    }
+
+    .section-title {
+      font-size: 38px;
+      letter-spacing: -1.5px;
+      margin-bottom: 15px;
+    }
+
+    .section-description {
+      color: #9298aa;
+      max-width: 650px;
+      margin-bottom: 40px;
+    }
+
+    /* CARDS */
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .card {
+      background: #0d0f16;
+      border: 1px solid #1c202c;
+      border-radius: 16px;
+      padding: 28px;
+    }
+
+    .number {
+      color: #777e92;
+      font-size: 13px;
+      margin-bottom: 35px;
+    }
+
+    .card h3 {
+      font-size: 21px;
+      margin-bottom: 10px;
+    }
+
+    .card p {
+      color: #858b9c;
+      font-size: 14px;
+    }
+
+    /* TOKENOMICS */
+
+    .tokenomics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .token-box {
+      background: #0d0f16;
+      border: 1px solid #1c202c;
+      border-radius: 16px;
+      padding: 28px;
+    }
+
+    .supply {
+      font-size: 42px;
+      font-weight: 800;
+      margin: 10px 0 20px;
+    }
+
+    .allocation {
+      display: flex;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid #1c202c;
+      color: #b3b8c7;
+    }
+
+    .allocation:last-child {
+      border-bottom: none;
+    }
+
+    .allocation strong {
+      color: white;
+    }
+
+    /* COMMUNITY */
+
+    .community-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .community-card {
+      background: #0d0f16;
+      border: 1px solid #1c202c;
+      border-radius: 16px;
+      padding: 30px;
+    }
+
+    .community-card .amount {
+      font-size: 32px;
+      font-weight: 800;
+      margin: 12px 0;
+    }
+
+    .community-card p {
+      color: #858b9c;
+      font-size: 14px;
+    }
+
+    /* VESTING */
+
+    .vesting-box {
+      background: #0d0f16;
+      border: 1px solid #1c202c;
+      border-radius: 16px;
+      padding: 32px;
+    }
+
+    .vesting-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 17px 0;
+      border-bottom: 1px solid #1c202c;
+    }
+
+    .vesting-row:last-child {
+      border-bottom: none;
+    }
+
+    .vesting-row span {
+      color: #9298aa;
+    }
+
+    /* CTA */
+
+    .cta {
+      text-align: center;
+      padding: 110px 20px;
+    }
+
+    .cta h2 {
+      font-size: clamp(38px, 6vw, 65px);
+      letter-spacing: -3px;
+      margin-bottom: 20px;
+    }
+
+    .cta p {
+      color: #8e94a6;
+      max-width: 550px;
+      margin: 0 auto 30px;
+    }
+
+    /* FOOTER */
+
+    footer {
+      border-top: 1px solid #151821;
+      padding: 35px 0;
+      color: #70778a;
+      font-size: 13px;
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    /* MOBILE */
+
+    @media (max-width: 760px) {
+
+      .nav-links {
+        display: none;
+      }
+
+      .hero {
+        padding: 80px 0;
+      }
+
+      .hero h1 {
+        letter-spacing: -3px;
+      }
+
+      .hero p {
+        font-size: 16px;
+      }
+
+      .cards,
+      .tokenomics,
+      .community-grid {
+        grid-template-columns: 1fr;
+      }
+
+      section {
+        padding: 65px 0;
+      }
+
+      .section-title {
+        font-size: 32px;
+      }
+
+      .supply {
+        font-size: 34px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAVIGATION -->
+
+  <nav>
+    <div class="container nav-inner">
+
+      <a href="#" class="logo">VERUN</a>
+
+      <div class="nav-links">
+        <a href="#how">How It Works</a>
+        <a href="#community">Community</a>
+        <a href="#tokenomics">Tokenomics</a>
+        <a href="#vesting">Vesting</a>
+      </div>
+
+      <a href="#community" class="nav-button">Explore</a>
+
+    </div>
+  </nav>
+
+
+  <!-- HERO -->
+
+  <header class="hero">
+    <div class="container">
+
+      <div class="badge">COMMUNITY-DRIVEN CRYPTO ECOSYSTEM</div>
+
+      <h1>
+        Earn your place.<br>
+        <span>Own your share.</span>
+      </h1>
+
+      <p>
+        VERUN rewards meaningful participation.
+        Complete tasks, contribute to the community,
+        earn XP and build your share of the VERUN ecosystem.
+      </p>
+
+      <div class="hero-buttons">
+        <a href="#how" class="primary">Explore VERUN</a>
+        <a href="#tokenomics" class="secondary">View Tokenomics</a>
+      </div>
+
+    </div>
+  </header>
+
+
+  <!-- HOW IT WORKS -->
+
+  <section id="how">
+    <div class="container">
+
+      <h2 class="section-title">How VERUN works</h2>
+
+      <p class="section-description">
+        VERUN turns community participation into measurable contribution.
+      </p>
+
+      <div class="cards">
+
+        <div class="card">
+          <div class="number">01</div>
+          <h3>Connect</h3>
+          <p>
+            Connect your social accounts and enter the VERUN ecosystem.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="number">02</div>
+          <h3>Participate</h3>
+          <p>
+            Complete eligible community and campaign tasks to earn XP.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="number">03</div>
+          <h3>Earn VERUN</h3>
+          <p>
+            Your eligible contribution determines your share of community rewards.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- COMMUNITY -->
+
+  <section id="community">
+    <div class="container">
+
+      <h2 class="section-title">Community rewards</h2>
+
+      <p class="section-description">
+        40% of the total VERUN supply is dedicated to the community.
+      </p>
+
+      <div class="community-grid">
+
+        <div class="community-card">
+          <div>SEASON 01</div>
+          <div class="amount">123.2M</div>
+          <p>VERUN allocated to the first community season.</p>
+        </div>
+
+        <div class="community-card">
+          <div>SEASON 02</div>
+          <div class="amount">78.4M</div>
+          <p>VERUN allocated to the second community season.</p>
+        </div>
+
+        <div class="community-card">
+          <div>REFERRALS</div>
+          <div class="amount">22.4M</div>
+          <p>Dedicated allocation for community referral rewards.</p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- TOKENOMICS -->
+
+  <section id="tokenomics">
+    <div class="container">
+
+      <h2 class="section-title">Tokenomics</h2>
+
+      <p class="section-description">
+        A fixed supply designed around community participation,
+        liquidity and long-term ecosystem growth.
+      </p>
+
+      <div class="tokenomics">
+
+        <div class="token-box">
+
+          <div>Total Supply</div>
+
+          <div class="supply">
+            560M
+          </div>
+
+          <div style="color:#858b9c;">
+            $VERUN
+          </div>
+
+        </div>
+
+        <div class="token-box">
+
+          <div class="allocation">
+            <span>Community</span>
+            <strong>40%</strong>
+          </div>
+
+          <div class="allocation">
+            <span>Treasury</span>
+            <strong>20%</strong>
+          </div>
+
+          <div class="allocation">
+            <span>Liquidity</span>
+            <strong>15%</strong>
+          </div>
+
+          <div class="allocation">
+            <span>Marketing</span>
+            <strong>10%</strong>
+          </div>
+
+          <div class="allocation">
+            <span>Token Sale</span>
+            <strong>10%</strong>
+          </div>
+
+          <div class="allocation">
+            <span>Foundation</span>
+            <strong>5%</strong>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- VESTING -->
+
+  <section id="vesting">
+    <div class="container">
+
+      <h2 class="section-title">Vesting</h2>
+
+      <p class="section-description">
+        Long-term allocations are structured to support sustainable ecosystem growth.
+      </p>
+
+      <div class="vesting-box">
+
+        <div class="vesting-row">
+          <strong>Foundation</strong>
+          <span>12-month cliff</span>
+        </div>
+
+        <div class="vesting-row">
+          <strong>Foundation unlock</strong>
+          <span>10% every 90 days</span>
+        </div>
+
+        <div class="vesting-row">
+          <strong>Token Sale</strong>
+          <span>100% at TGE</span>
+        </div>
+
+        <div class="vesting-row">
+          <strong>Liquidity</strong>
+          <span>Allocated at TGE</span>
+        </div>
+
+        <div class="vesting-row">
+          <strong>Marketing</strong>
+          <span>10% at TGE</span>
+        </div>
+
+        <div class="vesting-row">
+          <strong>Treasury</strong>
+          <span>0% at TGE</span>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- CTA -->
+
+  <section class="cta">
+
+    <div class="container">
+
+      <h2>Be part of VERUN.</h2>
+
+      <p>
+        The ecosystem is being built around its community.
+        Follow the journey from the beginning.
+      </p>
+
+      <div class="hero-buttons">
+
+        <a href="#" class="primary">
+          Follow on X
+        </a>
+
+        <a href="#" class="secondary">
+          Join Telegram
+        </a>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- FOOTER -->
+
+  <footer>
+
+    <div class="container footer-inner">
+
+      <div>
+        © 2026 VERUN. All rights reserved.
+      </div>
+
+      <div>
+        Community-driven. Built on BSC.
+      </div>
+
+    </div>
+
+  </footer>
+
+</body>
+</html>
