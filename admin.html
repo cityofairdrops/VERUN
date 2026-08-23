@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>VERUN Admin</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    .verification-card {
+      background: white;
+      padding: 18px;
+      margin-bottom: 15px;
+      border-radius: 12px;
+    }
+
+    .status {
+      font-weight: bold;
+      margin: 8px 0;
+    }
+
+    button {
+      padding: 10px 16px;
+      margin-right: 8px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .approve-button {
+      background: #22c55e;
+      color: white;
+    }
+
+    .reject-button {
+      background: #ef4444;
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>VERUN Verification Panel</h1>
+
+<div id="message">Loading...</div>
+
+<div id="verification-list"></div>
+
+<script>
+
+const SUPABASE_URL = "https://lhfgozlkeotxyzqowijz.supabase.co/";
+const SUPABASE_ANON_KEY = "sb_publishable_z8j_xh_NIZQHkFck_WqsuA_-zaPAMd0";
+
+const supabaseClient =
+  supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+
+
+async function checkAdmin() {
+
+  const {
+    data: { session }
+  } = await supabaseClient.auth.getSession();
+
+  if (!session) {
+
+    document.getElementById("message").textContent =
+      "Please log in first.";
+
+    return false;
+  }
+
+  const { data, error } =
+    await supabaseClient.rpc("is_admin");
+
+  if (error || !data) {
+
+    document.getElementById("message").textContent =
+      "Access denied.";
+
+    return false;
+  }
+
+  return true;
+}
+
+
+async function loadVerifications() {
+
+  const allowed = await checkAdmin();
+
+  if (!allowed) return;
+
+  const { data, error } =
+    await supabaseClient
+      .from("task_verifications")
+      .select(`
+        id,
+        user_id,
+        task_id,
+        status,
+        started_at,
+        created_at,
+        tasks (
+          title,
+          description,
+          xp_reward,
+          target_url
+        )
+      `)
+      .eq("status", "pending")
+      .order("created_at", {
+        ascending: false
+      });
+
+  if (error) {
+
+    console.error(error);
+
+    document.getElementById("message").textContent =
+      "Unable to load verification requests.";
+
+    return;
+  }
+
+  const list =
+    document.getElementById("verification-list");
+
+  list.innerHTML = "";
+
+  if (!data || data.length === 0) {
+
+    document.getElementById("message").textContent =
+      "No pending verifications.";
+
+    return;
+  }
+
+  document.getElementById("message").textContent =
+    `${data.length} pending verification(s)`;
+
+  data.forEach(item => {
+
+    const card =
+      document.createElement("div");
+
+    card.className =
+      "verification-card";
+
+    card.innerHTML = `
+
+      <h3>
+        ${escapeHtml(item.tasks?.title || "Task")}
+      </h3>
+
+      <p>
+        ${escapeHtml(
+          item.tasks?.description || ""
+        )}
+      </p>
+
+      <p>
+        <strong>Reward:</strong>
+        ${item.tasks?.xp_reward || 0} XP
+      </p>
+
+      <p>
+        <strong>User ID:</strong>
+        ${escapeHtml(item.user_id)}
+      </p>
+
+      <p>
+        <strong>Started:</strong>
+        ${new Date(
+          item.started_at
+        ).toLocaleString()}
+      </p>
+
+      <button
+        class="approve-button"
+        onclick="approveVerification('${item.id}')"
+      >
+        Approve
+      </button>
+
+      <button
+        class="reject-button"
+        onclick="rejectVerification('${item.id}')"
+      >
+        Reject
+      </button>
+    `;
+
+    list.appendChild(card);
+
+  });
+}
+
+
+async function approveVerification(id) {
+
+  const {
+    data: { session }
+  } = await supabaseClient.auth.getSession();
+
+  if (!session) {
+
+    alert("Please log in.");
+
+    return;
+  }
+
+  const { error } =
+    await supabaseClient
+      .from("task_verifications")
+      .update({
+        status: "approved",
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: session.user.id
+      })
+      .eq("id", id)
+      .eq("status", "pending");
+
+  if (error) {
+
+    console.error(error);
+
+    alert(
+      "Unable to approve verification."
+    );
+
+    return;
+  }
+
+  loadVerifications();
+}
+
+
+async function rejectVerification(id) {
+
+  const {
+    data: { session }
+  } = await supabaseClient.auth.getSession();
+
+  if (!session) {
+
+    alert("Please log in.");
+
+    return;
+  }
+
+  const { error } =
+    await supabaseClient
+      .from("task_verifications")
+      .update({
+        status: "rejected",
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: session.user.id
+      })
+      .eq("id", id)
+      .eq("status", "pending");
+
+  if (error) {
+
+    console.error(error);
+
+    alert(
+      "Unable to reject verification."
+    );
+
+    return;
+  }
+
+  loadVerifications();
+}
+
+
+function escapeHtml(value) {
+
+  const div =
+    document.createElement("div");
+
+  div.textContent =
+    value || "";
+
+  return div.innerHTML;
+}
+
+
+loadVerifications();
+
+</script>
+
+</body>
+</html>
