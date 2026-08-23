@@ -1540,6 +1540,39 @@ async function loadTasks() {
     container.appendChild(taskElement);
   });
 }
+    async function claimTaskXP(button, taskId) {
+
+  button.disabled = true;
+  button.textContent = "Claiming...";
+
+  const { data, error } =
+    await supabaseClient.rpc(
+      "claim_task_xp",
+      {
+        p_task_id: Number(taskId)
+      }
+    );
+
+  if (error) {
+    console.error(error);
+    alert("Unable to claim XP: " + error.message);
+    button.disabled = false;
+    button.textContent = "🎁 Claim XP";
+    return;
+  }
+
+  if (!data || !data.success) {
+    alert(data?.message || "Task cannot be claimed.");
+    button.disabled = false;
+    button.textContent = "🎁 Claim XP";
+    return;
+  }
+
+  button.textContent =
+    "✓ Completed +" + data.xp_awarded + " XP";
+
+  await loadUserProfile();
+}
 async function startTaskVerification(event, button, taskId) {
   event.preventDefault();
 
