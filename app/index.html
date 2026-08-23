@@ -1369,6 +1369,7 @@
     }
   }
 async function loadTasks() {
+
   const { data: tasks, error } =
     await supabaseClient
       .from("tasks")
@@ -1401,6 +1402,7 @@ async function loadTasks() {
       </div>
 
       <div class="task-info">
+
         <div class="task-name">
           ${escapeHtml(task.title)}
         </div>
@@ -1408,6 +1410,7 @@ async function loadTasks() {
         <div class="task-description">
           ${escapeHtml(task.description || "")}
         </div>
+
       </div>
 
       <div class="task-reward">
@@ -1415,30 +1418,17 @@ async function loadTasks() {
       </div>
 
       <a
-  class="task-button"
-  href="${task.target_url}"
-  target="_blank"
-  rel="noopener noreferrer"
->
-  Start
-</a>
+        class="task-button"
+        href="${escapeHtml(task.target_url || "#")}"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Start
+      </a>
     `;
 
-    const button =
-      taskElement.querySelector(".task-button");
-
-    button.addEventListener("click", () => {
-
-  if (!task.target_url) {
-    alert("Task URL is missing.");
-    return;
-  }
-
-  window.open(task.target_url, "_blank");
-
-});
-
     container.appendChild(taskElement);
+
   });
 }
 
