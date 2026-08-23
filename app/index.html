@@ -1213,16 +1213,126 @@
   <script>
   const connectXButton = document.getElementById("connectXButton");
 
+  async function loadUserProfile() {
+    const {
+      data: { user },
+      error: userError
+    } = await supabaseClient.auth.getUser();
+
+    if (userError || !user) {
+      connectXButton.disabled = false;
+      connectXButton.textContent = "Connect X";
+      return;
+    }
+
+    const xUsername =
+      user.user_metadata?.user_name ||
+      user.user_metadata?.preferred_username ||
+      user.user_metadata?.name ||
+      "VERUN User";
+
+    const xUserId =
+      user.user_metadata?.sub ||
+      user.user_metadata?.provider_id ||
+      user.id;
+
+    const { data: profile, error: profileError } =
+      await supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+
+    if (profileError) {
+      console.error("Profile error:", profileError);
+      return;
+    }
+
+    if (!profile) {
+      const { data: newProfile, error: insertError } =
+        await supabaseClient
+          .from("profiles")
+          .insert({
+            id: user.id,
+            x_username: xUsername,
+            x_user_id: xUserId,
+            xp: 0,
+            xp_multiplier: 1,
+            current_streak: 0,
+            longest_streak: 0,
+            referrals_count: 0
+          })
+          .select()
+          .single();
+
+      if (insertError) {
+        console.error("Profile creation error:", insertError);
+        alert("Profile could not be created: " + insertError.message);
+        return;
+      }
+
+      updateDashboard(newProfile);
+    } else {
+      updateDashboard(profile);
+    }
+  }
+
+  function updateDashboard(profile) {
+    const profileName = document.getElementById("profileName");
+    const profileStatus = document.getElementById("profileStatus");
+    const profileAvatar = document.getElementById("profileAvatar");
+
+    if (profileName) {
+      profileName.textContent = "@" + (profile.x_username || "VERUN User");
+    }
+
+    if (profileStatus) {
+      profileStatus.textContent = "Connected";
+    }
+
+    if (profileAvatar) {
+      profileAvatar.textContent =
+        (profile.x_username || "V").charAt(0).toUpperCase();
+    }
+
+    connectXButton.textContent = "Connected";
+    connectXButton.disabled = true;
+
+    document.querySelector(".balance").innerHTML =
+      `${profile.xp || 0} <span>XP</span>`;
+
+    const overviewValues =
+      document.querySelectorAll(".overview-value");
+
+    if (overviewValues.length >= 3) {
+      overviewValues[0].textContent =
+        `${profile.current_streak || 0} days`;
+
+      overviewValues[2].textContent =
+        profile.referrals_count || 0;
+    }
+
+    const streakNumber =
+      document.querySelector(".streak-number");
+
+    if (streakNumber) {
+      streakNumber.textContent =
+        profile.current_streak || 0;
+    }
+  }
+
   connectXButton.addEventListener("click", async () => {
     connectXButton.disabled = true;
     connectXButton.textContent = "Connecting...";
 
-    const { error } = await supabaseClient.auth.signInWithOAuth({
-      provider: "x",
-      options: {
-        redirectTo: "https://cityofairdrops.github.io/VERUN/app/"
-      }
-    });
+    const { error } =
+      await supabaseClient.auth.signInWithOAuth({
+        provider: "x",
+        options: {
+          redirectTo:
+            "https://cityofairdrops.github.io/VERUN/app/"
+        }
+      });
 
     if (error) {
       console.error(error);
@@ -1231,6 +1341,19 @@
       alert("Unable to connect X: " + error.message);
     }
   });
-</script>
+
+  supabaseClient.auth.onAuthStateChange(
+    async (event, session) => {
+      if (session) {
+        await loadUserProfile();
+      } else {
+        connectXButton.disabled = false;
+        connectXButton.textContent = "Connect X";
+      }
+    }
+  );
+
+  loadUserProfile();
+  </script>
 </body>
 </html>
