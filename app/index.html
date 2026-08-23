@@ -972,7 +972,10 @@
               +XP
             </div>
 
-            <button class="task-button">
+            <button
+  class="task-button"
+  data-task-url="${task.target_url}"
+>
   Start
 </button>
 
@@ -1428,7 +1431,20 @@ async function loadTasks() {
     `;
 
     container.appendChild(taskElement);
+const button = taskElement.querySelector(".task-button");
 
+button.addEventListener("click", () => {
+
+  const url = button.dataset.taskUrl;
+
+  if (!url) {
+    alert("Task URL is missing.");
+    return;
+  }
+
+  window.open(url, "_blank");
+
+});
   });
 }
 
