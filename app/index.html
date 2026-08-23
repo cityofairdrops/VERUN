@@ -1432,7 +1432,7 @@ ${task.task_type === "profile_badge" ? `
   href="${task.target_url}"
   target="_blank"
   rel="noopener noreferrer"
-  onclick="this.nextElementSibling.style.display='inline-block';"
+  onclick="startTaskVerification(event, this, '${task.id}')"
 >
   Start
 </a>
@@ -1449,7 +1449,61 @@ ${task.task_type === "profile_badge" ? `
     container.appendChild(taskElement);
   });
 }
+async function startTaskVerification(event, button, taskId) {
+  event.preventDefault();
 
+  const originalText = button.textContent;
+  button.textContent = "⏳ Verification in progress...";
+  button.style.pointerEvents = "none";
+
+  try {
+    const {
+      data: { session }
+    } = await supabaseClient.auth.getSession();
+
+    if (!session) {
+      alert("Please connect your X account first.");
+      button.textContent = originalText;
+      button.style.pointerEvents = "auto";
+      return;
+    }
+
+    const { error } = await supabaseClient
+      .from("task_verifications")
+      .upsert(
+        {
+          user_id: session.user.id,
+          task_id: Number(taskId),
+          status: "pending",
+          started_at: new Date().toISOString()
+        },
+        {
+          onConflict: "user_id,task_id"
+        }
+      );
+
+    if (error) {
+      console.error("Verification start error:", error);
+      alert("Unable to start verification. Please try again.");
+      button.textContent = originalText;
+      button.style.pointerEvents = "auto";
+      return;
+    }
+
+    // Open the task after the verification request is created.
+    const taskUrl = button.getAttribute("href");
+
+    if (taskUrl) {
+      window.open(taskUrl, "_blank");
+    }
+
+  } catch (error) {
+    console.error("Verification error:", error);
+    alert("Something went wrong. Please try again.");
+    button.textContent = originalText;
+    button.style.pointerEvents = "auto";
+  }
+}
 function getTaskIcon(type) {
   if (type === "follow") return "X";
   if (type === "repost") return "↗";
