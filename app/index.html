@@ -1819,9 +1819,11 @@ async function loadTasks() {
   }
 
   button.textContent =
-    "✓ Completed +" + data.xp_awarded + " XP";
+    button.textContent = "✓ Completed";
+button.disabled = true;
 
-  await loadUserProfile();
+await loadUserProfile();
+await loadTasks();
 }
 async function startTaskVerification(event, button, taskId) {
   event.preventDefault();
