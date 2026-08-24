@@ -3862,8 +3862,9 @@ loadMysteryBoxes();
   error.textContent = "Leaderboard error: " + (err.message || err);
 }
 } 
-    document.getElementById("leaderboardLoading").textContent = "JavaScript is running...";
-loadVerunLeaderboard();
+    window.addEventListener("DOMContentLoaded", () => {
+  loadVerunLeaderboard();
+});
   </script>
   <section id="leaderboardSection" class="card" style="margin-top:20px;">
   <h2>🏆 Verun Leaderboard</h2>
