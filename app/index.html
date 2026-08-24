@@ -3854,13 +3854,13 @@ loadMysteryBoxes();
       </div>
     `).join("");
 
-  } catch (err) {
-    console.error("Leaderboard error:", err);
+} catch (err) {
+  console.error("Leaderboard error:", err);
 
-    loading.style.display = "none";
-    error.style.display = "block";
-    error.textContent = "Failed to load leaderboard.";
-  }
+  loading.style.display = "none";
+  error.style.display = "block";
+  error.textContent = "Leaderboard error: " + (err.message || err);
+}
 } 
     loadVerunLeaderboard();
   </script>
