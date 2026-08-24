@@ -1870,8 +1870,8 @@ async function loadDailyLoginStatus() {
     await supabaseClient
       .from("daily_logins")
       .select(
-        "id,day_number,xp_awarded,bonus_xp,mystery_box"
-      )
+  "id,day_number,streak_day,xp_awarded,weekly_bonus,mystery_box"
+)
       .eq("user_id", session.user.id)
       .eq("login_date", today)
       .maybeSingle();
@@ -1879,11 +1879,13 @@ async function loadDailyLoginStatus() {
 
   if (todayLogin) {
 
-    if (dailyLoginButton) {
-      dailyLoginButton.disabled = true;
-      dailyLoginButton.textContent =
-        "✓ Claimed Today";
-    }
+  if (dailyLoginButton) {
+    dailyLoginButton.disabled = true;
+    dailyLoginButton.textContent =
+      "✓ Claimed Today";
+  }
+
+  startDailyCountdown();
 
     if (dailyLoginText) {
       dailyLoginText.textContent =
@@ -1891,9 +1893,9 @@ async function loadDailyLoginStatus() {
     }
 
     let text =
-      `+${todayLogin.xp_awarded + todayLogin.bonus_xp} XP earned`;
+  `+${todayLogin.xp_awarded + todayLogin.weekly_bonus} XP earned`;
 
-    if (todayLogin.bonus_xp > 0) {
+if (todayLogin.weekly_bonus > 0) {
       text += " 🎉 +100 bonus";
     }
 
