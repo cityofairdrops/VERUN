@@ -1434,11 +1434,38 @@
   const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_z8j_xh_NIZQHkFck_WqsuA_-zaPAMd0";
 
   const supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_PUBLISHABLE_KEY
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
+
+// ============================================
+// VERUN REFERRAL TRACKING
+// ============================================
+
+function getReferralCode() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("ref");
+}
+
+function saveReferralCode() {
+  const referralCode = getReferralCode();
+
+  if (!referralCode) return;
+
+  localStorage.setItem(
+    "verun_referral_code",
+    referralCode
   );
 
-  console.log("VERUN: Supabase connected");
+  console.log(
+    "VERUN referral detected:",
+    referralCode
+  );
+}
+
+saveReferralCode();
+
+console.log("VERUN: Supabase connected");
 </script>
   <script>
   const connectXButton = document.getElementById("connectXButton");
