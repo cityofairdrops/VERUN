@@ -3785,7 +3785,97 @@ if (mysteryBoxModal) {
 // Initial load
 
 loadMysteryBoxes();
-    
+   async function loadVerunLeaderboard() {
+  const loading = document.getElementById("leaderboardLoading");
+  const error = document.getElementById("leaderboardError");
+  const list = document.getElementById("leaderboardList");
+
+  if (!loading || !error || !list) return;
+
+  loading.style.display = "block";
+  error.style.display = "none";
+  list.innerHTML = "";
+
+  try {
+    const { data, error: dbError } = await supabase.rpc(
+      "get_verun_leaderboard",
+      {
+        p_limit: 100,
+        p_offset: 0
+      }
+    );
+
+    if (dbError) throw dbError;
+
+    loading.style.display = "none";
+
+    if (!data || data.length === 0) {
+      list.innerHTML = `
+        <div style="text-align:center;padding:20px;">
+          No leaderboard users yet.
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = data.map(user => `
+      <div class="leaderboard-row"
+           style="
+             display:flex;
+             align-items:center;
+             justify-content:space-between;
+             padding:12px;
+             margin-bottom:8px;
+             border-radius:10px;
+             background:rgba(255,255,255,0.05);
+           ">
+
+        <div style="display:flex;align-items:center;gap:12px;">
+          <strong style="min-width:35px;">
+            #${user.rank}
+          </strong>
+
+          <div>
+            <div style="font-weight:600;">
+              @${escapeHtml(user.x_username)}
+            </div>
+
+            <div style="font-size:12px;opacity:0.7;">
+              🔥 ${user.current_streak || 0} day streak
+              · 👥 ${user.referral_count || 0} referrals
+            </div>
+          </div>
+        </div>
+
+        <strong>
+          ⭐ ${Number(user.xp || 0).toLocaleString()} XP
+        </strong>
+
+      </div>
+    `).join("");
+
+  } catch (err) {
+    console.error("Leaderboard error:", err);
+
+    loading.style.display = "none";
+    error.style.display = "block";
+    error.textContent = "Failed to load leaderboard.";
+  }
+} 
+    loadVerunLeaderboard();
   </script>
+  <section id="leaderboardSection" class="card" style="margin-top:20px;">
+  <h2>🏆 Verun Leaderboard</h2>
+
+  <div id="leaderboardLoading" style="text-align:center;padding:15px;">
+    Loading leaderboard...
+  </div>
+
+  <div id="leaderboardError"
+       style="display:none;color:#ff6b6b;text-align:center;padding:15px;">
+  </div>
+
+  <div id="leaderboardList"></div>
+</section>
 </body>
 </html>
