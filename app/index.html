@@ -1205,27 +1205,153 @@
       </p>
     </div>
 
+    <div
+      id="mysteryBoxCount"
+      style="
+        color:var(--green);
+        font-size:10px;
+        font-weight:900;
+        white-space:nowrap;
+      "
+    >
+      0 Boxes
+    </div>
+
   </div>
+
+
+  <!-- MYSTERY BOX LIST -->
 
   <div
     id="mysteryBoxesContainer"
     style="
       display:grid;
-      gap:10px;
+      gap:12px;
     "
   >
 
     <div
       style="
-        padding:18px;
+        padding:20px;
         background:var(--panel);
         border:1px solid var(--border);
-        border-radius:12px;
+        border-radius:14px;
         color:var(--muted);
         font-size:11px;
+        text-align:center;
       "
     >
-      No Mystery Boxes yet.
+      Connect X to see your Mystery Boxes.
+    </div>
+
+  </div>
+
+
+  <!-- MYSTERY BOX REVEAL MODAL -->
+
+  <div
+    id="mysteryBoxModal"
+    style="
+      display:none;
+      position:fixed;
+      inset:0;
+      z-index:1000;
+      background:rgba(0,0,0,0.82);
+      backdrop-filter:blur(10px);
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    "
+  >
+
+    <div
+      id="mysteryBoxModalCard"
+      style="
+        width:min(420px,100%);
+        background:var(--panel);
+        border:1px solid var(--green-border);
+        border-radius:18px;
+        padding:28px;
+        text-align:center;
+        box-shadow:0 20px 80px rgba(0,0,0,0.55);
+      "
+    >
+
+      <!-- BOX GRAPHIC -->
+
+      <div
+        id="mysteryBoxGraphic"
+        style="
+          width:110px;
+          height:110px;
+          margin:0 auto 18px;
+          border-radius:22px;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          background:
+            radial-gradient(
+              circle,
+              rgba(141,255,183,0.18),
+              rgba(141,255,183,0.03)
+            );
+          border:1px solid var(--green-border);
+          font-size:58px;
+        "
+      >
+        🎁
+      </div>
+
+
+      <div
+        id="mysteryBoxModalTitle"
+        style="
+          font-size:22px;
+          font-weight:900;
+        "
+      >
+        Mystery Box
+      </div>
+
+
+      <div
+        id="mysteryBoxModalSubtitle"
+        style="
+          color:var(--muted);
+          font-size:11px;
+          margin-top:6px;
+        "
+      >
+        Your reward is being revealed...
+      </div>
+
+
+      <div
+        id="mysteryBoxReward"
+        style="
+          display:none;
+          margin-top:18px;
+          padding:18px;
+          border-radius:12px;
+          background:var(--green-soft);
+          border:1px solid var(--green-border);
+        "
+      ></div>
+
+
+      <button
+        id="mysteryBoxCloseButton"
+        type="button"
+        class="task-button"
+        style="
+          display:none;
+          width:100%;
+          margin-top:16px;
+        "
+      >
+        Continue
+      </button>
+
     </div>
 
   </div>
