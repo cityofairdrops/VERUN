@@ -2025,9 +2025,68 @@ async function claimDailyLogin() {
   showDailyMessage(message);
 
 
-  dailyLoginButton.textContent =
-    "✓ Claimed Today";
+  dailyLoginButton.disabled = true;
+dailyLoginButton.textContent =
+  "Next reward in 24:00:00";
+  function startDailyCountdown() {
 
+  function updateCountdown() {
+
+    const now = new Date();
+
+    const nextUtcMidnight =
+      Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate() + 1,
+        0, 0, 0
+      );
+
+    const remaining =
+      nextUtcMidnight - now.getTime();
+
+    if (remaining <= 0) {
+
+      dailyLoginButton.disabled = false;
+
+      dailyLoginButton.textContent =
+        "Claim Daily XP";
+
+      clearInterval(window.dailyCountdown);
+
+      return;
+    }
+
+    const totalSeconds =
+      Math.floor(remaining / 1000);
+
+    const hours =
+      Math.floor(totalSeconds / 3600);
+
+    const minutes =
+      Math.floor(
+        (totalSeconds % 3600) / 60
+      );
+
+    const seconds =
+      totalSeconds % 60;
+
+    dailyLoginButton.textContent =
+      `Next reward in ` +
+      `${String(hours).padStart(2, "0")}:` +
+      `${String(minutes).padStart(2, "0")}:` +
+      `${String(seconds).padStart(2, "0")}`;
+  }
+
+  updateCountdown();
+
+  clearInterval(window.dailyCountdown);
+
+  window.dailyCountdown =
+    setInterval(updateCountdown, 1000);
+}
+
+startDailyCountdown();
 
   if (dailyStreakNumber) {
     dailyStreakNumber.textContent =
