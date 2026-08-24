@@ -3797,7 +3797,7 @@ loadMysteryBoxes();
   list.innerHTML = "";
 
   try {
-    const { data, error: dbError } = await supabase.rpc(
+    const { data, error: dbError } = await supabaseClient.rpc(
       "get_verun_leaderboard",
       {
         p_limit: 100,
