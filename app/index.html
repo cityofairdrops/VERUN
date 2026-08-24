@@ -2033,62 +2033,55 @@ dailyLoginButton.textContent =
   "Next reward in 24:00:00";
   function startDailyCountdown() {
 
-  function updateCountdown() {
+  clearInterval(window.dailyCountdownTimer);
+
+  const updateCountdown = () => {
 
     const now = new Date();
 
-    const nextUtcMidnight =
+    const tomorrowUTC = new Date(
       Date.UTC(
         now.getUTCFullYear(),
         now.getUTCMonth(),
         now.getUTCDate() + 1,
         0, 0, 0
-      );
+      )
+    );
 
     const remaining =
-      nextUtcMidnight - now.getTime();
+      tomorrowUTC.getTime() - now.getTime();
 
     if (remaining <= 0) {
+      clearInterval(window.dailyCountdownTimer);
 
       dailyLoginButton.disabled = false;
+      dailyLoginButton.textContent = "Claim Daily XP";
 
-      dailyLoginButton.textContent =
-        "Claim Daily XP";
-
-      clearInterval(window.dailyCountdown);
+      loadDailyLoginStatus();
 
       return;
     }
 
-    const totalSeconds =
-      Math.floor(remaining / 1000);
-
     const hours =
-      Math.floor(totalSeconds / 3600);
+      Math.floor(remaining / 3600000);
 
     const minutes =
-      Math.floor(
-        (totalSeconds % 3600) / 60
-      );
+      Math.floor((remaining % 3600000) / 60000);
 
     const seconds =
-      totalSeconds % 60;
+      Math.floor((remaining % 60000) / 1000);
+
+    dailyLoginButton.disabled = true;
 
     dailyLoginButton.textContent =
-      `Next reward in ` +
-      `${String(hours).padStart(2, "0")}:` +
-      `${String(minutes).padStart(2, "0")}:` +
-      `${String(seconds).padStart(2, "0")}`;
-  }
+      `Next claim in ${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  };
 
   updateCountdown();
 
-  clearInterval(window.dailyCountdown);
-
-  window.dailyCountdown =
+  window.dailyCountdownTimer =
     setInterval(updateCountdown, 1000);
-}
-
+  }
 startDailyCountdown();
 
   if (dailyStreakNumber) {
