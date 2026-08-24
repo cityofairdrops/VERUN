@@ -1753,6 +1753,22 @@ async function processReferral() {
 
       updateDashboard(newProfile);
 
+try {
+  const { data: bonusData, error: bonusError } =
+    await supabaseClient.rpc(
+      "initialize_verun_early_bonus"
+    );
+
+  if (bonusError) {
+    console.error("Bonus initialization error:", bonusError);
+  } else if (bonusData && bonusData.length > 0) {
+    showVerunBonusPopup(bonusData[0]);
+  }
+
+} catch (err) {
+  console.error("Bonus initialization error:", err);
+};
+
     } else {
 
       updateDashboard(profile);
