@@ -1466,6 +1466,58 @@ function saveReferralCode() {
 saveReferralCode();
 
 console.log("VERUN: Supabase connected");
+  // ============================================
+// PROCESS REFERRAL AFTER X CONNECTION
+// ============================================
+
+async function processReferral() {
+
+  const referralCode =
+    localStorage.getItem("verun_referral_code");
+
+  if (!referralCode) return;
+
+  const {
+    data: { session }
+  } = await supabaseClient.auth.getSession();
+
+  if (!session) return;
+
+  const { data, error } =
+    await supabaseClient.rpc(
+      "process_referral",
+      {
+        p_referred_user_id: session.user.id,
+        p_referral_code: referralCode
+      }
+    );
+
+  if (error) {
+
+    console.error(
+      "Referral processing error:",
+      error
+    );
+
+    return;
+  }
+
+  console.log(
+    "VERUN referral result:",
+    data
+  );
+
+  // Referral has now been processed.
+  // Remove the saved code so it cannot be processed again.
+  if (data?.success) {
+
+    localStorage.removeItem(
+      "verun_referral_code"
+    );
+
+  }
+
+}
 </script>
   <script>
   const connectXButton = document.getElementById("connectXButton");
