@@ -1189,7 +1189,48 @@
 
 </section>
 
+<!-- MYSTERY BOXES -->
 
+<section class="section" id="mystery-boxes">
+
+  <div class="section-head">
+
+    <div>
+      <h2 class="section-title">
+        Mystery Boxes
+      </h2>
+
+      <p class="section-description">
+        Special rewards earned through participation.
+      </p>
+    </div>
+
+  </div>
+
+  <div
+    id="mysteryBoxesContainer"
+    style="
+      display:grid;
+      gap:10px;
+    "
+  >
+
+    <div
+      style="
+        padding:18px;
+        background:var(--panel);
+        border:1px solid var(--border);
+        border-radius:12px;
+        color:var(--muted);
+        font-size:11px;
+      "
+    >
+      No Mystery Boxes yet.
+    </div>
+
+  </div>
+
+</section>
       <!-- REFERRALS -->
 
       <section class="section" id="referral">
@@ -2194,6 +2235,269 @@ if (restoreStreakButton) {
 
 
 loadDailyLoginStatus();
+    // ============================================
+// VERUN MYSTERY BOXES
+// ============================================
+
+async function loadMysteryBoxes() {
+
+  const container =
+    document.getElementById("mysteryBoxesContainer");
+
+  if (!container) return;
+
+  const {
+    data: { session }
+  } = await supabaseClient.auth.getSession();
+
+  if (!session) {
+
+    container.innerHTML = `
+      <div style="
+        padding:18px;
+        background:var(--panel);
+        border:1px solid var(--border);
+        border-radius:12px;
+        color:var(--muted);
+        font-size:11px;
+      ">
+        Connect X to see your Mystery Boxes.
+      </div>
+    `;
+
+    return;
+  }
+
+  const { data: boxes, error } =
+    await supabaseClient
+      .from("mystery_boxes")
+      .select("*")
+      .eq("user_id", session.user.id)
+      .order("box_number", { ascending: true });
+
+  if (error) {
+
+    console.error(
+      "Mystery Boxes loading error:",
+      error
+    );
+
+    return;
+  }
+
+  if (!boxes || boxes.length === 0) {
+
+    container.innerHTML = `
+      <div style="
+        padding:18px;
+        background:var(--panel);
+        border:1px solid var(--border);
+        border-radius:12px;
+        color:var(--muted);
+        font-size:11px;
+      ">
+        No Mystery Boxes yet.
+      </div>
+    `;
+
+    return;
+  }
+
+  container.innerHTML = "";
+
+  boxes.forEach(box => {
+
+    const boxElement =
+      document.createElement("div");
+
+    boxElement.style.cssText = `
+      padding:18px;
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:12px;
+    `;
+
+    if (box.status === "unopened") {
+
+      boxElement.innerHTML = `
+
+        <div style="
+          font-size:24px;
+          margin-bottom:8px;
+        ">
+          🎁
+        </div>
+
+        <div style="
+          font-size:14px;
+          font-weight:800;
+        ">
+          Mystery Box #${box.box_number}
+        </div>
+
+        <div style="
+          color:var(--muted);
+          font-size:10px;
+          margin-top:3px;
+        ">
+          A special reward is waiting for you.
+        </div>
+
+        <button
+          class="task-button"
+          style="margin-top:12px;"
+          onclick="openMysteryBox(${box.id})"
+        >
+          Open Box
+        </button>
+
+        <button
+          class="task-button"
+          style="
+            margin-top:8px;
+            margin-left:5px;
+          "
+          onclick="this.textContent='Saved for later ✓'; this.disabled=true;"
+        >
+          Skip for Later
+        </button>
+
+      `;
+
+    } else {
+
+      let rewardText = "Reward received";
+
+      if (box.reward_type === "sale_eligibility") {
+        rewardText =
+          "🎉 Selected for VERUN Private Token Sale";
+      }
+
+      if (box.reward_type === "xp") {
+        rewardText =
+          `⭐ +${box.reward_xp} XP`;
+      }
+
+      if (box.reward_type === "verun") {
+        rewardText =
+          `🪙 +${box.reward_verun} VERUN`;
+      }
+
+      boxElement.innerHTML = `
+
+        <div style="
+          font-size:24px;
+          margin-bottom:8px;
+        ">
+          📦
+        </div>
+
+        <div style="
+          font-size:14px;
+          font-weight:800;
+        ">
+          Mystery Box #${box.box_number}
+        </div>
+
+        <div style="
+          color:var(--green);
+          font-size:11px;
+          margin-top:5px;
+          font-weight:800;
+        ">
+          Opened ✓
+        </div>
+
+        <div style="
+          margin-top:10px;
+          font-size:13px;
+          font-weight:800;
+        ">
+          ${rewardText}
+        </div>
+
+      `;
+    }
+
+    container.appendChild(boxElement);
+
+  });
+
+}
+
+
+// Load Mystery Boxes
+loadMysteryBoxes();
+    async function openMysteryBox(boxId) {
+
+  const confirmed = confirm(
+    "Open this Mystery Box?\n\n" +
+    "Your reward will be revealed immediately."
+  );
+
+  if (!confirmed) return;
+
+  const { data, error } =
+    await supabaseClient.rpc(
+      "open_mystery_box",
+      {
+        p_box_id: boxId
+      }
+    );
+
+  if (error) {
+
+    console.error(
+      "Mystery Box opening error:",
+      error
+    );
+
+    alert(
+      "Unable to open Mystery Box: " +
+      error.message
+    );
+
+    return;
+  }
+
+  if (!data || !data.success) {
+
+    alert(
+      data?.message ||
+      "This Mystery Box cannot be opened."
+    );
+
+    return;
+  }
+
+  let rewardMessage = "";
+
+  if (data.reward_type === "sale_eligibility") {
+
+    rewardMessage =
+      "🎉 CONGRATULATIONS!\n\n" +
+      "You have been selected for the " +
+      "VERUN Private Token Sale.";
+
+  } else if (data.reward_type === "xp") {
+
+    rewardMessage =
+      "⭐ Mystery Box opened!\n\n" +
+      "+" + data.reward_xp + " XP";
+
+  } else if (data.reward_type === "verun") {
+
+    rewardMessage =
+      "🪙 Mystery Box opened!\n\n" +
+      "+" + data.reward_verun + " VERUN";
+  }
+
+  alert(rewardMessage);
+
+  await loadMysteryBoxes();
+  await loadUserProfile();
+
+}
   </script>
 </body>
 </html>
