@@ -1356,157 +1356,163 @@
 
   </div>
 
-</section>
-      <!-- REFERRALS -->
+  <!-- REFERRALS -->
 
-      <section class="section" id="referral">
+<section class="section" id="referral">
 
-        <div class="section-head">
-
-          <div>
-
-            <h2 class="section-title">
-              Referrals
-            </h2>
-
-            <p class="section-description">
-              Invite people to join the VERUN community.
-            </p>
-
-          </div>
-
-        </div>
-
-
-        <div class="referral-card">
-
-          <div class="referral-title">
-            Grow the network.
-          </div>
-
-          <div class="referral-text">
-            Your referral link will become available after
-            connecting your X account.
-          </div>
-
-
-          <div class="referral-box">
-
-  <input
-    id="referralLinkInput"
-    class="referral-input"
-    type="text"
-    readonly
-    value="Connect X to generate your referral link"
-  >
-
-  <button
-    id="copyReferralButton"
-    class="copy-button"
-    type="button"
-  >
-    Copy
-  </button>
-
-</div>
-
-        </div>
-
-      </section>
-<!-- REFERRAL DASHBOARD START -->
-
-<div class="referral-dashboard">
-
-  <h3>Referral Dashboard</h3>
-
-  <div class="referral-stats">
-
-    <div class="referral-stat">
-      <span>Total Referrals</span>
-      <strong id="totalReferrals">0</strong>
-    </div>
-
-    <div class="referral-stat">
-      <span>Referral XP</span>
-      <strong id="referralXp">0 XP</strong>
-    </div>
-
-  </div>
-
-  <div class="referral-progress">
-
-    <div class="referral-progress-header">
-      <span>Next Milestone</span>
-      <strong id="nextReferralMilestone">10 Referrals</strong>
-    </div>
-
-    <div class="progress-bar">
-      <div
-        id="referralProgressBar"
-        class="progress-fill"
-        style="width: 0%;">
-      </div>
-    </div>
-
-    <div class="progress-text">
-      <span id="referralProgressText">0 / 10</span>
-    </div>
-
-  </div>
-
-  <div class="referral-milestones">
-
-    <h4>Referral Milestones</h4>
-
-    <div id="referralMilestones">
-
-      <div class="milestone">
-        <span>10 Referrals</span>
-        <span>+500 XP</span>
-      </div>
-
-      <div class="milestone">
-        <span>25 Referrals</span>
-        <span>+1,500 XP</span>
-      </div>
-
-      <div class="milestone">
-        <span>50 Referrals</span>
-        <span>+3,000 XP</span>
-      </div>
-
-      <div class="milestone">
-        <span>75 Referrals</span>
-        <span>+5,000 XP</span>
-      </div>
-
-      <div class="milestone">
-        <span>100 Referrals</span>
-        <span>🎁 Mystery Box</span>
-      </div>
-
-    </div>
-
-  </div>
-
-  <div class="referred-users">
-
-    <h4>People You Referred</h4>
-
-    <div id="referredUsersList">
-
-      <p id="noReferralsMessage">
-        No referrals yet.
+  <div class="section-head">
+    <div>
+      <h2 class="section-title">Referrals</h2>
+      <p class="section-description">
+        Invite people to join the VERUN community. Grow the network and earn referral XP.
       </p>
+    </div>
+  </div>
+
+  <!-- Referral Link -->
+  <div class="referral-card">
+
+    <div class="referral-title">
+      Your Referral Link
+    </div>
+
+    <div class="referral-text">
+      Connect your X account to unlock your personal referral link.
+    </div>
+
+    <div class="referral-box">
+
+      <input
+        id="referralLinkInput"
+        class="referral-input"
+        type="text"
+        readonly
+        value="Connect X to generate your referral link"
+      >
+
+      <button
+        id="copyReferralButton"
+        class="copy-button"
+        type="button"
+      >
+        Copy
+      </button>
 
     </div>
 
   </div>
 
-</div>
 
-<!-- REFERRAL DASHBOARD END -->
+  <!-- Referral Dashboard -->
 
+  <div class="referral-dashboard">
+
+    <h3>Referral Dashboard</h3>
+
+    <div class="referral-stats">
+
+      <div class="referral-stat">
+        <span>Total Referrals</span>
+        <strong id="totalReferrals">0</strong>
+      </div>
+
+      <div class="referral-stat">
+        <span>Referral XP</span>
+        <strong id="referralXp">0 XP</strong>
+      </div>
+
+    </div>
+
+
+    <!-- Progress -->
+
+    <div class="referral-progress">
+
+      <div class="referral-progress-header">
+        <span>Next Milestone</span>
+        <strong id="nextReferralMilestone">
+          10 Referrals
+        </strong>
+      </div>
+
+      <div class="progress-bar">
+
+        <div
+          id="referralProgressBar"
+          class="progress-fill"
+          style="width: 0%;">
+        </div>
+
+      </div>
+
+      <div class="progress-text">
+        <span id="referralProgressText">
+          0 / 10
+        </span>
+      </div>
+
+    </div>
+
+
+    <!-- Milestones -->
+
+    <div class="referral-milestones">
+
+      <h4>Referral Milestones</h4>
+
+      <div id="referralMilestones">
+
+        <div class="milestone">
+          <span>10 Referrals</span>
+          <span>+500 XP</span>
+        </div>
+
+        <div class="milestone">
+          <span>25 Referrals</span>
+          <span>+1,500 XP</span>
+        </div>
+
+        <div class="milestone">
+          <span>50 Referrals</span>
+          <span>+3,000 XP</span>
+        </div>
+
+        <div class="milestone">
+          <span>75 Referrals</span>
+          <span>+5,000 XP</span>
+        </div>
+
+        <div class="milestone">
+          <span>100 Referrals</span>
+          <span>🎁 Mystery Box</span>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- Referred Users -->
+
+    <div class="referred-users">
+
+      <h4>People You Referred</h4>
+
+      <div id="referredUsersList">
+
+        <p id="noReferralsMessage">
+          No referrals yet.
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+<!-- END REFERRALS -->
       <!-- NOTICE -->
 
       <div class="notice">
