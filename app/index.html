@@ -1646,6 +1646,32 @@ async function loadTasks() {
       );
     } else {
       verifications = data || [];
+      // Put incomplete/rejected tasks first and completed tasks last
+tasks.sort((a, b) => {
+
+  const verificationA = verifications.find(
+    item => Number(item.task_id) === Number(a.id)
+  );
+
+  const verificationB = verifications.find(
+    item => Number(item.task_id) === Number(b.id)
+  );
+
+  const completedA =
+    verificationA &&
+    verificationA.status === "approved" &&
+    verificationA.claimed_at;
+
+  const completedB =
+    verificationB &&
+    verificationB.status === "approved" &&
+    verificationB.claimed_at;
+
+  if (completedA && !completedB) return 1;
+  if (!completedA && completedB) return -1;
+
+  return 0;
+});
     }
   }
 
