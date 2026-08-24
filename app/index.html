@@ -1816,7 +1816,7 @@ function updateDailyRewardPreview(streak) {
 
 
 async function loadDailyLoginStatus() {
-
+console.log("DAILY STATUS FUNCTION RUNNING");
   const {
     data: { session }
   } = await supabaseClient.auth.getSession();
