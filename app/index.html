@@ -2035,8 +2035,13 @@ function escapeHtml(value) {
       );
 
       if (session) {
-        await loadUserProfile();
-      } else {
+
+  await loadUserProfile();
+
+  // Process referral after X connection
+  await processReferral();
+
+} else {
         connectXButton.disabled = false;
         connectXButton.textContent = "Connect X";
       }
