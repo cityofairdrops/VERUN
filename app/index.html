@@ -2362,44 +2362,116 @@ if (restoreStreakButton) {
 
 loadDailyLoginStatus();
     // ============================================
-// VERUN MYSTERY BOXES
+// VERUN MYSTERY BOXES — V2
 // ============================================
+
+const mysteryBoxesContainer =
+  document.getElementById("mysteryBoxesContainer");
+
+const mysteryBoxCount =
+  document.getElementById("mysteryBoxCount");
+
+const mysteryBoxModal =
+  document.getElementById("mysteryBoxModal");
+
+const mysteryBoxGraphic =
+  document.getElementById("mysteryBoxGraphic");
+
+const mysteryBoxModalTitle =
+  document.getElementById("mysteryBoxModalTitle");
+
+const mysteryBoxModalSubtitle =
+  document.getElementById("mysteryBoxModalSubtitle");
+
+const mysteryBoxReward =
+  document.getElementById("mysteryBoxReward");
+
+const mysteryBoxCloseButton =
+  document.getElementById("mysteryBoxCloseButton");
+
+
+// ============================================================
+// RARITY SETTINGS
+// ============================================================
+
+const MYSTERY_RARITY = {
+
+  special: {
+    label: "SPECIAL",
+    icon: "👑",
+    description: "Private Token Sale Eligibility"
+  },
+
+  rare: {
+    label: "RARE",
+    icon: "💎",
+    description: "5,000 VERUN"
+  },
+
+  uncommon: {
+    label: "UNCOMMON",
+    icon: "✨",
+    description: "1,000 VERUN"
+  },
+
+  common: {
+    label: "COMMON",
+    icon: "⭐",
+    description: "XP Reward"
+  }
+
+};
+
+
+// ============================================================
+// LOAD MYSTERY BOXES
+// ============================================================
 
 async function loadMysteryBoxes() {
 
-  const container =
-    document.getElementById("mysteryBoxesContainer");
+  if (!mysteryBoxesContainer) return;
 
-  if (!container) return;
 
   const {
     data: { session }
   } = await supabaseClient.auth.getSession();
 
+
   if (!session) {
 
-    container.innerHTML = `
+    if (mysteryBoxCount) {
+      mysteryBoxCount.textContent = "0 Boxes";
+    }
+
+    mysteryBoxesContainer.innerHTML = `
+
       <div style="
-        padding:18px;
+        padding:20px;
         background:var(--panel);
         border:1px solid var(--border);
-        border-radius:12px;
+        border-radius:14px;
         color:var(--muted);
         font-size:11px;
+        text-align:center;
       ">
         Connect X to see your Mystery Boxes.
       </div>
+
     `;
 
     return;
   }
+
 
   const { data: boxes, error } =
     await supabaseClient
       .from("mystery_boxes")
       .select("*")
       .eq("user_id", session.user.id)
-      .order("box_number", { ascending: true });
+      .order("box_number", {
+        ascending: true
+      });
+
 
   if (error) {
 
@@ -2408,160 +2480,489 @@ async function loadMysteryBoxes() {
       error
     );
 
-    return;
-  }
+    mysteryBoxesContainer.innerHTML = `
 
-  if (!boxes || boxes.length === 0) {
-
-    container.innerHTML = `
       <div style="
         padding:18px;
         background:var(--panel);
         border:1px solid var(--border);
         border-radius:12px;
-        color:var(--muted);
+        color:#ff8d8d;
         font-size:11px;
       ">
-        No Mystery Boxes yet.
+        Unable to load Mystery Boxes.
       </div>
+
     `;
 
     return;
   }
 
-  container.innerHTML = "";
+
+  const totalBoxes =
+    boxes ? boxes.length : 0;
+
+
+  if (mysteryBoxCount) {
+
+    mysteryBoxCount.textContent =
+      `${totalBoxes} ${
+        totalBoxes === 1 ? "Box" : "Boxes"
+      }`;
+
+  }
+
+
+  if (!boxes || boxes.length === 0) {
+
+    mysteryBoxesContainer.innerHTML = `
+
+      <div style="
+        padding:20px;
+        background:var(--panel);
+        border:1px solid var(--border);
+        border-radius:14px;
+        color:var(--muted);
+        font-size:11px;
+        text-align:center;
+      ">
+
+        <div style="
+          font-size:35px;
+          margin-bottom:8px;
+        ">
+          🎁
+        </div>
+
+        No Mystery Boxes yet.
+
+      </div>
+
+    `;
+
+    return;
+  }
+
+
+  mysteryBoxesContainer.innerHTML = "";
+
 
   boxes.forEach(box => {
 
     const boxElement =
       document.createElement("div");
 
+
+    const rarity =
+      box.rarity ||
+      (
+        box.reward_type === "sale_eligibility"
+          ? "special"
+          : box.reward_type === "verun"
+            ? (
+                Number(box.reward_verun) >= 5000
+                  ? "rare"
+                  : "uncommon"
+              )
+            : "common"
+      );
+
+
+    const rarityInfo =
+      MYSTERY_RARITY[rarity] ||
+      MYSTERY_RARITY.common;
+
+
+    const isOpened =
+      box.status === "opened";
+
+
     boxElement.style.cssText = `
-      padding:18px;
-      background:var(--panel);
-      border:1px solid var(--border);
-      border-radius:12px;
+
+      position:relative;
+
+      padding:20px;
+
+      background:
+        radial-gradient(
+          circle at 90% 10%,
+          rgba(141,255,183,0.07),
+          transparent 35%
+        ),
+        var(--panel);
+
+      border:1px solid
+        ${isOpened
+          ? "var(--border)"
+          : "var(--green-border)"};
+
+      border-radius:14px;
+
+      overflow:hidden;
+
     `;
 
-    if (box.status === "unopened") {
+
+    if (!isOpened) {
+
+      // ======================================================
+      // UNOPENED BOX
+      // ======================================================
 
       boxElement.innerHTML = `
 
         <div style="
-          font-size:24px;
-          margin-bottom:8px;
+          display:flex;
+          align-items:center;
+          gap:15px;
         ">
-          🎁
+
+          <div style="
+            width:58px;
+            height:58px;
+            flex-shrink:0;
+
+            display:flex;
+            align-items:center;
+            justify-content:center;
+
+            border-radius:14px;
+
+            background:
+              radial-gradient(
+                circle,
+                rgba(141,255,183,0.16),
+                rgba(141,255,183,0.03)
+              );
+
+            border:1px solid
+              var(--green-border);
+
+            font-size:30px;
+          ">
+            🎁
+          </div>
+
+
+          <div style="
+            flex:1;
+            min-width:0;
+          ">
+
+            <div style="
+              font-size:14px;
+              font-weight:850;
+            ">
+              Mystery Box #${box.box_number}
+            </div>
+
+            <div style="
+              margin-top:3px;
+              color:var(--muted);
+              font-size:10px;
+            ">
+              A special reward is waiting for you.
+            </div>
+
+            <div style="
+              display:inline-block;
+              margin-top:8px;
+              padding:4px 7px;
+              border-radius:5px;
+
+              background:rgba(255,255,255,0.04);
+
+              color:var(--muted);
+              font-size:8px;
+              font-weight:900;
+              letter-spacing:1px;
+            ">
+              MYSTERY
+            </div>
+
+          </div>
+
         </div>
+
 
         <div style="
-          font-size:14px;
-          font-weight:800;
+          display:flex;
+          gap:8px;
+          margin-top:16px;
         ">
-          Mystery Box #${box.box_number}
+
+          <button
+            type="button"
+            class="task-button"
+            style="
+              flex:1;
+              color:var(--green);
+              border-color:var(--green-border);
+            "
+            onclick="openMysteryBox(${box.id})"
+          >
+            🔓 Open Box
+          </button>
+
+
+          <button
+            type="button"
+            class="task-button"
+            style="flex:1;"
+            onclick="saveMysteryBoxForLater(this, ${box.id})"
+          >
+            Save for Later
+          </button>
+
         </div>
-
-        <div style="
-          color:var(--muted);
-          font-size:10px;
-          margin-top:3px;
-        ">
-          A special reward is waiting for you.
-        </div>
-
-        <button
-          class="task-button"
-          style="margin-top:12px;"
-          onclick="openMysteryBox(${box.id})"
-        >
-          Open Box
-        </button>
-
-        <button
-          class="task-button"
-          style="
-            margin-top:8px;
-            margin-left:5px;
-          "
-          onclick="this.textContent='Saved for later ✓'; this.disabled=true;"
-        >
-          Skip for Later
-        </button>
 
       `;
 
     } else {
 
-      let rewardText = "Reward received";
+      // ======================================================
+      // OPENED BOX
+      // ======================================================
 
-      if (box.reward_type === "sale_eligibility") {
+      let rewardText =
+        "Reward received";
+
+
+      if (
+        box.reward_type ===
+        "sale_eligibility"
+      ) {
+
         rewardText =
-          "🎉 Selected for VERUN Private Token Sale";
+          "Selected for VERUN Private Token Sale";
+
       }
 
-      if (box.reward_type === "xp") {
+
+      else if (
+        box.reward_type === "xp"
+      ) {
+
         rewardText =
-          `⭐ +${box.reward_xp} XP`;
+          `+${Number(box.reward_xp || 0).toLocaleString()} XP`;
+
       }
 
-      if (box.reward_type === "verun") {
+
+      else if (
+        box.reward_type === "verun"
+      ) {
+
         rewardText =
-          `🪙 +${box.reward_verun} VERUN`;
+          `+${Number(box.reward_verun || 0).toLocaleString()} VERUN`;
+
       }
+
 
       boxElement.innerHTML = `
 
         <div style="
-          font-size:24px;
-          margin-bottom:8px;
+          display:flex;
+          align-items:center;
+          gap:15px;
         ">
-          📦
+
+
+          <div style="
+            width:58px;
+            height:58px;
+            flex-shrink:0;
+
+            display:flex;
+            align-items:center;
+            justify-content:center;
+
+            border-radius:14px;
+
+            background:
+              rgba(255,255,255,0.035);
+
+            border:1px solid
+              var(--border);
+
+            font-size:30px;
+          ">
+            📦
+          </div>
+
+
+          <div style="
+            flex:1;
+            min-width:0;
+          ">
+
+            <div style="
+              font-size:14px;
+              font-weight:850;
+            ">
+              Mystery Box #${box.box_number}
+            </div>
+
+
+            <div style="
+              margin-top:5px;
+              color:var(--green);
+              font-size:9px;
+              font-weight:900;
+              letter-spacing:1px;
+            ">
+              OPENED ✓
+            </div>
+
+
+            <div style="
+              display:inline-block;
+              margin-top:8px;
+
+              padding:5px 8px;
+
+              border-radius:6px;
+
+              background:
+                var(--green-soft);
+
+              border:1px solid
+                var(--green-border);
+
+              color:var(--green);
+
+              font-size:8px;
+              font-weight:900;
+
+              letter-spacing:1px;
+            ">
+              ${rarityInfo.label}
+            </div>
+
+          </div>
+
         </div>
 
-        <div style="
-          font-size:14px;
-          font-weight:800;
-        ">
-          Mystery Box #${box.box_number}
-        </div>
 
         <div style="
-          color:var(--green);
-          font-size:11px;
-          margin-top:5px;
-          font-weight:800;
-        ">
-          Opened ✓
-        </div>
+          margin-top:16px;
+          padding:14px;
 
-        <div style="
-          margin-top:10px;
-          font-size:13px;
+          border-radius:10px;
+
+          background:
+            rgba(255,255,255,0.025);
+
+          border:1px solid
+            var(--border);
+
+          font-size:12px;
           font-weight:800;
         ">
+
+          ${rarityInfo.icon}
           ${rewardText}
+
         </div>
 
       `;
+
     }
 
-    container.appendChild(boxElement);
+
+    mysteryBoxesContainer.appendChild(
+      boxElement
+    );
 
   });
 
 }
 
 
-// Load Mystery Boxes
-loadMysteryBoxes();
-    async function openMysteryBox(boxId) {
+// ============================================================
+// SAVE BOX FOR LATER
+// ============================================================
 
-  const confirmed = confirm(
-    "Open this Mystery Box?\n\n" +
-    "Your reward will be revealed immediately."
+function saveMysteryBoxForLater(
+  button,
+  boxId
+) {
+
+  button.textContent =
+    "Saved for Later ✓";
+
+  button.disabled = true;
+
+  button.style.opacity =
+    "0.6";
+
+  localStorage.setItem(
+    "verun_saved_box_" + boxId,
+    "true"
   );
 
-  if (!confirmed) return;
+}
+
+
+// ============================================================
+// OPEN MYSTERY BOX
+// ============================================================
+
+async function openMysteryBox(boxId) {
+
+  if (!mysteryBoxModal) return;
+
+
+  // ----------------------------------------------------------
+  // Show modal
+  // ----------------------------------------------------------
+
+  mysteryBoxModal.style.display =
+    "flex";
+
+
+  mysteryBoxGraphic.textContent =
+    "🎁";
+
+
+  mysteryBoxModalTitle.textContent =
+    "Opening Mystery Box";
+
+
+  mysteryBoxModalSubtitle.textContent =
+    "Revealing your reward...";
+
+
+  mysteryBoxReward.style.display =
+    "none";
+
+
+  mysteryBoxCloseButton.style.display =
+    "none";
+
+
+  // ----------------------------------------------------------
+  // Small reveal animation
+  // ----------------------------------------------------------
+
+  mysteryBoxGraphic.style.transform =
+    "scale(0.85)";
+
+  mysteryBoxGraphic.style.transition =
+    "transform 0.5s ease";
+
+
+  setTimeout(() => {
+
+    mysteryBoxGraphic.style.transform =
+      "scale(1.12)";
+
+  }, 100);
+
+
+  // ----------------------------------------------------------
+  // Call secure Supabase function
+  // ----------------------------------------------------------
 
   const { data, error } =
     await supabaseClient.rpc(
@@ -2571,6 +2972,11 @@ loadMysteryBoxes();
       }
     );
 
+
+  // ----------------------------------------------------------
+  // Error
+  // ----------------------------------------------------------
+
   if (error) {
 
     console.error(
@@ -2578,52 +2984,244 @@ loadMysteryBoxes();
       error
     );
 
-    alert(
-      "Unable to open Mystery Box: " +
-      error.message
-    );
+
+    mysteryBoxModalTitle.textContent =
+      "Something went wrong";
+
+
+    mysteryBoxModalSubtitle.textContent =
+      "Your Mystery Box could not be opened.";
+
+
+    mysteryBoxCloseButton.textContent =
+      "Close";
+
+
+    mysteryBoxCloseButton.style.display =
+      "block";
+
 
     return;
   }
+
 
   if (!data || !data.success) {
 
-    alert(
+    mysteryBoxModalTitle.textContent =
+      "Unable to Open";
+
+
+    mysteryBoxModalSubtitle.textContent =
       data?.message ||
-      "This Mystery Box cannot be opened."
-    );
+      "This Mystery Box cannot be opened.";
+
+
+    mysteryBoxCloseButton.textContent =
+      "Close";
+
+
+    mysteryBoxCloseButton.style.display =
+      "block";
+
 
     return;
   }
 
-  let rewardMessage = "";
 
-  if (data.reward_type === "sale_eligibility") {
+  // ----------------------------------------------------------
+  // Reveal reward
+  // ----------------------------------------------------------
 
-    rewardMessage =
-      "🎉 CONGRATULATIONS!\n\n" +
-      "You have been selected for the " +
-      "VERUN Private Token Sale.";
+  setTimeout(() => {
 
-  } else if (data.reward_type === "xp") {
+    const rarity =
+      data.rarity ||
+      "common";
 
-    rewardMessage =
-      "⭐ Mystery Box opened!\n\n" +
-      "+" + data.reward_xp + " XP";
 
-  } else if (data.reward_type === "verun") {
+    const rarityInfo =
+      MYSTERY_RARITY[rarity] ||
+      MYSTERY_RARITY.common;
 
-    rewardMessage =
-      "🪙 Mystery Box opened!\n\n" +
-      "+" + data.reward_verun + " VERUN";
-  }
 
-  alert(rewardMessage);
+    mysteryBoxGraphic.textContent =
+      rarityInfo.icon;
 
-  await loadMysteryBoxes();
-  await loadUserProfile();
+
+    mysteryBoxModalTitle.textContent =
+      rarityInfo.label;
+
+
+    mysteryBoxModalSubtitle.textContent =
+      "Mystery Box opened successfully";
+
+
+    let rewardHtml = "";
+
+
+    if (
+      data.reward_type ===
+      "sale_eligibility"
+    ) {
+
+      rewardHtml = `
+
+        <div style="
+          font-size:28px;
+          margin-bottom:8px;
+        ">
+          🎉
+        </div>
+
+        <div style="
+          color:var(--green);
+          font-size:16px;
+          font-weight:900;
+        ">
+          You're Selected!
+        </div>
+
+        <div style="
+          color:var(--text);
+          font-size:11px;
+          margin-top:7px;
+          line-height:1.5;
+        ">
+          You have been selected for the
+          <strong>VERUN Private Token Sale.</strong>
+        </div>
+
+      `;
+
+    }
+
+
+    else if (
+      data.reward_type === "xp"
+    ) {
+
+      rewardHtml = `
+
+        <div style="
+          font-size:25px;
+        ">
+          ⭐
+        </div>
+
+        <div style="
+          color:var(--green);
+          font-size:20px;
+          font-weight:900;
+          margin-top:5px;
+        ">
+          +${Number(data.reward_xp || 0).toLocaleString()} XP
+        </div>
+
+      `;
+
+    }
+
+
+    else if (
+      data.reward_type === "verun"
+    ) {
+
+      rewardHtml = `
+
+        <div style="
+          font-size:25px;
+        ">
+          🪙
+        </div>
+
+        <div style="
+          color:var(--green);
+          font-size:20px;
+          font-weight:900;
+          margin-top:5px;
+        ">
+          +${Number(data.reward_verun || 0).toLocaleString()} VERUN
+        </div>
+
+      `;
+
+    }
+
+
+    mysteryBoxReward.innerHTML =
+      rewardHtml;
+
+
+    mysteryBoxReward.style.display =
+      "block";
+
+
+    mysteryBoxCloseButton.textContent =
+      "Continue";
+
+
+    mysteryBoxCloseButton.style.display =
+      "block";
+
+
+  }, 650);
 
 }
+
+
+// ============================================================
+// CLOSE MODAL
+// ============================================================
+
+if (mysteryBoxCloseButton) {
+
+  mysteryBoxCloseButton.addEventListener(
+    "click",
+    async () => {
+
+      mysteryBoxModal.style.display =
+        "none";
+
+
+      await loadMysteryBoxes();
+
+      await loadUserProfile();
+
+    }
+  );
+
+}
+
+
+// Close by clicking outside modal
+
+if (mysteryBoxModal) {
+
+  mysteryBoxModal.addEventListener(
+    "click",
+    (event) => {
+
+      if (
+        event.target ===
+        mysteryBoxModal
+      ) {
+
+        mysteryBoxModal.style.display =
+          "none";
+
+      }
+
+    }
+  );
+
+}
+
+
+// ============================================================
+// LOAD MYSTERY BOXES
+// ============================================================
+
+loadMysteryBoxes();
   </script>
 </body>
 </html>
