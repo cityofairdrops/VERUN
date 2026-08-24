@@ -1635,7 +1635,7 @@ async function loadTasks() {
     const { data, error: verificationError } =
       await supabaseClient
         .from("task_verifications")
-        .select("task_id, status")
+        .select("task_id, status, claimed_at")
         .eq("user_id", session.user.id)
         .in("task_id", taskIds);
 
@@ -1699,18 +1699,40 @@ async function loadTasks() {
         </button>
       `;
 
-    } else if (verification.status === "approved") {
+    } else if (
+  verification.status === "approved" &&
+  verification.claimed_at
+) {
 
-  // Admin approved the task
+  // XP was already claimed — permanently completed
+  buttonHtml = `
+    <div
+      class="task-button"
+      style="
+        color:var(--green);
+        border-color:var(--green-border);
+        background:var(--green-soft);
+        cursor:default;
+      "
+    >
+      ✓ Completed
+    </div>
+  `;
+
+} else if (verification.status === "approved") {
+
+  // Admin approved, but XP has not been claimed yet
   buttonHtml = `
     <button
-      class="claim-task-button"
+      class="task-button claim-task-button"
       data-task-id="${task.id}"
       onclick="claimTaskXP(this, '${task.id}')"
     >
-      🎁 Claim XP
+      Claim XP
     </button>
   `;
+
+}
 
     } else if (verification.status === "rejected") {
 
