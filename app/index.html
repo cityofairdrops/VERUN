@@ -2351,7 +2351,69 @@ function startDailyCountdown() {
   window.dailyCountdownTimer =
     setInterval(updateCountdown, 1000);
   }
+async function claimWelcomeBonus() {
 
+  const button = document.getElementById(
+    "claimWelcomeBonusButton"
+  );
+
+  if (!button) return;
+
+  button.disabled = true;
+  button.textContent = "Claiming...";
+
+  const { data, error } =
+    await supabaseClient.rpc(
+      "claim_welcome_bonus"
+    );
+
+  if (error) {
+
+    console.error(
+      "Welcome bonus error:",
+      error
+    );
+
+    button.disabled = false;
+    button.textContent = "Claim Welcome Bonus";
+
+    alert(
+      "Unable to claim welcome bonus: " +
+      error.message
+    );
+
+    return;
+  }
+
+  if (!data || !data.success) {
+
+    button.disabled = false;
+    button.textContent = "Claim Welcome Bonus";
+
+    alert(
+      data?.message ||
+      "Welcome bonus cannot be claimed."
+    );
+
+    return;
+  }
+
+  button.textContent = "Bonus Claimed ✓";
+  button.disabled = true;
+
+  alert(
+    "🎉 Welcome bonus claimed!\n\n" +
+    "Welcome Bonus: +" +
+    data.welcome_bonus +
+    " XP\n" +
+    "Early User Bonus: +" +
+    data.early_user_bonus +
+    " XP\n\n" +
+    "Total: +" +
+    data.total_bonus +
+    " XP"
+  );
+}
 async function loadDailyLoginStatus() {
 console.log("DAILY STATUS FUNCTION RUNNING");
   const {
