@@ -1813,7 +1813,58 @@ function updateDailyRewardPreview(streak) {
   dailyRewardText.textContent = text;
 
 }
+    
+function startDailyCountdown() {
 
+  clearInterval(window.dailyCountdownTimer);
+
+  const updateCountdown = () => {
+
+    const now = new Date();
+
+    const tomorrowUTC = new Date(
+      Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate() + 1,
+        0, 0, 0
+      )
+    );
+
+    const remaining =
+      tomorrowUTC.getTime() - now.getTime();
+
+    if (remaining <= 0) {
+      clearInterval(window.dailyCountdownTimer);
+
+      dailyLoginButton.disabled = false;
+      dailyLoginButton.textContent = "Claim Daily XP";
+
+      loadDailyLoginStatus();
+
+      return;
+    }
+
+    const hours =
+      Math.floor(remaining / 3600000);
+
+    const minutes =
+      Math.floor((remaining % 3600000) / 60000);
+
+    const seconds =
+      Math.floor((remaining % 60000) / 1000);
+
+    dailyLoginButton.disabled = true;
+
+    dailyLoginButton.textContent =
+      `Next claim in ${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  };
+
+  updateCountdown();
+
+  window.dailyCountdownTimer =
+    setInterval(updateCountdown, 1000);
+  }
 
 async function loadDailyLoginStatus() {
 console.log("DAILY STATUS FUNCTION RUNNING");
@@ -2027,59 +2078,6 @@ async function claimDailyLogin() {
 
   showDailyMessage(message);
 
-
-  
-  function startDailyCountdown() {
-
-  clearInterval(window.dailyCountdownTimer);
-
-  const updateCountdown = () => {
-
-    const now = new Date();
-
-    const tomorrowUTC = new Date(
-      Date.UTC(
-        now.getUTCFullYear(),
-        now.getUTCMonth(),
-        now.getUTCDate() + 1,
-        0, 0, 0
-      )
-    );
-
-    const remaining =
-      tomorrowUTC.getTime() - now.getTime();
-
-    if (remaining <= 0) {
-      clearInterval(window.dailyCountdownTimer);
-
-      dailyLoginButton.disabled = false;
-      dailyLoginButton.textContent = "Claim Daily XP";
-
-      loadDailyLoginStatus();
-
-      return;
-    }
-
-    const hours =
-      Math.floor(remaining / 3600000);
-
-    const minutes =
-      Math.floor((remaining % 3600000) / 60000);
-
-    const seconds =
-      Math.floor((remaining % 60000) / 1000);
-
-    dailyLoginButton.disabled = true;
-
-    dailyLoginButton.textContent =
-      `Next claim in ${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-  };
-
-  updateCountdown();
-
-  window.dailyCountdownTimer =
-    setInterval(updateCountdown, 1000);
-  }
 startDailyCountdown();
 
   if (dailyStreakNumber) {
