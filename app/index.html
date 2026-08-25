@@ -1618,27 +1618,22 @@ z-index:10000;
 
 </div>
 
-</script>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
   const SUPABASE_URL = "https://lhfgozlkeotxyzqowijz.supabase.co";
 
-  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_z8j_xh_NIZQHkFck_WqsuA_-zaPAMd0";
-<script>
-  const SUPABASE_URL = "https://lhfgozlkeotxyzqowijz.supabase.co";
-
-  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_z8j_xh_NIZQHkFck_WqsuA_-zaPAMd0";
+  const SUPABASE_PUBLISHABLE_KEY =
+    "sb_publishable_z8j_xh_NIZQHkFck_WqsuA_-zaPAMd0";
 
   const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_PUBLISHABLE_KEY
-);
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+  );
 
-// ============================================
-// VERUN REFERRAL TRACKING
-// ============================================
+  // ============================================
+  // VERUN REFERRAL TRACKING
+  // ============================================
 
 function getReferralCode() {
   const params = new URLSearchParams(window.location.search);
@@ -4048,7 +4043,18 @@ const verunSections = {
   leaderboard: document.getElementById("leaderboardSection"),
   airdrop: document.getElementById("airdropSection")
 };
+function closeVerunMenu() {
+  const menu = document.getElementById("verunSideMenu");
+  const overlay = document.getElementById("verunMenuOverlay");
 
+  if (menu) {
+    menu.style.right = "-320px";
+  }
+
+  if (overlay) {
+    overlay.style.display = "none";
+  }
+}
 function showVerunSection(sectionName) {
 
   Object.values(verunSections).forEach(section => {
