@@ -4109,10 +4109,44 @@ window.addEventListener("DOMContentLoaded", () => {
 <!-- ============================================
      VERUN SIDE MENU - FINAL
      ============================================ -->
+
+<!-- TEMPORARY DEBUG PANEL — remove once the menu bug is fixed -->
+<div id="verunDebugPanel" style="
+  position:fixed;
+  top:70px;
+  left:8px;
+  right:8px;
+  max-height:35vh;
+  overflow-y:auto;
+  background:rgba(0,0,0,0.92);
+  color:#8dffb7;
+  font-size:11px;
+  font-family:monospace;
+  padding:10px;
+  border:1px solid #8dffb7;
+  border-radius:8px;
+  z-index:2147483647;
+  white-space:pre-wrap;
+"></div>
+
 <script>
 (function () {
 
+  var debugPanel = document.getElementById("verunDebugPanel");
+
+  function verunDebugLog(msg) {
+    if (debugPanel) {
+      debugPanel.textContent += msg + "\n";
+    }
+  }
+
+  verunDebugLog("Debug script loaded.");
+
+  var menuButtonEl = document.getElementById("verunMenuButton");
+  verunDebugLog("verunMenuButton found in DOM: " + !!menuButtonEl);
+
   function openMenu() {
+    verunDebugLog("openMenu() called");
     const menu = document.getElementById("verunSideMenu");
     const overlay = document.getElementById("verunMenuOverlay");
 
@@ -4144,9 +4178,12 @@ window.addEventListener("DOMContentLoaded", () => {
   // Use document-level click handling so nothing else can break the button
   document.addEventListener("click", function (event) {
 
+    verunDebugLog("Click on: " + event.target.tagName + (event.target.id ? ("#" + event.target.id) : "") + (event.target.className ? ("." + event.target.className) : ""));
+
     const menuButton = event.target.closest("#verunMenuButton");
 
     if (menuButton) {
+      verunDebugLog("Matched #verunMenuButton via closest()");
       event.preventDefault();
       event.stopPropagation();
       openMenu();
