@@ -4250,5 +4250,95 @@ if (verunMenuOverlay) {
 
   <div id="leaderboardList"></div>
 </section>
+  <script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  const menuButton =
+    document.getElementById("verunMenuButton");
+
+  const menu =
+    document.getElementById("verunSideMenu");
+
+  const overlay =
+    document.getElementById("verunMenuOverlay");
+
+  const closeButton =
+    document.getElementById("verunMenuClose");
+
+  console.log("VERUN MENU:", {
+    menuButton,
+    menu,
+    overlay,
+    closeButton
+  });
+
+  function openVerunMenu() {
+
+    if (!menu || !overlay) return;
+
+    menu.style.right = "0px";
+    overlay.style.display = "block";
+  }
+
+  function closeVerunMenu() {
+
+    if (menu) {
+      menu.style.right = "-320px";
+    }
+
+    if (overlay) {
+      overlay.style.display = "none";
+    }
+  }
+
+  window.closeVerunMenu = closeVerunMenu;
+
+  if (menuButton) {
+    menuButton.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      openVerunMenu();
+    });
+  }
+
+  if (closeButton) {
+    closeButton.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeVerunMenu();
+    });
+  }
+
+  if (overlay) {
+    overlay.addEventListener("click", function () {
+      closeVerunMenu();
+    });
+  }
+
+  // MENU NAVIGATION
+  document
+    .querySelectorAll(".verun-nav-button")
+    .forEach(function (button) {
+
+      button.addEventListener("click", function () {
+
+        const sectionName =
+          button.dataset.section;
+
+        if (sectionName === "home") {
+          window.location.href = "../";
+          return;
+        }
+
+        if (typeof showVerunSection === "function") {
+          showVerunSection(sectionName);
+        }
+
+      });
+
+    });
+
+});
+</script>
 </body>
 </html>
