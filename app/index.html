@@ -4049,37 +4049,59 @@ loadMysteryBoxes();
 // VERUN SIDE MENU
 // ============================================
 
-const verunMenuButton =
-  document.getElementById("verunMenuButton");
+document.addEventListener("click", function (event) {
 
-const verunMenuClose =
-  document.getElementById("verunMenuClose");
+  // OPEN MENU
+  if (event.target.closest("#verunMenuButton")) {
 
-const verunSideMenu =
-  document.getElementById("verunSideMenu");
+    const menu = document.getElementById("verunSideMenu");
+    const overlay = document.getElementById("verunMenuOverlay");
 
-const verunMenuOverlay =
-  document.getElementById("verunMenuOverlay");
+    if (menu) {
+      menu.style.right = "0";
+    }
 
-function openVerunMenu() {
-  if (!verunSideMenu) return;
+    if (overlay) {
+      overlay.style.display = "block";
+    }
 
-  verunSideMenu.style.right = "0";
-  verunMenuOverlay.style.display = "block";
-}
+    return;
+  }
 
-function closeVerunMenu() {
-  if (!verunSideMenu) return;
+  // CLOSE MENU
+  if (event.target.closest("#verunMenuClose")) {
 
-  verunSideMenu.style.right = "-320px";
-  verunMenuOverlay.style.display = "none";
-}
+    const menu = document.getElementById("verunSideMenu");
+    const overlay = document.getElementById("verunMenuOverlay");
 
-verunMenuButton?.addEventListener("click", openVerunMenu);
+    if (menu) {
+      menu.style.right = "-320px";
+    }
 
-verunMenuClose?.addEventListener("click", closeVerunMenu);
+    if (overlay) {
+      overlay.style.display = "none";
+    }
 
-verunMenuOverlay?.addEventListener("click", closeVerunMenu);
+    return;
+  }
+
+  // CLOSE WHEN CLICKING OUTSIDE
+  if (event.target.closest("#verunMenuOverlay")) {
+
+    const menu = document.getElementById("verunSideMenu");
+    const overlay = document.getElementById("verunMenuOverlay");
+
+    if (menu) {
+      menu.style.right = "-320px";
+    }
+
+    if (overlay) {
+      overlay.style.display = "none";
+    }
+
+  }
+
+});
   // ============================================
 // VERUN APP SECTION NAVIGATION
 // ============================================
