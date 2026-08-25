@@ -1618,47 +1618,6 @@ z-index:10000;
 
 </div>
 
-<script>
-(function () {
-
-  function setupVerunMenu() {
-
-    const button = document.getElementById("verunMenuButton");
-    const menu = document.getElementById("verunSideMenu");
-    const overlay = document.getElementById("verunMenuOverlay");
-    const close = document.getElementById("verunMenuClose");
-
-    if (!button || !menu || !overlay || !close) {
-      return;
-    }
-
-    button.addEventListener("click", function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      menu.style.right = "0px";
-      overlay.style.display = "block";
-    });
-
-    close.addEventListener("click", function () {
-      menu.style.right = "-320px";
-      overlay.style.display = "none";
-    });
-
-    overlay.addEventListener("click", function () {
-      menu.style.right = "-320px";
-      overlay.style.display = "none";
-    });
-
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", setupVerunMenu);
-  } else {
-    setupVerunMenu();
-  }
-
-})();
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -4077,39 +4036,7 @@ loadMysteryBoxes();
     window.addEventListener("DOMContentLoaded", () => {
   loadVerunLeaderboard();
 });
-    // ============================================
-// VERUN SIDE MENU - FIXED
-// ============================================
-
-    console.log("VERUN MENU SCRIPT LOADED");
-window.addEventListener("DOMContentLoaded", function () {
-
-  const menuButton = document.getElementById("verunMenuButton");
-  const menu = document.getElementById("verunSideMenu");
-  const overlay = document.getElementById("verunMenuOverlay");
-  const closeButton = document.getElementById("verunMenuClose");
-
-  if (!menuButton || !menu || !overlay || !closeButton) {
-    console.error("VERUN MENU: element missing");
-    return;
-  }
-
-  menuButton.onclick = function () {
-    menu.style.right = "0";
-    overlay.style.display = "block";
-  };
-
-  closeButton.onclick = function () {
-    menu.style.right = "-320px";
-    overlay.style.display = "none";
-  };
-
-  overlay.onclick = function () {
-    menu.style.right = "-320px";
-    overlay.style.display = "none";
-  };
-
-});
+    
   // ============================================
 // VERUN APP SECTION NAVIGATION
 // ============================================
@@ -4167,7 +4094,57 @@ document.querySelectorAll(".verun-nav-button").forEach(button => {
 window.addEventListener("DOMContentLoaded", () => {
   showVerunSection("tasks");
 });
-  </script>
+
+// ============================================
+// VERUN SIDE MENU
+// ============================================
+
+const verunMenuButton =
+  document.getElementById("verunMenuButton");
+
+const verunSideMenu =
+  document.getElementById("verunSideMenu");
+
+const verunMenuOverlay =
+  document.getElementById("verunMenuOverlay");
+
+const verunMenuClose =
+  document.getElementById("verunMenuClose");
+
+if (verunMenuButton) {
+
+  verunMenuButton.onclick = function () {
+
+    verunSideMenu.style.right = "0px";
+    verunMenuOverlay.style.display = "block";
+
+  };
+
+}
+
+if (verunMenuClose) {
+
+  verunMenuClose.onclick = function () {
+
+    verunSideMenu.style.right = "-320px";
+    verunMenuOverlay.style.display = "none";
+
+  };
+
+}
+
+if (verunMenuOverlay) {
+
+  verunMenuOverlay.onclick = function () {
+
+    verunSideMenu.style.right = "-320px";
+    verunMenuOverlay.style.display = "none";
+
+  };
+
+}
+
+</script>
   <!-- AIRDROP SECTION -->
 <section
   id="airdropSection"
