@@ -1616,6 +1616,62 @@
 
 </div>
 
+  <script>
+(function () {
+
+  function initVerunMenu() {
+
+    const menuButton = document.getElementById("verunMenuButton");
+    const sideMenu = document.getElementById("verunSideMenu");
+    const overlay = document.getElementById("verunMenuOverlay");
+    const closeButton = document.getElementById("verunMenuClose");
+
+    if (!menuButton || !sideMenu || !overlay) {
+      console.error("VERUN MENU: Required element not found.");
+      return;
+    }
+
+    function openMenu() {
+      sideMenu.style.right = "0px";
+      overlay.style.display = "block";
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeMenu() {
+      sideMenu.style.right = "-320px";
+      overlay.style.display = "none";
+      document.body.style.overflow = "";
+    }
+
+    menuButton.onclick = function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      openMenu();
+    };
+
+    if (closeButton) {
+      closeButton.onclick = function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        closeMenu();
+      };
+    }
+
+    overlay.onclick = function () {
+      closeMenu();
+    };
+
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initVerunMenu);
+  } else {
+    initVerunMenu();
+  }
+
+})();
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
