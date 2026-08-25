@@ -4149,7 +4149,75 @@ if (verunMenuOverlay) {
   };
 
 }
+</script>
 
+<!-- ============================================
+     VERUN SIDE MENU - FINAL
+     ============================================ -->
+<script>
+(function () {
+
+  function openMenu() {
+    const menu = document.getElementById("verunSideMenu");
+    const overlay = document.getElementById("verunMenuOverlay");
+
+    if (menu) {
+      menu.style.right = "0px";
+    }
+
+    if (overlay) {
+      overlay.style.display = "block";
+    }
+  }
+
+  function closeMenu() {
+    const menu = document.getElementById("verunSideMenu");
+    const overlay = document.getElementById("verunMenuOverlay");
+
+    if (menu) {
+      menu.style.right = "-320px";
+    }
+
+    if (overlay) {
+      overlay.style.display = "none";
+    }
+  }
+
+  // Make this available to the existing section navigation
+  window.closeVerunMenu = closeMenu;
+
+  // Use document-level click handling so nothing else can break the button
+  document.addEventListener("click", function (event) {
+
+    const menuButton = event.target.closest("#verunMenuButton");
+
+    if (menuButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      openMenu();
+      return;
+    }
+
+    const closeButton = event.target.closest("#verunMenuClose");
+
+    if (closeButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeMenu();
+      return;
+    }
+
+    const overlay = event.target.closest("#verunMenuOverlay");
+
+    if (overlay) {
+      closeMenu();
+      return;
+    }
+
+  }, true);
+
+})();
+  
 </script>
   <!-- AIRDROP SECTION -->
 <section
