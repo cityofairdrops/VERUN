@@ -759,6 +759,8 @@
         color:#fff;
         font-size:22px;
         cursor:pointer;
+      position:relative;
+z-index:10000;
         display:flex;
         align-items:center;
         justify-content:center;
@@ -4027,60 +4029,35 @@ loadMysteryBoxes();
   loadVerunLeaderboard();
 });
     // ============================================
-// VERUN SIDE MENU
+// VERUN SIDE MENU - FIXED
 // ============================================
 
-document.addEventListener("click", function (event) {
+window.addEventListener("DOMContentLoaded", function () {
 
-  // OPEN MENU
-  if (event.target.closest("#verunMenuButton")) {
+  const menuButton = document.getElementById("verunMenuButton");
+  const menu = document.getElementById("verunSideMenu");
+  const overlay = document.getElementById("verunMenuOverlay");
+  const closeButton = document.getElementById("verunMenuClose");
 
-    const menu = document.getElementById("verunSideMenu");
-    const overlay = document.getElementById("verunMenuOverlay");
-
-    if (menu) {
-      menu.style.right = "0";
-    }
-
-    if (overlay) {
-      overlay.style.display = "block";
-    }
-
+  if (!menuButton || !menu || !overlay || !closeButton) {
+    console.error("VERUN MENU: element missing");
     return;
   }
 
-  // CLOSE MENU
-  if (event.target.closest("#verunMenuClose")) {
+  menuButton.onclick = function () {
+    menu.style.right = "0";
+    overlay.style.display = "block";
+  };
 
-    const menu = document.getElementById("verunSideMenu");
-    const overlay = document.getElementById("verunMenuOverlay");
+  closeButton.onclick = function () {
+    menu.style.right = "-320px";
+    overlay.style.display = "none";
+  };
 
-    if (menu) {
-      menu.style.right = "-320px";
-    }
-
-    if (overlay) {
-      overlay.style.display = "none";
-    }
-
-    return;
-  }
-
-  // CLOSE WHEN CLICKING OUTSIDE
-  if (event.target.closest("#verunMenuOverlay")) {
-
-    const menu = document.getElementById("verunSideMenu");
-    const overlay = document.getElementById("verunMenuOverlay");
-
-    if (menu) {
-      menu.style.right = "-320px";
-    }
-
-    if (overlay) {
-      overlay.style.display = "none";
-    }
-
-  }
+  overlay.onclick = function () {
+    menu.style.right = "-320px";
+    overlay.style.display = "none";
+  };
 
 });
   // ============================================
