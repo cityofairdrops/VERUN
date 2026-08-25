@@ -696,82 +696,99 @@
 <div class="app">
 
 
-<!-- TOP NAVIGATION -->
+  <!-- TOP NAVIGATION -->
 
-<header class="topbar">
+  <header class="topbar">
 
-  <div class="topbar-inner">
+    <div class="topbar-inner">
 
-    <a href="../" class="brand">
-      <span class="brand-mark"></span>
-      VERUN
-    </a>
+      <a href="../" class="brand">
 
-    <div class="profile">
+        <span class="brand-mark"></span>
 
-      <div class="avatar" id="profileAvatar">
-        ?
-      </div>
+        VERUN
 
-      <div>
-        <div class="profile-name" id="profileName">
-          Not connected
+      </a>
+
+
+      <div class="profile">
+
+        <div class="avatar">
+          ?
         </div>
 
-        <div class="profile-status" id="profileStatus">
-          Connect X to begin
-        </div>
-      </div>
+        <div>
 
-      <button
-        id="connectXButton"
-        type="button"
-        style="
-          margin-left:8px;
-          border:1px solid rgba(141,255,183,0.25);
-          background:rgba(141,255,183,0.10);
-          color:#8dffb7;
-          border-radius:7px;
-          padding:7px 10px;
-          font-size:10px;
-          font-weight:800;
-          cursor:pointer;
-        "
-      >
-        Connect X
-      </button>
+          <div class="profile">
 
-    </div>
-
-    <!-- VERUN MENU BUTTON -->
-
-    <button
-      id="verunMenuButton"
-      type="button"
-      aria-label="Open menu"
-      style="
-        margin-left:auto;
-        width:42px;
-        height:42px;
-        border-radius:10px;
-        border:1px solid rgba(255,255,255,0.12);
-        background:rgba(255,255,255,0.05);
-        color:#fff;
-        font-size:22px;
-        cursor:pointer;
-      position:relative;
-z-index:10000;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-      "
-    >
-      ☰
-    </button>
-
+  <div class="avatar" id="profileAvatar">
+    ?
   </div>
 
-</header>
+  <div>
+    <div class="profile-name" id="profileName">
+      Not connected
+    </div>
+
+    <div class="profile-status" id="profileStatus">
+      Connect X to begin
+    </div>
+  </div>
+
+  <button
+    id="connectXButton"
+    type="button"
+    style="
+      margin-left:8px;
+      border:1px solid rgba(141,255,183,0.25);
+      background:rgba(141,255,183,0.10);
+      color:#8dffb7;
+      border-radius:7px;
+      padding:7px 10px;
+      font-size:10px;
+      font-weight:800;
+      cursor:pointer;
+    "
+  >
+    Connect X
+  </button>
+
+          </div>
+            Not connected
+          </div>
+
+          <div class="profile-status">
+            Connect X to begin
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+<!-- VERUN MENU BUTTON -->
+<button
+  id="verunMenuButton"
+  type="button"
+  aria-label="Open menu"
+  style="
+    margin-left:auto;
+    width:42px;
+    height:42px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.05);
+    color:#fff;
+    font-size:22px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  "
+>
+  ☰
+</button>
+  </header>
 
 
   <!-- APP LAYOUT -->
@@ -4029,94 +4046,40 @@ loadMysteryBoxes();
   loadVerunLeaderboard();
 });
     // ============================================
-// VERUN SIDE MENU - FIXED
+// VERUN SIDE MENU
 // ============================================
 
-window.addEventListener("DOMContentLoaded", function () {
+const verunMenuButton =
+  document.getElementById("verunMenuButton");
 
-  const menuButton = document.getElementById("verunMenuButton");
-  const menu = document.getElementById("verunSideMenu");
-  const overlay = document.getElementById("verunMenuOverlay");
-  const closeButton = document.getElementById("verunMenuClose");
+const verunMenuClose =
+  document.getElementById("verunMenuClose");
 
-  if (!menuButton || !menu || !overlay || !closeButton) {
-    console.error("VERUN MENU: element missing");
-    return;
-  }
+const verunSideMenu =
+  document.getElementById("verunSideMenu");
 
-  menuButton.onclick = function () {
-    menu.style.right = "0";
-    overlay.style.display = "block";
-  };
+const verunMenuOverlay =
+  document.getElementById("verunMenuOverlay");
 
-  closeButton.onclick = function () {
-    menu.style.right = "-320px";
-    overlay.style.display = "none";
-  };
+function openVerunMenu() {
+  if (!verunSideMenu) return;
 
-  overlay.onclick = function () {
-    menu.style.right = "-320px";
-    overlay.style.display = "none";
-  };
-
-});
-  // ============================================
-// VERUN APP SECTION NAVIGATION
-// ============================================
-
-const verunSections = {
-  tasks: document.getElementById("tasks"),
-  boxes: document.getElementById("mystery-boxes"),
-  referral: document.getElementById("referral"),
-  leaderboard: document.getElementById("leaderboardSection"),
-  airdrop: document.getElementById("airdropSection")
-};
-
-function showVerunSection(sectionName) {
-
-  Object.values(verunSections).forEach(section => {
-    if (section) {
-      section.style.display = "none";
-    }
-  });
-
-  const selected = verunSections[sectionName];
-
-  if (selected) {
-    selected.style.display = "";
-  }
-
-  closeVerunMenu();
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
+  verunSideMenu.style.right = "0";
+  verunMenuOverlay.style.display = "block";
 }
 
-document.querySelectorAll(".verun-nav-button").forEach(button => {
+function closeVerunMenu() {
+  if (!verunSideMenu) return;
 
-  button.addEventListener("click", () => {
+  verunSideMenu.style.right = "-320px";
+  verunMenuOverlay.style.display = "none";
+}
 
-    const sectionName = button.dataset.section;
+verunMenuButton?.addEventListener("click", openVerunMenu);
 
-    if (sectionName === "home") {
-      window.location.href = "../";
-      return;
-    }
+verunMenuClose?.addEventListener("click", closeVerunMenu);
 
-    showVerunSection(sectionName);
-
-  });
-
-});
-    // ============================================
-// DEFAULT SECTION: TASKS
-// ============================================
-
-window.addEventListener("DOMContentLoaded", () => {
-  showVerunSection("tasks");
-});
+verunMenuOverlay?.addEventListener("click", closeVerunMenu);
   </script>
   <!-- AIRDROP SECTION -->
 <section
