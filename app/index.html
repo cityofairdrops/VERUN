@@ -4080,6 +4080,63 @@ verunMenuButton?.addEventListener("click", openVerunMenu);
 verunMenuClose?.addEventListener("click", closeVerunMenu);
 
 verunMenuOverlay?.addEventListener("click", closeVerunMenu);
+  // ============================================
+// VERUN APP SECTION NAVIGATION
+// ============================================
+
+const verunSections = {
+  tasks: document.getElementById("tasks"),
+  boxes: document.getElementById("mystery-boxes"),
+  referral: document.getElementById("referral"),
+  leaderboard: document.getElementById("leaderboardSection"),
+  airdrop: document.getElementById("airdropSection")
+};
+
+function showVerunSection(sectionName) {
+
+  Object.values(verunSections).forEach(section => {
+    if (section) {
+      section.style.display = "none";
+    }
+  });
+
+  const selected = verunSections[sectionName];
+
+  if (selected) {
+    selected.style.display = "";
+  }
+
+  closeVerunMenu();
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
+
+document.querySelectorAll(".verun-nav-button").forEach(button => {
+
+  button.addEventListener("click", () => {
+
+    const sectionName = button.dataset.section;
+
+    if (sectionName === "home") {
+      window.location.href = "../";
+      return;
+    }
+
+    showVerunSection(sectionName);
+
+  });
+
+});
+    // ============================================
+// DEFAULT SECTION: TASKS
+// ============================================
+
+window.addEventListener("DOMContentLoaded", () => {
+  showVerunSection("tasks");
+});
   </script>
   <!-- AIRDROP SECTION -->
 <section
