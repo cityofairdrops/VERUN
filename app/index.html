@@ -1751,7 +1751,16 @@ async function processReferral() {
   return;
       }
 
-      updateDashboard(newProfile);
+            updateDashboard(newProfile);
+
+      const { data: bonusData, error: bonusError } =
+        await supabaseClient.rpc("initialize_verun_early_bonus");
+
+      if (bonusError) {
+        console.error("Bonus initialization error:", bonusError);
+      } else if (bonusData && bonusData.length > 0) {
+        showVerunBonusPopup(bonusData[0]);
+      }
 
    } else {
 
@@ -1833,6 +1842,173 @@ async function processReferral() {
 
 }  // ← closes updateDashboard()
 
+    function showVerunBonusPopup(bonus) {
+  if (!bonus) return;
+
+  const bonusXP = Number(bonus.bonus_xp || 0);
+  const bonusType = bonus.bonus_type;
+  const position = Number(bonus.user_position || 0);
+
+  const title =
+    bonusType === "early_user"
+      ? "🎉 Congratulations!"
+      : "🎁 Welcome to Verun!";
+
+  const heading =
+    bonusType === "early_user"
+      ? "Early User Bonus"
+      : "Welcome Bonus";
+
+  const message =
+    bonusType === "early_user"
+      ? `You are Verun user #${position}.`
+      : "You have received your Verun welcome bonus.";
+
+  const popup = document.createElement("div");
+
+  popup.id = "verunBonusPopup";
+
+  popup.style.cssText = `
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.75);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:99999;
+    padding:20px;
+  `;
+
+  popup.innerHTML = `
+    <div style="
+      width:100%;
+      max-width:400px;
+      background:#111827;
+      border-radius:20px;
+      padding:28px 22px;
+      text-align:center;
+    ">
+
+      <div style="font-size:42px;margin-bottom:10px;">
+        ${bonusType === "early_user" ? "🎉" : "🎁"}
+      </div>
+
+      <h2>${title}</h2>
+
+      <h3>${heading}</h3>
+
+      <p>${message}</p>
+
+      <div style="
+        font-size:32px;
+        font-weight:bold;
+        margin:20px 0;
+      ">
+        +${bonusXP.toLocaleString()} XP
+      </div>
+
+      <button
+        id="verunBonusClaimButton"
+        type="button"
+        style="
+          width:100%;
+          padding:14px;
+          border:0;
+          border-radius:12px;
+          font-weight:bold;
+          font-size:16px;
+          margin-bottom:10px;
+        "
+      >
+        Claim Bonus
+      </button>
+
+      <button
+        id="verunBonusSkipButton"
+        type="button"
+        style="
+          width:100%;
+          padding:12px;
+          background:transparent;
+          color:inherit;
+          border:1px solid rgba(255,255,255,0.2);
+          border-radius:12px;
+        "
+      >
+        Skip
+      </button>
+
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+
+  document
+    .getElementById("verunBonusClaimButton")
+    .addEventListener("click", async () => {
+
+      const button =
+        document.getElementById("verunBonusClaimButton");
+
+      button.disabled = true;
+      button.textContent = "Claiming...";
+
+      const { data, error } =
+        await supabaseClient.rpc(
+          "claim_verun_early_bonus"
+        );
+
+      if (error) {
+        console.error("Bonus claim error:", error);
+
+        alert("Bonus could not be claimed.");
+
+        button.disabled = false;
+        button.textContent = "Claim Bonus";
+        return;
+      }
+
+      popup.remove();
+
+      const result = data[0];
+
+      alert(
+        `${result.bonus_type === "early_user"
+          ? "Early User Bonus"
+          : "Welcome Bonus"} claimed!\n\n` +
+        `+${Number(result.bonus_xp).toLocaleString()} XP added to your account.`
+      );
+
+      location.reload();
+    });
+
+  document
+    .getElementById("verunBonusSkipButton")
+    .addEventListener("click", async () => {
+
+      const confirmed = confirm(
+        "Are you sure you want to skip this bonus?\n\n" +
+        "You will permanently lose it."
+      );
+
+      if (!confirmed) return;
+
+      const { error } =
+        await supabaseClient.rpc(
+          "skip_verun_early_bonus"
+        );
+
+      if (error) {
+        console.error("Bonus skip error:", error);
+        alert("Bonus could not be skipped.");
+        return;
+      }
+
+      popup.remove();
+
+      alert("Bonus skipped.");
+    });
+}
 
 // COPY BUTTON CODE STARTS HERE
 
