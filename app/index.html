@@ -2494,9 +2494,7 @@ function escapeHtml(value) {
   div.textContent = value || "";
   return div.innerHTML;
 }
-    if (!connectXButton || !supabaseClient) {
-  console.error("VERUN: X connection dependencies missing");
-}
+    
   connectXButton.addEventListener("click", async () => {
 
     connectXButton.disabled = true;
