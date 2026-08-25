@@ -4101,33 +4101,13 @@ window.addEventListener("DOMContentLoaded", () => {
   showVerunSection("tasks");
 });
 
-// (menu button open/close is wired up once, below, in the
-// "VERUN SIDE MENU - FINAL" script — see there for the single
-// source of truth for opening/closing this menu)
-</script>
+// ============================================
+// VERUN SIDE MENU (final, no debug logging)
+// ============================================
 
-<!-- ============================================
-     VERUN SIDE MENU - FINAL
-     ============================================ -->
-
-<script>
 (function () {
 
-  var debugPanel = document.getElementById("verunDebugPanel");
-
-  function verunDebugLog(msg) {
-    if (debugPanel) {
-      debugPanel.textContent += msg + "\n";
-    }
-  }
-
-  verunDebugLog("Debug script loaded.");
-
-  var menuButtonEl = document.getElementById("verunMenuButton");
-  verunDebugLog("verunMenuButton found in DOM: " + !!menuButtonEl);
-
   function openMenu() {
-    verunDebugLog("openMenu() called");
     const menu = document.getElementById("verunSideMenu");
     const overlay = document.getElementById("verunMenuOverlay");
 
@@ -4153,18 +4133,13 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Make this available to the existing section navigation
   window.closeVerunMenu = closeMenu;
 
-  // Use document-level click handling so nothing else can break the button
   document.addEventListener("click", function (event) {
-
-    verunDebugLog("Click on: " + event.target.tagName + (event.target.id ? ("#" + event.target.id) : "") + (event.target.className ? ("." + event.target.className) : ""));
 
     const menuButton = event.target.closest("#verunMenuButton");
 
     if (menuButton) {
-      verunDebugLog("Matched #verunMenuButton via closest()");
       event.preventDefault();
       event.stopPropagation();
       openMenu();
@@ -4190,7 +4165,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }, true);
 
 })();
-  
+
 </script>
   <!-- AIRDROP SECTION -->
 <section
@@ -4211,7 +4186,7 @@ window.addEventListener("DOMContentLoaded", () => {
   </div>
 </section>
   <section id="leaderboardSection" class="card app-section" style="margin-top:20px;">
-  <h2>🏆 Verun Leaderboard</h2>
+  <h2>Verun Leaderboard</h2>
 
   <div id="leaderboardLoading" style="text-align:center;padding:15px;">
     Loading leaderboard...
