@@ -1070,7 +1070,51 @@
   </div>
 </header>
 
+<!-- VERUN APP DRAWER -->
+<div id="verunMenuOverlay" class="verun-menu-overlay"></div>
 
+<aside id="verunSideMenu" class="verun-drawer" aria-hidden="true">
+  <div class="verun-drawer-head">
+    <div>
+      <div class="verun-drawer-kicker">VERUN</div>
+      <div class="verun-drawer-title">Community</div>
+    </div>
+    <button id="verunMenuClose" class="verun-drawer-close" type="button" aria-label="Close menu">×</button>
+  </div>
+
+  <nav class="verun-drawer-nav">
+    <a href="../home/" class="verun-drawer-link" data-nav="home"><span>⌂</span><span>Home</span></a>
+    <button class="verun-drawer-link" type="button" data-section="tasks"><span>✓</span><span>Tasks</span></button>
+    <button class="verun-drawer-link" type="button" data-section="boxes"><span>◇</span><span>Boxes</span></button>
+    <button class="verun-drawer-link" type="button" data-section="referral"><span>↗</span><span>Referral</span></button>
+    <button class="verun-drawer-link" type="button" data-section="leaderboard"><span>≡</span><span>Leaderboard</span></button>
+    <button class="verun-drawer-link" type="button" data-section="airdrop"><span>✦</span><span>Airdrop</span></button>
+  </nav>
+
+  <div class="verun-drawer-account">
+    <div class="verun-account-kicker">ACCOUNT</div>
+    <div id="verunGuestDrawer" class="verun-guest-drawer">
+      <button id="drawerConnectXButton" class="verun-connect-small" type="button">Connect X</button>
+    </div>
+    <div id="verunConnectedDrawer" class="verun-connected-drawer" style="display:none;">
+      <div class="verun-account-row">
+        <img id="drawerProfileAvatar" class="verun-profile-photo" alt="X profile picture">
+        <div class="verun-account-name" id="drawerProfileName">@username</div>
+      </div>
+      <button id="disconnectXButton" class="verun-disconnect-button" type="button">Disconnect</button>
+    </div>
+  </div>
+</aside>
+
+<div id="verunGuestGate" class="verun-guest-gate">
+  <div class="verun-guest-card">
+    <div class="verun-guest-mark"><span></span></div>
+    <div class="verun-guest-kicker">VERUN COMMUNITY APP</div>
+    <h1>Connect X to enter.</h1>
+    <p>Connect the X account to unlock Tasks, Mystery Boxes, Referral, Leaderboard and Airdrop.</p>
+    <button id="guestConnectXButton" class="verun-connect-primary" type="button">Connect X</button>
+  </div>
+</div>
 
   <!-- APP LAYOUT -->
 
@@ -4511,9 +4555,23 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 })();
 
+
+// Hard fallback for the drawer: works even if another VERUN handler throws.
+document.addEventListener('click', function (event) {
+  const button = event.target.closest('#verunMenuButton');
+  if (!button) return;
+  const drawer = document.getElementById('verunSideMenu');
+  const overlay = document.getElementById('verunMenuOverlay');
+  if (!drawer || !overlay) return;
+  drawer.classList.add('open');
+  overlay.classList.add('open');
+  drawer.setAttribute('aria-hidden', 'false');
+  button.setAttribute('aria-expanded', 'true');
+}, true);
 </script>
 </body>
 </html>
+
 
 
 
