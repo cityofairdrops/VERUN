@@ -807,32 +807,6 @@
 
     </div>
 
-    <!-- VERUN MENU BUTTON -->
-
-    <button
-      id="verunMenuButton"
-      type="button"
-      aria-label="Open menu"
-      style="
-        margin-left:auto;
-        width:42px;
-        height:42px;
-        border-radius:10px;
-        border:1px solid rgba(255,255,255,0.12);
-        background:rgba(255,255,255,0.05);
-        color:#fff;
-        font-size:22px;
-        cursor:pointer;
-      position:relative;
-z-index:10000;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-      "
-    >
-      ☰
-    </button>
-
   </div>
 
 </header>
@@ -1600,87 +1574,6 @@ z-index:10000;
 
 
 </main>
-
-<!-- VERUN SIDE MENU -->
-<div
-  id="verunMenuOverlay"
-  style="
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.55);
-    z-index:9998;
-  "
-></div>
-
-<aside
-  id="verunSideMenu"
-  style="
-    position:fixed;
-    top:0;
-    right:-320px;
-    width:min(320px,85vw);
-    height:100vh;
-    background:#0b0d12;
-    border-left:1px solid rgba(255,255,255,0.10);
-    z-index:9999;
-    padding:24px 18px;
-    box-sizing:border-box;
-    transition:right .25s ease;
-    overflow-y:auto;
-  "
->
-  <div style="
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:28px;
-  ">
-    <strong style="font-size:20px;">VERUN</strong>
-
-    <button
-      id="verunMenuClose"
-      type="button"
-      style="
-        border:0;
-        background:none;
-        color:#fff;
-        font-size:26px;
-        cursor:pointer;
-      "
-    >
-      ×
-    </button>
-  </div>
-
-  <nav style="display:flex;flex-direction:column;gap:8px;">
-
-    <button class="verun-nav-button" data-section="home">
-      Home
-    </button>
-
-    <button class="verun-nav-button" data-section="tasks">
-      ✓ Tasks
-    </button>
-
-    <button class="verun-nav-button" data-section="boxes">
-      Mystery Boxes
-    </button>
-
-    <button class="verun-nav-button" data-section="referral">
-      ↗ Referrals
-    </button>
-
-    <button class="verun-nav-button" data-section="leaderboard">
-      Leaderboard
-    </button>
-
-    <button class="verun-nav-button" data-section="airdrop">
-      ◇ Airdrop
-    </button>
-
-  </nav>
-</aside>
 
   </div>
 
@@ -4204,18 +4097,6 @@ const verunSections = {
   leaderboard: document.getElementById("leaderboardSection"),
   airdrop: document.getElementById("airdropSection")
 };
-function closeVerunMenu() {
-  const menu = document.getElementById("verunSideMenu");
-  const overlay = document.getElementById("verunMenuOverlay");
-
-  if (menu) {
-    menu.style.right = "-320px";
-  }
-
-  if (overlay) {
-    overlay.style.display = "none";
-  }
-}
 function showVerunSection(sectionName) {
 
   Object.values(verunSections).forEach(section => {
@@ -4230,30 +4111,11 @@ function showVerunSection(sectionName) {
     selected.style.display = "";
   }
 
-  closeVerunMenu();
-
   window.scrollTo({
     top: 0,
     behavior: "smooth"
   });
 }
-
-document.querySelectorAll(".verun-nav-button").forEach(button => {
-
-  button.addEventListener("click", () => {
-
-    const sectionName = button.dataset.section;
-
-    if (sectionName === "home") {
-      window.location.href = "../";
-      return;
-    }
-
-    showVerunSection(sectionName);
-
-  });
-
-});
     // ============================================
 // DEFAULT SECTION: TASKS
 // ============================================
@@ -4261,81 +4123,8 @@ document.querySelectorAll(".verun-nav-button").forEach(button => {
 window.addEventListener("DOMContentLoaded", () => {
   showVerunSection("tasks");
 });
-
-// (menu button open/close is wired up once, below, in the
-// "VERUN SIDE MENU - FINAL" script — see there for the single
-// source of truth for opening/closing this menu)
 </script>
 
-<!-- ============================================
-     VERUN SIDE MENU - FINAL
-     ============================================ -->
-
-<script>
-(function () {
-
-  function openMenu() {
-    const menu = document.getElementById("verunSideMenu");
-    const overlay = document.getElementById("verunMenuOverlay");
-
-    if (menu) {
-      menu.style.right = "0px";
-    }
-
-    if (overlay) {
-      overlay.style.display = "block";
-    }
-  }
-
-  function closeMenu() {
-    const menu = document.getElementById("verunSideMenu");
-    const overlay = document.getElementById("verunMenuOverlay");
-
-    if (menu) {
-      menu.style.right = "-320px";
-    }
-
-    if (overlay) {
-      overlay.style.display = "none";
-    }
-  }
-
-  // Make this available to the existing section navigation
-  window.closeVerunMenu = closeMenu;
-
-  // Use document-level click handling so nothing else can break the button
-  document.addEventListener("click", function (event) {
-
-    const menuButton = event.target.closest("#verunMenuButton");
-
-    if (menuButton) {
-      event.preventDefault();
-      event.stopPropagation();
-      openMenu();
-      return;
-    }
-
-    const closeButton = event.target.closest("#verunMenuClose");
-
-    if (closeButton) {
-      event.preventDefault();
-      event.stopPropagation();
-      closeMenu();
-      return;
-    }
-
-    const overlay = event.target.closest("#verunMenuOverlay");
-
-    if (overlay) {
-      closeMenu();
-      return;
-    }
-
-  }, true);
-
-})();
-  
-</script>
   <!-- AIRDROP SECTION -->
 <section
   id="airdropSection"
@@ -4376,5 +4165,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
 </body>
 </html>
+
 
 
