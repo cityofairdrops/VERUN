@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>VERUN — App</title>
-  <meta name="theme-color" content="#070909">
-
-  <style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VERUN — App</title>
+<meta name="theme-color" content="#070909">
+<style>
     :root {
       --bg: #070909;
       --panel: #0d1110;
@@ -752,10 +750,298 @@
         height: 38px;
       }
     }
-  </style>
-</head>
+  
+/* ============================================================
+   VERUN TWO-URL / SINGLE-APP-VIEW NAVIGATION
+   ============================================================ */
+:root {
+  --border-strong: rgba(255,255,255,0.14);
+}
 
+.verun-menu-button {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.025);
+  border-radius: 10px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  cursor:pointer;
+  transition:.2s ease;
+}
+.verun-menu-button:hover {
+  border-color:var(--green-border);
+  background:var(--green-soft);
+}
+.verun-menu-button span {
+  width:17px;
+  height:1.5px;
+  background:var(--text);
+  border-radius:2px;
+  transition:.2s ease;
+}
+.verun-menu-button:hover span { background:var(--green); }
+
+.verun-menu-overlay {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.62);
+  backdrop-filter:blur(3px);
+  z-index:9998;
+  opacity:0;
+  pointer-events:none;
+  transition:.25s ease;
+}
+.verun-menu-overlay.open {
+  opacity:1;
+  pointer-events:auto;
+}
+
+.verun-drawer {
+  position:fixed;
+  top:0;
+  right:0;
+  width:min(350px,88vw);
+  height:100vh;
+  z-index:9999;
+  background:linear-gradient(180deg,#0d1110,#090c0b);
+  border-left:1px solid var(--border);
+  box-shadow:-30px 0 80px rgba(0,0,0,.45);
+  transform:translateX(105%);
+  transition:transform .32s cubic-bezier(.2,.8,.2,1);
+  display:flex;
+  flex-direction:column;
+  padding:22px;
+}
+.verun-drawer.open { transform:translateX(0); }
+
+.verun-drawer-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding-bottom:20px;
+  border-bottom:1px solid var(--border);
+}
+.verun-drawer-kicker,.verun-account-kicker {
+  color:var(--green);
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:1.6px;
+  text-transform:uppercase;
+}
+.verun-drawer-title {
+  font-size:20px;
+  font-weight:900;
+  letter-spacing:-.5px;
+  margin-top:3px;
+}
+.verun-drawer-close {
+  width:38px;height:38px;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,.025);
+  color:var(--text);
+  border-radius:9px;
+  font-size:24px;
+  line-height:1;
+  cursor:pointer;
+}
+.verun-drawer-nav {
+  display:grid;
+  gap:5px;
+  padding:22px 0;
+  flex:1;
+}
+.verun-drawer-link {
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:13px 12px;
+  border:1px solid transparent;
+  border-radius:10px;
+  background:transparent;
+  color:var(--muted);
+  text-decoration:none;
+  font-size:12px;
+  font-weight:750;
+  text-align:left;
+  cursor:pointer;
+}
+.verun-drawer-link:hover,
+.verun-drawer-link.active {
+  color:var(--green);
+  background:var(--green-soft);
+  border-color:var(--green-border);
+}
+.verun-drawer-link span:first-child {
+  width:18px;
+  text-align:center;
+  color:currentColor;
+}
+
+.verun-drawer-account {
+  border-top:1px solid var(--border);
+  padding-top:18px;
+}
+.verun-connected-drawer {
+  margin-top:10px;
+}
+.verun-account-row {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+}
+.verun-profile-photo {
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  object-fit:cover;
+  background:#1b211e;
+  border:1px solid var(--green-border);
+}
+.verun-account-name {
+  font-size:13px;
+  font-weight:800;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.verun-disconnect-button,
+.verun-connect-small {
+  width:100%;
+  margin-top:12px;
+  padding:10px 12px;
+  border-radius:8px;
+  font-size:10px;
+  font-weight:850;
+  cursor:pointer;
+}
+.verun-disconnect-button {
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.025);
+  color:var(--muted);
+}
+.verun-disconnect-button:hover {
+  color:var(--text);
+  border-color:var(--border-strong);
+}
+.verun-connect-small {
+  border:1px solid var(--green-border);
+  background:var(--green-soft);
+  color:var(--green);
+}
+
+.verun-guest-gate {
+  position:fixed;
+  inset:68px 0 0;
+  z-index:40;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:28px 18px;
+  background:
+    radial-gradient(circle at 50% 38%,rgba(141,255,183,.055),transparent 36%),
+    var(--bg);
+}
+.verun-guest-gate.visible { display:flex; }
+.verun-guest-card {
+  width:min(500px,100%);
+  text-align:center;
+  padding:42px 25px;
+  border:1px solid var(--border);
+  border-radius:20px;
+  background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.012));
+  box-shadow:0 30px 90px rgba(0,0,0,.35);
+}
+.verun-guest-mark {
+  width:66px;height:66px;
+  margin:0 auto 20px;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--green-border);
+  border-radius:18px;
+  transform:rotate(45deg);
+  background:rgba(141,255,183,.04);
+}
+.verun-guest-mark span {
+  width:21px;height:21px;
+  background:var(--green);
+  display:block;
+  transform:rotate(-45deg);
+  border-radius:3px;
+  box-shadow:0 0 25px rgba(141,255,183,.25);
+}
+.verun-guest-kicker {
+  color:var(--green);
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:1.8px;
+}
+.verun-guest-card h1 {
+  margin-top:8px;
+  font-size:clamp(28px,6vw,42px);
+  letter-spacing:-1.7px;
+}
+.verun-guest-card p {
+  max-width:390px;
+  margin:10px auto 0;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.7;
+}
+.verun-connect-primary {
+  margin-top:22px;
+  border:1px solid var(--green-border);
+  background:var(--green);
+  color:#071009;
+  padding:12px 22px;
+  min-width:145px;
+  border-radius:9px;
+  font-size:11px;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:0 10px 35px rgba(141,255,183,.12);
+  transition:.2s ease;
+}
+.verun-connect-primary:hover {
+  transform:translateY(-1px);
+  box-shadow:0 14px 42px rgba(141,255,183,.18);
+}
+.verun-auth-app.locked { display:none; }
+
+.verun-app-page,
+.section-card {
+  animation:verunPageIn .34s ease both;
+}
+@keyframes verunPageIn {
+  from { opacity:0; transform:translateY(8px) rotateX(-1deg); }
+  to { opacity:1; transform:translateY(0) rotateX(0); }
+}
+
+.balance-card { margin-top:0; }
+.section-card {
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:25px;
+}
+#leaderboardSection h2 {
+  font-size:20px;
+  letter-spacing:-.5px;
+  margin-bottom:15px;
+}
+
+@media (max-width:520px) {
+  .verun-drawer { padding:18px; }
+  .verun-guest-card { padding:35px 20px; }
+}
+</style>
+</head>
 <body>
+
 
 <div class="app">
 
@@ -771,45 +1057,19 @@
       VERUN
     </a>
 
-    <div class="profile">
-
-      <div class="avatar" id="profileAvatar">
-        ?
-      </div>
-
-      <div>
-        <div class="profile-name" id="profileName">
-          Not connected
-        </div>
-
-        <div class="profile-status" id="profileStatus">
-          Connect X to begin
-        </div>
-      </div>
-
-      <button
-        id="connectXButton"
-        type="button"
-        style="
-          margin-left:8px;
-          border:1px solid rgba(141,255,183,0.25);
-          background:rgba(141,255,183,0.10);
-          color:#8dffb7;
-          border-radius:7px;
-          padding:7px 10px;
-          font-size:10px;
-          font-weight:800;
-          cursor:pointer;
-        "
-      >
-        Connect X
-      </button>
-
-    </div>
-
+    
+    <button
+      id="verunMenuButton"
+      class="verun-menu-button"
+      type="button"
+      aria-label="Open menu"
+      aria-expanded="false"
+    >
+      <span></span><span></span><span></span>
+    </button>
   </div>
-
 </header>
+
 
 
   <!-- APP LAYOUT -->
@@ -819,80 +1079,14 @@
 
     <!-- SIDEBAR -->
 
-    <aside class="sidebar">
-
-      <div class="side-label">
-        Dashboard
-      </div>
-
-      <nav class="side-menu">
-
-        <a href="#" class="side-link active">
-          <span class="side-icon">⌂</span>
-          Overview
-        </a>
-
-        <a href="#tasks" class="side-link">
-          <span class="side-icon">✓</span>
-          Tasks
-        </a>
-
-        <a href="#streak" class="side-link">
-          <span class="side-icon">✦</span>
-          Streak
-        </a>
-
-        <a href="#referral" class="side-link">
-          <span class="side-icon">↗</span>
-          Referrals
-        </a>
-
-      </nav>
-
-
-      <div class="side-bottom">
-
-        <div class="network">
-          Network:
-          <strong>BNB Smart Chain</strong>
-        </div>
-
-      </div>
-
-    </aside>
+    
 
 
     <!-- MAIN CONTENT -->
 
-    <main>
+    <main id="verunAuthenticatedApp" class="verun-auth-app">
 
-
-      <!-- WELCOME -->
-
-      <div class="welcome">
-
-        <div class="welcome-small">
-          VERUN APP
-        </div>
-
-        <h1>
-          Welcome.
-        </h1>
-
-        <p>
-          Participate in the ecosystem and build your contribution.
-        </p>
-
-      </div>
-
-
-      <!-- XP BALANCE -->
-
-      <div class="balance-card">
-
-        <div class="balance-label">
-          Your XP
-        </div>
+      
 
         <div class="balance">
           0 <span>XP</span>
@@ -904,69 +1098,15 @@
 
       </div>
 
-
-      <!-- OVERVIEW -->
-
-      <div class="overview-grid">
-
-
-        <div class="overview-card">
-
-          <div class="overview-label">
-            Current Streak
-          </div>
-
-          <div class="overview-value">
-            0 days
-          </div>
-
-          <div class="overview-sub">
-            Keep participating daily
-          </div>
-
-        </div>
-
-
-        <div class="overview-card">
-
-          <div class="overview-label">
-            Tasks Completed
-          </div>
-
-          <div class="overview-value">
-            0
-          </div>
-
-          <div class="overview-sub">
-            Start your first task
-          </div>
-
-        </div>
-
-
-        <div class="overview-card">
-
-          <div class="overview-label">
-            Referrals
-          </div>
-
-          <div class="overview-value">
-            0
-          </div>
-
-          <div class="overview-sub">
-            Invite your network
-          </div>
-
-        </div>
-
-
-      </div>
-
-
       <!-- TASKS -->
 
-      <section class="section app-section" id="tasks">
+      <div class="verun-app-page app-view" id="tasksPage">
+<div class="balance-card">
+
+        <div class="balance-label">
+          Your XP
+        </div>
+<section class="section app-section" id="tasks">
 
         <div class="section-head">
 
@@ -1117,6 +1257,8 @@
 
 
       <!-- DAILY LOGIN + STREAK -->
+
+
 
 <section class="section" id="streak">
 
@@ -1573,15 +1715,57 @@
       </div>
 
 
+<!-- AIRDROP SECTION -->
+<section
+  id="airdropSection"
+  class="section-card"
+  style="display:none;margin-top:20px;"
+>
+  <div style="text-align:center;padding:40px 20px;">
+    <div style="font-size:48px;margin-bottom:15px;">◇</div>
+
+    <h2 style="margin-bottom:10px;">
+      VERUN Airdrop
+    </h2>
+
+    <p style="opacity:0.7;font-size:16px;">
+      Coming Soon
+    </p>
+  </div>
+</section>
+  <section id="leaderboardSection" class="section-card app-section" style="margin-top:20px;">
+  <h2>Verun Leaderboard</h2>
+
+  <div id="leaderboardTabs" class="leaderboard-tabs">
+    <button type="button" class="leaderboard-tab active" data-sort="xp">Top XP</button>
+    <button type="button" class="leaderboard-tab" data-sort="streak">Top Grinders</button>
+    <button type="button" class="leaderboard-tab" data-sort="referrals">Top Networkers</button>
+  </div>
+
+  <div id="leaderboardLoading" style="text-align:center;padding:15px;">
+    Loading leaderboard...
+  </div>
+
+  <div id="leaderboardError"
+       style="display:none;color:#ff6b6b;text-align:center;padding:15px;">
+  </div>
+
+  <div id="leaderboardList"></div>
+</section>
+
+
 </main>
 
   </div>
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+
   const SUPABASE_URL = "https://lhfgozlkeotxyzqowijz.supabase.co";
 
   const SUPABASE_PUBLISHABLE_KEY =
@@ -1672,9 +1856,10 @@ async function processReferral() {
   }
 
 }
-</script>
-  <script>
-  const connectXButton = document.getElementById("connectXButton");
+
+
+
+  const connectXButton = document.getElementById("connectXButton") || { disabled:false, textContent:"Connect X", addEventListener:()=>{} };
 
   async function loadUserProfile() {
     const {
@@ -2416,7 +2601,7 @@ function escapeHtml(value) {
         provider: "x",
         options: {
           redirectTo:
-            "https://cityofairdrops.github.io/VERUN/app/"
+            (() => { const p = window.location.pathname; const b = p.includes("/app") ? p.split("/app")[0] : ""; return window.location.origin + b + "/app/"; })()
         }
       });
 
@@ -4121,50 +4306,215 @@ function showVerunSection(sectionName) {
 // ============================================
 
 window.addEventListener("DOMContentLoaded", () => {
-  showVerunSection("tasks");
+  if (typeof showVerunSection === "function") showVerunSection("tasks");
+  const daily = document.getElementById("streak");
+  if (daily) daily.style.display = "";
 });
+
+
+
+// ============================================================
+// VERUN TWO-URL APP NAVIGATION + DRAWER
+// ============================================================
+(function () {
+  const menuButton = document.getElementById("verunMenuButton");
+  const drawer = document.getElementById("verunSideMenu");
+  const overlay = document.getElementById("verunMenuOverlay");
+  const closeButton = document.getElementById("verunMenuClose");
+  const guestGate = document.getElementById("verunGuestGate");
+  const authApp = document.getElementById("verunAuthenticatedApp");
+
+  const drawerConnect = document.getElementById("drawerConnectXButton");
+  const guestConnect = document.getElementById("guestConnectXButton");
+  const disconnectButton = document.getElementById("disconnectXButton");
+
+  const guestDrawer = document.getElementById("verunGuestDrawer");
+  const connectedDrawer = document.getElementById("verunConnectedDrawer");
+  const drawerProfileName = document.getElementById("drawerProfileName");
+  const drawerProfileAvatar = document.getElementById("drawerProfileAvatar");
+
+  const dailySection = document.getElementById("streak");
+
+  const pages = {
+    tasks: document.getElementById("tasksPage"),
+    boxes: document.getElementById("mystery-boxes"),
+    referral: document.getElementById("referral"),
+    leaderboard: document.getElementById("leaderboardSection"),
+    airdrop: document.getElementById("airdropSection")
+  };
+
+  const drawerLinks = Array.from(document.querySelectorAll(".verun-drawer-link[data-section]"));
+
+  function openDrawer() {
+    if (!drawer) return;
+    drawer.classList.add("open");
+    overlay?.classList.add("open");
+    drawer.setAttribute("aria-hidden", "false");
+    menuButton?.setAttribute("aria-expanded", "true");
+  }
+
+  function closeDrawer() {
+    drawer?.classList.remove("open");
+    overlay?.classList.remove("open");
+    drawer?.setAttribute("aria-hidden", "true");
+    menuButton?.setAttribute("aria-expanded", "false");
+  }
+
+  menuButton?.addEventListener("click", openDrawer);
+  closeButton?.addEventListener("click", closeDrawer);
+  overlay?.addEventListener("click", closeDrawer);
+
+  function showSection(name) {
+    if (dailySection) dailySection.style.display = name === "tasks" ? "" : "none";
+    Object.entries(pages).forEach(([key, element]) => {
+      if (!element) return;
+      element.style.display = key === name ? "" : "none";
+      if (key === name) {
+        element.classList.remove("verun-page-refresh");
+        void element.offsetWidth;
+        element.classList.add("verun-page-refresh");
+      }
+    });
+
+    drawerLinks.forEach(link => {
+      link.classList.toggle("active", link.dataset.section === name);
+    });
+
+    history.replaceState(null, "", window.location.pathname);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    closeDrawer();
+  }
+
+  drawerLinks.forEach(link => {
+    link.addEventListener("click", async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        closeDrawer();
+        return;
+      }
+      showSection(link.dataset.section);
+      if (link.dataset.section === "boxes") await loadMysteryBoxes();
+      if (link.dataset.section === "leaderboard") await loadVerunLeaderboard();
+    });
+  });
+
+  function getAppRedirectUrl() {
+    const path = window.location.pathname;
+    const marker = "/app";
+    const base = path.includes(marker) ? path.split(marker)[0] : "";
+    return window.location.origin + base + "/app/";
+  }
+
+  async function connectX() {
+    const buttons = [drawerConnect, guestConnect].filter(Boolean);
+    buttons.forEach(b => { b.disabled = true; b.textContent = "Connecting..."; });
+
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: "x",
+      options: { redirectTo: getAppRedirectUrl() }
+    });
+
+    if (error) {
+      buttons.forEach(b => { b.disabled = false; b.textContent = "Connect X"; });
+      alert("Unable to connect X: " + error.message);
+    }
+  }
+
+  drawerConnect?.addEventListener("click", connectX);
+  guestConnect?.addEventListener("click", connectX);
+
+  disconnectButton?.addEventListener("click", async () => {
+    disconnectButton.disabled = true;
+    disconnectButton.textContent = "Disconnecting...";
+    const { error } = await supabaseClient.auth.signOut();
+    if (error) {
+      disconnectButton.disabled = false;
+      disconnectButton.textContent = "Disconnect";
+      alert("Unable to disconnect X: " + error.message);
+      return;
+    }
+    closeDrawer();
+    await updateAppAccess(null);
+  });
+
+  function setDrawerUser(user, profile) {
+    const username =
+      profile?.x_username ||
+      user?.user_metadata?.user_name ||
+      user?.user_metadata?.preferred_username ||
+      user?.user_metadata?.name ||
+      "VERUN User";
+
+    const avatar =
+      user?.user_metadata?.avatar_url ||
+      user?.user_metadata?.profile_image_url ||
+      user?.user_metadata?.picture ||
+      "";
+
+    if (drawerProfileName) drawerProfileName.textContent = "@" + username.replace(/^@/, "");
+
+    if (drawerProfileAvatar) {
+      drawerProfileAvatar.src = avatar || "";
+      drawerProfileAvatar.style.display = avatar ? "block" : "none";
+      drawerProfileAvatar.alt = "@" + username + " profile picture";
+    }
+
+    if (guestDrawer) guestDrawer.style.display = "none";
+    if (connectedDrawer) connectedDrawer.style.display = "block";
+  }
+
+  function setDrawerGuest() {
+    if (guestDrawer) guestDrawer.style.display = "block";
+    if (connectedDrawer) connectedDrawer.style.display = "none";
+    if (drawerConnect) {
+      drawerConnect.disabled = false;
+      drawerConnect.textContent = "Connect X";
+    }
+    if (guestConnect) {
+      guestConnect.disabled = false;
+      guestConnect.textContent = "Connect X";
+    }
+  }
+
+  window.updateAppAccess = async function (session) {
+    if (!session) {
+      guestGate?.classList.add("visible");
+      if (authApp) authApp.classList.add("locked");
+      setDrawerGuest();
+      return;
+    }
+
+    guestGate?.classList.remove("visible");
+    if (authApp) authApp.classList.remove("locked");
+
+    const { data: profile } = await supabaseClient
+      .from("profiles")
+      .select("x_username")
+      .eq("id", session.user.id)
+      .maybeSingle();
+
+    setDrawerUser(session.user, profile);
+    showSection("tasks");
+  };
+
+  supabaseClient.auth.getSession().then(async ({ data: { session } }) => {
+    await updateAppAccess(session);
+  });
+
+  supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    if (session) {
+      // Existing VERUN auth handler performs profile creation/loading.
+      setTimeout(() => updateAppAccess(session), 350);
+    } else {
+      await updateAppAccess(null);
+    }
+  });
+})();
+
 </script>
-
-  <!-- AIRDROP SECTION -->
-<section
-  id="airdropSection"
-  class="card"
-  style="display:none;margin-top:20px;"
->
-  <div style="text-align:center;padding:40px 20px;">
-    <div style="font-size:48px;margin-bottom:15px;">◇</div>
-
-    <h2 style="margin-bottom:10px;">
-      VERUN Airdrop
-    </h2>
-
-    <p style="opacity:0.7;font-size:16px;">
-      Coming Soon
-    </p>
-  </div>
-</section>
-  <section id="leaderboardSection" class="card app-section" style="margin-top:20px;">
-  <h2>Verun Leaderboard</h2>
-
-  <div id="leaderboardTabs" class="leaderboard-tabs">
-    <button type="button" class="leaderboard-tab active" data-sort="xp">Top XP</button>
-    <button type="button" class="leaderboard-tab" data-sort="streak">Top Grinders</button>
-    <button type="button" class="leaderboard-tab" data-sort="referrals">Top Networkers</button>
-  </div>
-
-  <div id="leaderboardLoading" style="text-align:center;padding:15px;">
-    Loading leaderboard...
-  </div>
-
-  <div id="leaderboardError"
-       style="display:none;color:#ff6b6b;text-align:center;padding:15px;">
-  </div>
-
-  <div id="leaderboardList"></div>
-</section>
-
 </body>
 </html>
+
 
 
 
