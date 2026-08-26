@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VERUN — Home</title>
+<meta name="theme-color" content="#070909">
+<style>
+    :root {
+      --bg: #070909;
+      --panel: #0d1110;
+      --panel2: #111613;
+      --border: rgba(255,255,255,0.08);
+      --text: #f4f7f5;
+      --muted: #89948e;
+      --muted2: #626d67;
+      --green: #8dffb7;
+      --green-soft: rgba(141,255,183,0.10);
+      --green-border: rgba(141,255,183,0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+      line-height: 1.5;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .app {
+      min-height: 100vh;
+    }
+
+    /* ================= NAV ================= */
+
+    .topbar {
+      height: 68px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(7,9,9,0.86);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar-inner {
+      max-width: 1180px;
+      width: calc(100% - 30px);
+      height: 100%;
+      margin: auto;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      font-size: 19px;
+      font-weight: 900;
+      letter-spacing: 3px;
+    }
+
+    .brand-mark {
+      width: 22px;
+      height: 22px;
+      border: 1px solid var(--green);
+      transform: rotate(45deg);
+      position: relative;
+    }
+
+    .brand-mark::after {
+      content: "";
+      width: 7px;
+      height: 7px;
+      background: var(--green);
+
+      position: absolute;
+      top: 6px;
+      left: 6px;
+    }
+
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.025);
+      border-radius: 10px;
+
+      padding: 7px 11px;
+    }
+
+    .avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #1b211e;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .profile-name {
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .profile-status {
+      font-size: 9px;
+      color: var(--green);
+    }
+
+    /* ================= LAYOUT ================= */
+
+    .layout {
+      max-width: 1180px;
+      width: calc(100% - 30px);
+      margin: auto;
+
+      display: grid;
+      grid-template-columns: 210px 1fr;
+
+      gap: 28px;
+    }
+
+    /* ================= SIDEBAR ================= */
+
+    .sidebar {
+      position: sticky;
+      top: 92px;
+      height: calc(100vh - 110px);
+
+      padding-top: 25px;
+    }
+
+    .side-label {
+      color: var(--muted2);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+
+      margin: 0 0 10px 12px;
+    }
+
+    .side-menu {
+      display: grid;
+      gap: 4px;
+    }
+
+    .side-link {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+
+      padding: 11px 12px;
+      border-radius: 9px;
+
+      color: var(--muted);
+      font-size: 12px;
+
+      transition: 0.2s ease;
+    }
+
+    .side-link:hover {
+      background: rgba(255,255,255,0.035);
+      color: var(--text);
+    }
+
+    .side-link.active {
+      color: var(--green);
+      background: var(--green-soft);
+      border: 1px solid var(--green-border);
+    }
+
+    .side-icon {
+      width: 17px;
+      text-align: center;
+      opacity: 0.9;
+    }
+
+    .side-bottom {
+      position: absolute;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+
+      padding: 15px 12px;
+
+      border-top: 1px solid var(--border);
+    }
+
+    .network {
+      color: var(--muted2);
+      font-size: 10px;
+    }
+
+    .network strong {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    /* ================= MAIN ================= */
+
+    main {
+      padding: 35px 0 70px;
+      min-width: 0;
+    }
+
+    .welcome {
+      margin-bottom: 28px;
+    }
+
+    .welcome-small {
+      color: var(--green);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .welcome h1 {
+      font-size: clamp(32px, 5vw, 48px);
+      line-height: 1;
+      letter-spacing: -2px;
+    }
+
+    .welcome p {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    /* ================= BALANCE ================= */
+
+    .balance-card {
+      position: relative;
+      overflow: hidden;
+
+      background:
+        radial-gradient(
+          circle at 85% 15%,
+          rgba(141,255,183,0.10),
+          transparent 35%
+        ),
+        var(--panel);
+
+      border: 1px solid var(--border);
+      border-radius: 16px;
+
+      padding: 30px;
+
+      margin-bottom: 15px;
+    }
+
+    .balance-card::after {
+      content: "";
+      position: absolute;
+
+      width: 180px;
+      height: 180px;
+
+      right: -80px;
+      bottom: -100px;
+
+      border: 1px solid rgba(141,255,183,0.08);
+      border-radius: 50%;
+    }
+
+    .balance-label {
+      color: var(--muted2);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+    }
+
+    .balance {
+      font-size: clamp(45px, 7vw, 70px);
+      line-height: 1;
+      letter-spacing: -4px;
+      font-weight: 900;
+
+      margin: 10px 0 4px;
+    }
+
+    .balance span {
+      color: var(--green);
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .balance-note {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    /* ================= SMALL CARDS ================= */
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-bottom: 35px;
+    }
+
+    .overview-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 21px;
+    }
+
+    .overview-label {
+      color: var(--muted2);
+      font-size: 9px;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .overview-value {
+      font-size: 25px;
+      font-weight: 850;
+      margin-top: 8px;
+    }
+
+    .overview-sub {
+      color: var(--muted);
+      font-size: 10px;
+      margin-top: 2px;
+    }
+
+    /* ================= SECTION ================= */
+
+    .section {
+      margin-top: 38px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+
+      margin-bottom: 15px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      letter-spacing: -0.5px;
+    }
+
+    .section-description {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 3px;
+    }
+
+    .view-all {
+      color: var(--green);
+      font-size: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    /* ================= TASKS ================= */
+
+    .tasks {
+      display: grid;
+      gap: 8px;
+    }
+
+    .task {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+
+      padding: 15px;
+
+      transition: 0.2s ease;
+    }
+
+    .task:hover {
+      border-color: var(--border-strong);
+      background: var(--panel2);
+    }
+
+    .task-icon {
+      width: 38px;
+      height: 38px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      background: var(--green-soft);
+      border: 1px solid var(--green-border);
+      border-radius: 9px;
+
+      color: var(--green);
+      font-size: 14px;
+      font-weight: 900;
+
+      flex-shrink: 0;
+    }
+
+    .task-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .task-name {
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .task-description {
+      color: var(--muted);
+      font-size: 10px;
+      margin-top: 2px;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .task-reward {
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .task-button {
+      border: 1px solid var(--border-strong);
+      background: transparent;
+      color: var(--text);
+
+      padding: 8px 12px;
+      border-radius: 7px;
+
+      font-size: 10px;
+      font-weight: 800;
+
+      cursor: pointer;
+    }
+
+    .task-button:hover {
+      border-color: var(--green-border);
+      color: var(--green);
+    }
+
+    /* ================= STREAK ================= */
+
+    .streak-card {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 20px;
+
+      padding: 20px;
+
+      background:
+        linear-gradient(
+          100deg,
+          rgba(141,255,183,0.06),
+          rgba(255,255,255,0.015)
+        );
+
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    .fire {
+      width: 48px;
+      height: 48px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      background: var(--green-soft);
+      border: 1px solid var(--green-border);
+      border-radius: 12px;
+
+      font-size: 22px;
+    }
+
+    .streak-title {
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .streak-text {
+      color: var(--muted);
+      font-size: 10px;
+      margin-top: 2px;
+    }
+
+    .streak-count {
+      text-align: right;
+    }
+
+    .streak-number {
+      color: var(--green);
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .streak-days {
+      color: var(--muted2);
+      font-size: 9px;
+    }
+
+    /* ================= REFERRAL ================= */
+
+    .referral-card {
+      padding: 25px;
+
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    .referral-title {
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .referral-text {
+      color: var(--muted);
+      font-size: 11px;
+      max-width: 500px;
+      margin-top: 5px;
+    }
+
+    .referral-box {
+      display: flex;
+      margin-top: 18px;
+      gap: 8px;
+    }
+
+    .referral-input {
+      flex: 1;
+      min-width: 0;
+
+      background: #080b09;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+
+      color: var(--muted);
+      padding: 11px;
+
+      font-size: 10px;
+    }
+
+    .copy-button {
+      border: 0;
+      background: var(--green);
+      color: #071009;
+
+      border-radius: 8px;
+      padding: 0 17px;
+
+      font-size: 10px;
+      font-weight: 900;
+
+      cursor: pointer;
+    }
+
+    /* ================= DISCLAIMER ================= */
+
+    .notice {
+      margin-top: 35px;
+
+      padding: 14px 16px;
+
+      border: 1px solid var(--border);
+      border-radius: 10px;
+
+      color: var(--muted2);
+      font-size: 9px;
+      line-height: 1.6;
+    }
+
+    /* ================= LEADERBOARD ================= */
+
+    .leaderboard-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .leaderboard-tab {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.025);
+      color: var(--muted);
+
+      padding: 9px 14px;
+      border-radius: 8px;
+
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .leaderboard-tab:hover {
+      color: var(--text);
+      border-color: var(--green-border);
+    }
+
+    .leaderboard-tab.active {
+      color: var(--green);
+      background: var(--green-soft);
+      border-color: var(--green-border);
+    }
+
+    .rank-badge {
+      display: inline-flex;
+      align-items: center;
+
+      padding: 2px 7px;
+      border-radius: 5px;
+
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .rank-badge-ambassador {
+      color: var(--green);
+      background: var(--green-soft);
+      border-color: var(--green-border);
+    }
+
+    .rank-badge-legend {
+      color: #071009;
+      background: var(--green);
+      border-color: var(--green);
+    }
+
+    /* ================= MOBILE ================= */
+
+    @media (max-width: 850px) {
+
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      main {
+        padding-top: 28px;
+      }
+
+      .overview-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 520px) {
+
+      .topbar-inner,
+      .layout {
+        width: calc(100% - 22px);
+      }
+
+      .profile-name,
+      .profile-status {
+        display: none;
+      }
+
+      .balance-card {
+        padding: 25px;
+      }
+
+      .task {
+        padding: 12px;
+      }
+
+      .task-description {
+        display: none;
+      }
+
+      .task-button {
+        padding: 7px 9px;
+      }
+
+      .streak-card {
+        grid-template-columns: auto 1fr auto;
+        gap: 12px;
+      }
+
+      .referral-box {
+        flex-direction: column;
+      }
+
+      .copy-button {
+        height: 38px;
+      }
+    }
+  
+/* ============================================================
+   VERUN TWO-URL / SINGLE-APP-VIEW NAVIGATION
+   ============================================================ */
+:root {
+  --border-strong: rgba(255,255,255,0.14);
+}
+
+.verun-menu-button {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.025);
+  border-radius: 10px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  cursor:pointer;
+  transition:.2s ease;
+}
+.verun-menu-button:hover {
+  border-color:var(--green-border);
+  background:var(--green-soft);
+}
+.verun-menu-button span {
+  width:17px;
+  height:1.5px;
+  background:var(--text);
+  border-radius:2px;
+  transition:.2s ease;
+}
+.verun-menu-button:hover span { background:var(--green); }
+
+.verun-menu-overlay {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.62);
+  backdrop-filter:blur(3px);
+  z-index:9998;
+  opacity:0;
+  pointer-events:none;
+  transition:.25s ease;
+}
+.verun-menu-overlay.open {
+  opacity:1;
+  pointer-events:auto;
+}
+
+.verun-drawer {
+  position:fixed;
+  top:0;
+  right:0;
+  width:min(350px,88vw);
+  height:100vh;
+  z-index:9999;
+  background:linear-gradient(180deg,#0d1110,#090c0b);
+  border-left:1px solid var(--border);
+  box-shadow:-30px 0 80px rgba(0,0,0,.45);
+  transform:translateX(105%);
+  transition:transform .32s cubic-bezier(.2,.8,.2,1);
+  display:flex;
+  flex-direction:column;
+  padding:22px;
+}
+.verun-drawer.open { transform:translateX(0); }
+
+.verun-drawer-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding-bottom:20px;
+  border-bottom:1px solid var(--border);
+}
+.verun-drawer-kicker,.verun-account-kicker {
+  color:var(--green);
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:1.6px;
+  text-transform:uppercase;
+}
+.verun-drawer-title {
+  font-size:20px;
+  font-weight:900;
+  letter-spacing:-.5px;
+  margin-top:3px;
+}
+.verun-drawer-close {
+  width:38px;height:38px;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,.025);
+  color:var(--text);
+  border-radius:9px;
+  font-size:24px;
+  line-height:1;
+  cursor:pointer;
+}
+.verun-drawer-nav {
+  display:grid;
+  gap:5px;
+  padding:22px 0;
+  flex:1;
+}
+.verun-drawer-link {
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:13px 12px;
+  border:1px solid transparent;
+  border-radius:10px;
+  background:transparent;
+  color:var(--muted);
+  text-decoration:none;
+  font-size:12px;
+  font-weight:750;
+  text-align:left;
+  cursor:pointer;
+}
+.verun-drawer-link:hover,
+.verun-drawer-link.active {
+  color:var(--green);
+  background:var(--green-soft);
+  border-color:var(--green-border);
+}
+.verun-drawer-link span:first-child {
+  width:18px;
+  text-align:center;
+  color:currentColor;
+}
+
+.verun-drawer-account {
+  border-top:1px solid var(--border);
+  padding-top:18px;
+}
+.verun-connected-drawer {
+  margin-top:10px;
+}
+.verun-account-row {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+}
+.verun-profile-photo {
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  object-fit:cover;
+  background:#1b211e;
+  border:1px solid var(--green-border);
+}
+.verun-account-name {
+  font-size:13px;
+  font-weight:800;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.verun-disconnect-button,
+.verun-connect-small {
+  width:100%;
+  margin-top:12px;
+  padding:10px 12px;
+  border-radius:8px;
+  font-size:10px;
+  font-weight:850;
+  cursor:pointer;
+}
+.verun-disconnect-button {
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.025);
+  color:var(--muted);
+}
+.verun-disconnect-button:hover {
+  color:var(--text);
+  border-color:var(--border-strong);
+}
+.verun-connect-small {
+  border:1px solid var(--green-border);
+  background:var(--green-soft);
+  color:var(--green);
+}
+
+.verun-guest-gate {
+  position:fixed;
+  inset:68px 0 0;
+  z-index:40;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:28px 18px;
+  background:
+    radial-gradient(circle at 50% 38%,rgba(141,255,183,.055),transparent 36%),
+    var(--bg);
+}
+.verun-guest-gate.visible { display:flex; }
+.verun-guest-card {
+  width:min(500px,100%);
+  text-align:center;
+  padding:42px 25px;
+  border:1px solid var(--border);
+  border-radius:20px;
+  background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.012));
+  box-shadow:0 30px 90px rgba(0,0,0,.35);
+}
+.verun-guest-mark {
+  width:66px;height:66px;
+  margin:0 auto 20px;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--green-border);
+  border-radius:18px;
+  transform:rotate(45deg);
+  background:rgba(141,255,183,.04);
+}
+.verun-guest-mark span {
+  width:21px;height:21px;
+  background:var(--green);
+  display:block;
+  transform:rotate(-45deg);
+  border-radius:3px;
+  box-shadow:0 0 25px rgba(141,255,183,.25);
+}
+.verun-guest-kicker {
+  color:var(--green);
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:1.8px;
+}
+.verun-guest-card h1 {
+  margin-top:8px;
+  font-size:clamp(28px,6vw,42px);
+  letter-spacing:-1.7px;
+}
+.verun-guest-card p {
+  max-width:390px;
+  margin:10px auto 0;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.7;
+}
+.verun-connect-primary {
+  margin-top:22px;
+  border:1px solid var(--green-border);
+  background:var(--green);
+  color:#071009;
+  padding:12px 22px;
+  min-width:145px;
+  border-radius:9px;
+  font-size:11px;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:0 10px 35px rgba(141,255,183,.12);
+  transition:.2s ease;
+}
+.verun-connect-primary:hover {
+  transform:translateY(-1px);
+  box-shadow:0 14px 42px rgba(141,255,183,.18);
+}
+.verun-auth-app.locked { display:none; }
+
+.verun-app-page,
+.section-card {
+  animation:verunPageIn .34s ease both;
+}
+@keyframes verunPageIn {
+  from { opacity:0; transform:translateY(8px) rotateX(-1deg); }
+  to { opacity:1; transform:translateY(0) rotateX(0); }
+}
+
+.section-card {
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:25px;
+}
+#leaderboardSection h2 {
+  font-size:20px;
+  letter-spacing:-.5px;
+  margin-bottom:15px;
+}
+
+@media (max-width:520px) {
+  .verun-drawer { padding:18px; }
+  .verun-guest-card { padding:35px 20px; }
+}
+
+.home-page .topbar { position:sticky; }
+.home-shell { max-width:1080px; width:calc(100% - 30px); margin:auto; }
+.home-hero {
+  min-height:calc(100vh - 68px);
+  display:grid;
+  place-items:center;
+  text-align:center;
+  padding:70px 0;
+}
+.home-kicker {
+  color:var(--green); font-size:10px; font-weight:900; letter-spacing:2px;
+}
+.home-hero h1 {
+  margin-top:12px;
+  font-size:clamp(48px,9vw,92px);
+  line-height:.9;
+  letter-spacing:-5px;
+}
+.home-hero p {
+  max-width:650px; margin:22px auto 0; color:var(--muted);
+  font-size:14px; line-height:1.8;
+}
+.home-actions { margin-top:28px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+.home-button {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:145px; padding:12px 20px; border-radius:9px;
+  font-size:11px; font-weight:900; cursor:pointer;
+}
+.home-button.primary { background:var(--green); color:#071009; border:1px solid var(--green); }
+.home-button.secondary { background:rgba(255,255,255,.025); color:var(--text); border:1px solid var(--border); }
+.home-grid {
+  display:grid; grid-template-columns:repeat(2,1fr); gap:15px; padding:0 0 70px;
+}
+.home-card {
+  background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:25px;
+}
+.home-card.wide { grid-column:1/-1; }
+.home-label {
+  color:var(--green); font-size:9px; font-weight:900; letter-spacing:1.5px; text-transform:uppercase;
+}
+.home-card h2 { margin-top:6px; font-size:24px; letter-spacing:-.8px; }
+.home-card p { margin-top:9px; color:var(--muted); font-size:12px; line-height:1.75; }
+.home-points { margin-top:15px; display:grid; gap:8px; }
+.home-point {
+  padding:11px 12px; border:1px solid var(--border); border-radius:9px;
+  color:var(--muted); font-size:11px;
+}
+.home-token-note {
+  margin-top:15px; padding:13px; border-radius:10px;
+  background:var(--green-soft); border:1px solid var(--green-border);
+  color:var(--muted); font-size:10px; line-height:1.6;
+}
+@media(max-width:700px) {
+  .home-grid { grid-template-columns:1fr; }
+  .home-card.wide { grid-column:auto; }
+}
+</style>
+</head>
+<body class="home-page">
+<div class="app">
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="../home/" class="brand"><span class="brand-mark"></span>VERUN</a>
+    <a class="home-button secondary" href="../app/">Enter App</a>
+  </div>
+</header>
+
+<div class="home-shell">
+<section class="home-hero">
+  <div>
+    <div class="home-kicker">VERUN PROJECT</div>
+    <h1>Build.<br>Participate.</h1>
+    <p>VERUN is a community participation ecosystem where contribution is tracked through XP, tasks, streaks, referrals and special rewards.</p>
+    <div class="home-actions">
+      <button id="homeConnectX" class="home-button primary" type="button">Connect X</button>
+      <a href="../app/" class="home-button secondary">Open Community App</a>
+    </div>
+  </div>
+</section>
+
+<section class="home-grid">
+  <article class="home-card wide">
+    <div class="home-label">About VERUN</div>
+    <h2>A contribution-first community layer.</h2>
+    <p>The public project page contains the information hub. The separate community app is where connected X users participate and build their contribution history.</p>
+  </article>
+
+  <article class="home-card">
+    <div class="home-label">XP System</div>
+    <h2>Earn through participation.</h2>
+    <p>Community XP is used as a participation tracking mechanism and is tied to activities inside the VERUN app.</p>
+    <div class="home-points">
+      <div class="home-point">X-based community tasks</div>
+      <div class="home-point">Daily login and streak rewards</div>
+      <div class="home-point">Referral XP tracked separately</div>
+    </div>
+  </article>
+
+  <article class="home-card">
+    <div class="home-label">Mystery Boxes</div>
+    <h2>Special rewards.</h2>
+    <p>Mystery Boxes can be earned through participation and may contain XP, VERUN rewards or private token-sale eligibility according to the existing app logic.</p>
+    <div class="home-token-note">Rewards and eligibility remain subject to official VERUN announcements and the rules implemented by the project.</div>
+  </article>
+
+  <article class="home-card">
+    <div class="home-label">Referrals</div>
+    <h2>Grow the network.</h2>
+    <p>Referral activity is tracked independently in the app as <strong>Referral Bonus</strong> XP, reflecting the dedicated referral reward allocation.</p>
+  </article>
+
+  <article class="home-card">
+    <div class="home-label">Leaderboard</div>
+    <h2>Contribution rankings.</h2>
+    <p>The community leaderboard ranks participants by XP, streak and referrals, with referral-based VERUN ranks including Networker, Ambassador and Legend.</p>
+  </article>
+
+  <article class="home-card wide">
+    <div class="home-label">Token & Airdrop</div>
+    <h2>VERUN token information</h2>
+    <p>The existing app identifies VERUN rewards and a private token-sale eligibility reward. Final token distribution, eligibility conditions and airdrop details remain subject to official project announcements.</p>
+    <div class="home-token-note">Airdrop status: Coming Soon.</div>
+  </article>
+</section>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://lhfgozlkeotxyzqowijz.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_z8j_xh_NIZQHkFck_WqsuA_-zaPAMd0";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+function verunAppUrl() {
+  const path = window.location.pathname;
+  const marker = "/home";
+  const base = path.includes(marker) ? path.split(marker)[0] : "";
+  return window.location.origin + base + "/app/";
+}
+
+document.getElementById("homeConnectX").addEventListener("click", async function() {
+  this.disabled = true;
+  this.textContent = "Connecting...";
+  const { error } = await supabaseClient.auth.signInWithOAuth({
+    provider: "x",
+    options: { redirectTo: verunAppUrl() }
+  });
+  if (error) {
+    this.disabled = false;
+    this.textContent = "Connect X";
+    alert("Unable to connect X: " + error.message);
+  }
+});
+</script>
+</body>
+</html>
