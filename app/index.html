@@ -1130,30 +1130,11 @@
 
     <main id="verunAuthenticatedApp" class="verun-auth-app">
 
-  <div class="verun-app-page app-view" id="tasksPage">
-
-    <!-- XP BALANCE -->
-
-    <div class="balance-card">
-
-      <div class="balance-label">
-        Your XP
-      </div>
-
-      <div class="balance">
-        0 <span>XP</span>
-      </div>
-
-      <div class="balance-note">
-        Connect X to start earning.
-      </div>
-
-    </div>
-
       <!-- TASKS -->
 
       <div class="verun-app-page app-view" id="tasksPage">
-<div class="balance-card">
+
+        <div class="balance-card">
 
         <div class="balance-label">
           Your XP
@@ -4326,49 +4307,7 @@ async function loadVerunLeaderboard() {
   loadVerunLeaderboard();
 });
     
-  // ============================================
-// VERUN APP SECTION NAVIGATION
-// ============================================
-
-const verunSections = {
-  tasks: document.getElementById("tasks"),
-  boxes: document.getElementById("mystery-boxes"),
-  referral: document.getElementById("referral"),
-  leaderboard: document.getElementById("leaderboardSection"),
-  airdrop: document.getElementById("airdropSection")
-};
-function showVerunSection(sectionName) {
-
-  Object.values(verunSections).forEach(section => {
-    if (section) {
-      section.style.display = "none";
-    }
-  });
-
-  const selected = verunSections[sectionName];
-
-  if (selected) {
-    selected.style.display = "";
-  }
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
-}
-    // ============================================
-// DEFAULT SECTION: TASKS
-// ============================================
-
-window.addEventListener("DOMContentLoaded", () => {
-  if (typeof showVerunSection === "function") showVerunSection("tasks");
-  const daily = document.getElementById("streak");
-  if (daily) daily.style.display = "";
-});
-
-
-
-// ============================================================
+  // ============================================================
 // VERUN TWO-URL APP NAVIGATION + DRAWER
 // ============================================================
 (function () {
@@ -4376,6 +4315,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const drawer = document.getElementById("verunSideMenu");
   const overlay = document.getElementById("verunMenuOverlay");
   const closeButton = document.getElementById("verunMenuClose");
+
   const guestGate = document.getElementById("verunGuestGate");
   const authApp = document.getElementById("verunAuthenticatedApp");
 
@@ -4388,92 +4328,67 @@ window.addEventListener("DOMContentLoaded", () => {
   const drawerProfileName = document.getElementById("drawerProfileName");
   const drawerProfileAvatar = document.getElementById("drawerProfileAvatar");
 
-  const dailySection = document.getElementById("streak");
+  const drawerLinks = Array.from(
+    document.querySelectorAll(".verun-drawer-link[data-section]")
+  );
 
   const pages = {
-  tasks: document.getElementById("tasksPage"),
-  boxes: document.getElementById("mystery-boxes"),
-  referral: document.getElementById("referral"),
-  leaderboard: document.getElementById("leaderboardSection"),
-  airdrop: document.getElementById("airdropSection")
-};
+    tasks: document.getElementById("tasksPage"),
+    boxes: document.getElementById("mystery-boxes"),
+    referral: document.getElementById("referral"),
+    leaderboard: document.getElementById("leaderboardSection"),
+    airdrop: document.getElementById("airdropSection")
+  };
 
-function showSection(name) {
-
-  Object.entries(pages).forEach(([key, element]) => {
-
-    if (!element) return;
-
-    element.style.display =
-      key === name ? "" : "none";
-
-  });
-
-  // Daily Login belongs ONLY to Tasks
-  const dailyLogin = document.getElementById("streak");
-
-  if (dailyLogin) {
-    dailyLogin.style.display =
-      name === "tasks" ? "" : "none";
+  function openDrawer() {
+    if (!drawer || !overlay) return;
+    drawer.classList.add("open");
+    overlay.classList.add("open");
+    drawer.setAttribute("aria-hidden", "false");
+    menuButton?.setAttribute("aria-expanded", "true");
   }
 
-  drawerLinks.forEach(link => {
-    link.classList.toggle(
-      "active",
-      link.dataset.section === name
-    );
-  });
+  function closeDrawer() {
+    if (!drawer || !overlay) return;
+    drawer.classList.remove("open");
+    overlay.classList.remove("open");
+    drawer.setAttribute("aria-hidden", "true");
+    menuButton?.setAttribute("aria-expanded", "false");
+  }
 
-  closeDrawer();
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
-}
-    if (dailySection) dailySection.style.display = name === "tasks" ? "" : "none";
+  function showSection(name) {
     Object.entries(pages).forEach(([key, element]) => {
       if (!element) return;
       element.style.display = key === name ? "" : "none";
-      if (key === name) {
-        element.classList.remove("verun-page-refresh");
-        void element.offsetWidth;
-        element.classList.add("verun-page-refresh");
-      }
     });
+
+    const dailyLogin = document.getElementById("streak");
+    if (dailyLogin) {
+      dailyLogin.style.display = name === "tasks" ? "" : "none";
+    }
 
     drawerLinks.forEach(link => {
       link.classList.toggle("active", link.dataset.section === name);
     });
 
     history.replaceState(null, "", window.location.pathname);
-    window.scrollTo({ top: 0, behavior: "smooth" });
     closeDrawer();
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
-
-  drawerLinks.forEach(link => {
-    link.addEventListener("click", async () => {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session) {
-        closeDrawer();
-        return;
-      }
-      showSection(link.dataset.section);
-      if (link.dataset.section === "boxes") await loadMysteryBoxes();
-      if (link.dataset.section === "leaderboard") await loadVerunLeaderboard();
-    });
-  });
 
   function getAppRedirectUrl() {
     const path = window.location.pathname;
     const marker = "/app";
-    const base = path.includes(marker) ? path.split(marker)[0] : "";
+    const base = path.includes(marker) ? path.split(marker)[0] : "/VERUN";
     return window.location.origin + base + "/app/";
   }
 
   async function connectX() {
     const buttons = [drawerConnect, guestConnect].filter(Boolean);
-    buttons.forEach(b => { b.disabled = true; b.textContent = "Connecting..."; });
+    buttons.forEach(button => {
+      button.disabled = true;
+      button.textContent = "Connecting...";
+    });
 
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider: "x",
@@ -4481,27 +4396,23 @@ function showSection(name) {
     });
 
     if (error) {
-      buttons.forEach(b => { b.disabled = false; b.textContent = "Connect X"; });
+      buttons.forEach(button => {
+        button.disabled = false;
+        button.textContent = "Connect X";
+      });
       alert("Unable to connect X: " + error.message);
     }
   }
 
-  drawerConnect?.addEventListener("click", connectX);
-  guestConnect?.addEventListener("click", connectX);
+  function setDrawerGuest() {
+    if (guestDrawer) guestDrawer.style.display = "block";
+    if (connectedDrawer) connectedDrawer.style.display = "none";
 
-  disconnectButton?.addEventListener("click", async () => {
-    disconnectButton.disabled = true;
-    disconnectButton.textContent = "Disconnecting...";
-    const { error } = await supabaseClient.auth.signOut();
-    if (error) {
-      disconnectButton.disabled = false;
-      disconnectButton.textContent = "Disconnect";
-      alert("Unable to disconnect X: " + error.message);
-      return;
+    if (drawerConnect) {
+      drawerConnect.disabled = false;
+      drawerConnect.textContent = "Connect X";
     }
-    closeDrawer();
-    await updateAppAccess(null);
-  });
+  }
 
   function setDrawerUser(user, profile) {
     const username =
@@ -4517,41 +4428,30 @@ function showSection(name) {
       user?.user_metadata?.picture ||
       "";
 
-    if (drawerProfileName) drawerProfileName.textContent = "@" + username.replace(/^@/, "");
+    if (drawerProfileName) {
+      drawerProfileName.textContent =
+        "@" + username.replace(/^@/, "");
+    }
 
     if (drawerProfileAvatar) {
       drawerProfileAvatar.src = avatar || "";
       drawerProfileAvatar.style.display = avatar ? "block" : "none";
-      drawerProfileAvatar.alt = "@" + username + " profile picture";
     }
 
     if (guestDrawer) guestDrawer.style.display = "none";
     if (connectedDrawer) connectedDrawer.style.display = "block";
   }
 
-  function setDrawerGuest() {
-    if (guestDrawer) guestDrawer.style.display = "block";
-    if (connectedDrawer) connectedDrawer.style.display = "none";
-    if (drawerConnect) {
-      drawerConnect.disabled = false;
-      drawerConnect.textContent = "Connect X";
-    }
-    if (guestConnect) {
-      guestConnect.disabled = false;
-      guestConnect.textContent = "Connect X";
-    }
-  }
-
-  window.updateAppAccess = async function (session) {
+  async function updateAppAccess(session) {
     if (!session) {
       guestGate?.classList.add("visible");
-      if (authApp) authApp.classList.add("locked");
+      authApp?.classList.add("locked");
       setDrawerGuest();
       return;
     }
 
     guestGate?.classList.remove("visible");
-    if (authApp) authApp.classList.remove("locked");
+    authApp?.classList.remove("locked");
 
     const { data: profile } = await supabaseClient
       .from("profiles")
@@ -4561,7 +4461,65 @@ function showSection(name) {
 
     setDrawerUser(session.user, profile);
     showSection("tasks");
-  };
+
+    // Keep the existing working loaders; only call them when their
+    // functions are present so nothing breaks if a future version changes.
+    if (typeof loadTasks === "function") await loadTasks();
+    if (typeof loadDailyLoginStatus === "function") await loadDailyLoginStatus();
+    if (typeof loadMysteryBoxes === "function") await loadMysteryBoxes();
+    if (typeof loadVerunLeaderboard === "function") await loadVerunLeaderboard();
+  }
+
+  menuButton?.addEventListener("click", openDrawer);
+  closeButton?.addEventListener("click", closeDrawer);
+  overlay?.addEventListener("click", closeDrawer);
+
+  drawerConnect?.addEventListener("click", connectX);
+  guestConnect?.addEventListener("click", connectX);
+
+  drawerLinks.forEach(link => {
+    link.addEventListener("click", async event => {
+      event.preventDefault();
+
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        closeDrawer();
+        return;
+      }
+
+      const section = link.dataset.section;
+      showSection(section);
+
+      if (section === "boxes" && typeof loadMysteryBoxes === "function") {
+        await loadMysteryBoxes();
+      }
+
+      if (section === "referral" && typeof loadReferralDashboard === "function") {
+        await loadReferralDashboard();
+      }
+
+      if (section === "leaderboard" && typeof loadVerunLeaderboard === "function") {
+        await loadVerunLeaderboard();
+      }
+    });
+  });
+
+  disconnectButton?.addEventListener("click", async () => {
+    disconnectButton.disabled = true;
+    disconnectButton.textContent = "Disconnecting...";
+
+    const { error } = await supabaseClient.auth.signOut();
+
+    if (error) {
+      disconnectButton.disabled = false;
+      disconnectButton.textContent = "Disconnect";
+      alert("Unable to disconnect X: " + error.message);
+      return;
+    }
+
+    closeDrawer();
+    await updateAppAccess(null);
+  });
 
   supabaseClient.auth.getSession().then(async ({ data: { session } }) => {
     await updateAppAccess(session);
@@ -4569,30 +4527,25 @@ function showSection(name) {
 
   supabaseClient.auth.onAuthStateChange(async (event, session) => {
     if (session) {
-      // Existing VERUN auth handler performs profile creation/loading.
       setTimeout(() => updateAppAccess(session), 350);
     } else {
       await updateAppAccess(null);
     }
   });
+
+  // Make the navigation function available to the rest of VERUN if needed.
+  window.showVerunSection = showSection;
 })();
 
-
-// Hard fallback for the drawer: works even if another VERUN handler throws.
-document.addEventListener('click', function (event) {
-  const button = event.target.closest('#verunMenuButton');
-  if (!button) return;
-  const drawer = document.getElementById('verunSideMenu');
-  const overlay = document.getElementById('verunMenuOverlay');
-  if (!drawer || !overlay) return;
-  drawer.classList.add('open');
-  overlay.classList.add('open');
-  drawer.setAttribute('aria-hidden', 'false');
-  button.setAttribute('aria-expanded', 'true');
-}, true);
 </script>
 </body>
 </html>
+
+
+
+
+
+
 
 
 
