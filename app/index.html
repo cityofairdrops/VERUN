@@ -4391,35 +4391,46 @@ window.addEventListener("DOMContentLoaded", () => {
   const dailySection = document.getElementById("streak");
 
   const pages = {
-    tasks: document.getElementById("tasksPage"),
-    boxes: document.getElementById("mystery-boxes"),
-    referral: document.getElementById("referral"),
-    leaderboard: document.getElementById("leaderboardSection"),
-    airdrop: document.getElementById("airdropSection")
-  };
+  tasks: document.getElementById("tasksPage"),
+  boxes: document.getElementById("mystery-boxes"),
+  referral: document.getElementById("referral"),
+  leaderboard: document.getElementById("leaderboardSection"),
+  airdrop: document.getElementById("airdropSection")
+};
 
-  const drawerLinks = Array.from(document.querySelectorAll(".verun-drawer-link[data-section]"));
+function showSection(name) {
 
-  function openDrawer() {
-    if (!drawer) return;
-    drawer.classList.add("open");
-    overlay?.classList.add("open");
-    drawer.setAttribute("aria-hidden", "false");
-    menuButton?.setAttribute("aria-expanded", "true");
+  Object.entries(pages).forEach(([key, element]) => {
+
+    if (!element) return;
+
+    element.style.display =
+      key === name ? "" : "none";
+
+  });
+
+  // Daily Login belongs ONLY to Tasks
+  const dailyLogin = document.getElementById("streak");
+
+  if (dailyLogin) {
+    dailyLogin.style.display =
+      name === "tasks" ? "" : "none";
   }
 
-  function closeDrawer() {
-    drawer?.classList.remove("open");
-    overlay?.classList.remove("open");
-    drawer?.setAttribute("aria-hidden", "true");
-    menuButton?.setAttribute("aria-expanded", "false");
-  }
+  drawerLinks.forEach(link => {
+    link.classList.toggle(
+      "active",
+      link.dataset.section === name
+    );
+  });
 
-  menuButton?.addEventListener("click", openDrawer);
-  closeButton?.addEventListener("click", closeDrawer);
-  overlay?.addEventListener("click", closeDrawer);
+  closeDrawer();
 
-  function showSection(name) {
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
     if (dailySection) dailySection.style.display = name === "tasks" ? "" : "none";
     Object.entries(pages).forEach(([key, element]) => {
       if (!element) return;
