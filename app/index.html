@@ -626,6 +626,70 @@
       line-height: 1.6;
     }
 
+    /* ================= LEADERBOARD ================= */
+
+    .leaderboard-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .leaderboard-tab {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.025);
+      color: var(--muted);
+
+      padding: 9px 14px;
+      border-radius: 8px;
+
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .leaderboard-tab:hover {
+      color: var(--text);
+      border-color: var(--green-border);
+    }
+
+    .leaderboard-tab.active {
+      color: var(--green);
+      background: var(--green-soft);
+      border-color: var(--green-border);
+    }
+
+    .rank-badge {
+      display: inline-flex;
+      align-items: center;
+
+      padding: 2px 7px;
+      border-radius: 5px;
+
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .rank-badge-ambassador {
+      color: var(--green);
+      background: var(--green-soft);
+      border-color: var(--green-border);
+    }
+
+    .rank-badge-legend {
+      color: #071009;
+      background: var(--green);
+      border-color: var(--green);
+    }
+
     /* ================= MOBILE ================= */
 
     @media (max-width: 850px) {
@@ -696,99 +760,82 @@
 <div class="app">
 
 
-  <!-- TOP NAVIGATION -->
+<!-- TOP NAVIGATION -->
 
-  <header class="topbar">
+<header class="topbar">
 
-    <div class="topbar-inner">
+  <div class="topbar-inner">
 
-      <a href="../" class="brand">
+    <a href="../" class="brand">
+      <span class="brand-mark"></span>
+      VERUN
+    </a>
 
-        <span class="brand-mark"></span>
+    <div class="profile">
 
-        VERUN
-
-      </a>
-
-
-      <div class="profile">
-
-        <div class="avatar">
-          ?
-        </div>
-
-        <div>
-
-          <div class="profile">
-
-  <div class="avatar" id="profileAvatar">
-    ?
-  </div>
-
-  <div>
-    <div class="profile-name" id="profileName">
-      Not connected
-    </div>
-
-    <div class="profile-status" id="profileStatus">
-      Connect X to begin
-    </div>
-  </div>
-
-  <button
-    id="connectXButton"
-    type="button"
-    style="
-      margin-left:8px;
-      border:1px solid rgba(141,255,183,0.25);
-      background:rgba(141,255,183,0.10);
-      color:#8dffb7;
-      border-radius:7px;
-      padding:7px 10px;
-      font-size:10px;
-      font-weight:800;
-      cursor:pointer;
-    "
-  >
-    Connect X
-  </button>
-
-          </div>
-            Not connected
-          </div>
-
-          <div class="profile-status">
-            Connect X to begin
-          </div>
-
-        </div>
-
+      <div class="avatar" id="profileAvatar">
+        ?
       </div>
 
+      <div>
+        <div class="profile-name" id="profileName">
+          Not connected
+        </div>
+
+        <div class="profile-status" id="profileStatus">
+          Connect X to begin
+        </div>
+      </div>
+
+      <button
+        id="connectXButton"
+        type="button"
+        style="
+          margin-left:8px;
+          border:1px solid rgba(141,255,183,0.25);
+          background:rgba(141,255,183,0.10);
+          color:#8dffb7;
+          border-radius:7px;
+          padding:7px 10px;
+          font-size:10px;
+          font-weight:800;
+          cursor:pointer;
+        "
+      >
+        Connect X
+      </button>
+
     </div>
-<!-- VERUN MENU BUTTON -->
-<button
-  id="verunMenuButton"
-  type="button"
-  aria-label="Open menu"
-  style="
-    margin-left:auto;
-    width:42px;
-    height:42px;
-    border-radius:10px;
-    border:1px solid rgba(255,255,255,0.12);
-    background:rgba(255,255,255,0.05);
-    color:#fff;
-    font-size:22px;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  "
->
-  ☰
-</button>
-  </header>
+
+    <!-- VERUN MENU BUTTON -->
+
+    <button
+      id="verunMenuButton"
+      type="button"
+      aria-label="Open menu"
+      style="
+        margin-left:auto;
+        width:42px;
+        height:42px;
+        border-radius:10px;
+        border:1px solid rgba(255,255,255,0.12);
+        background:rgba(255,255,255,0.05);
+        color:#fff;
+        font-size:22px;
+        cursor:pointer;
+      position:relative;
+z-index:10000;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+      "
+    >
+      ☰
+    </button>
+
+  </div>
+
+</header>
 
 
   <!-- APP LAYOUT -->
@@ -1111,7 +1158,7 @@
   <div class="streak-card">
 
     <div class="fire">
-      🔥
+      ✦
     </div>
 
     <div>
@@ -1318,10 +1365,12 @@
               rgba(141,255,183,0.03)
             );
           border:1px solid var(--green-border);
-          font-size:58px;
+          font-size:40px;
+          font-weight:900;
+          color:var(--green);
         "
       >
-        🎁
+        V
       </div>
 
 
@@ -1505,7 +1554,7 @@
 
         <div class="milestone">
           <span>100 Referrals</span>
-          <span>🎁 Mystery Box</span>
+          <span>Mystery Box</span>
         </div>
 
       </div>
@@ -1538,12 +1587,14 @@
 
       <div class="notice">
 
-        VERUN is currently in its community-building phase.
-        XP displayed in this interface is a participation
-        tracking mechanism and does not represent a guaranteed
-        monetary value. Final token distribution and eligibility
-        conditions may be subject to the project's official
-        announcements.
+        VERUN is a 100% community-bootstrapped initiative with no
+        private presales, venture capital allocations, or paid
+        influencers. We are currently in our community-building
+        phase. XP displayed in this interface is a participation
+        tracking mechanism and will determine your allocation
+        during our fair launch. Final token distribution and
+        eligibility conditions will be subject to the project's
+        official announcements.
 
       </div>
 
@@ -1605,7 +1656,7 @@
   <nav style="display:flex;flex-direction:column;gap:8px;">
 
     <button class="verun-nav-button" data-section="home">
-      🏠 Home
+      Home
     </button>
 
     <button class="verun-nav-button" data-section="tasks">
@@ -1613,7 +1664,7 @@
     </button>
 
     <button class="verun-nav-button" data-section="boxes">
-      🎁 Mystery Boxes
+      Mystery Boxes
     </button>
 
     <button class="verun-nav-button" data-section="referral">
@@ -1621,7 +1672,7 @@
     </button>
 
     <button class="verun-nav-button" data-section="leaderboard">
-      🏆 Leaderboard
+      Leaderboard
     </button>
 
     <button class="verun-nav-button" data-section="airdrop">
@@ -1634,21 +1685,23 @@
   </div>
 
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
   const SUPABASE_URL = "https://lhfgozlkeotxyzqowijz.supabase.co";
 
-  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_z8j_xh_NIZQHkFck_WqsuA_-zaPAMd0";
+  const SUPABASE_PUBLISHABLE_KEY =
+    "sb_publishable_z8j_xh_NIZQHkFck_WqsuA_-zaPAMd0";
 
   const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_PUBLISHABLE_KEY
-);
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+  );
 
-// ============================================
-// VERUN REFERRAL TRACKING
-// ============================================
+  // ============================================
+  // VERUN REFERRAL TRACKING
+  // ============================================
 
 function getReferralCode() {
   const params = new URLSearchParams(window.location.search);
@@ -1918,8 +1971,8 @@ async function processReferral() {
 
   const title =
     bonusType === "early_user"
-      ? "🎉 Congratulations!"
-      : "🎁 Welcome to Verun!";
+      ? "Congratulations!"
+      : "Welcome to Verun!";
 
   const heading =
     bonusType === "early_user"
@@ -1955,10 +2008,6 @@ async function processReferral() {
       padding:28px 22px;
       text-align:center;
     ">
-
-      <div style="font-size:42px;margin-bottom:10px;">
-        ${bonusType === "early_user" ? "🎉" : "🎁"}
-      </div>
 
       <h2>${title}</h2>
 
@@ -2026,11 +2075,11 @@ async function processReferral() {
         );
 
       if (error) {
-  console.error("Bonus claim error:", error);
+        console.error("Bonus claim error:", error);
 
-  alert("Bonus could not be claimed:\n\n" + error.message);
+        alert("Bonus could not be claimed.");
 
-  button.disabled = false;
+        button.disabled = false;
         button.textContent = "Claim Bonus";
         return;
       }
@@ -2066,10 +2115,10 @@ async function processReferral() {
         );
 
       if (error) {
-  console.error("Bonus skip error:", error);
-  alert("Bonus could not be skipped:\n\n" + error.message);
-  return;
-}
+        console.error("Bonus skip error:", error);
+        alert("Bonus could not be skipped.");
+        return;
+      }
 
       popup.remove();
 
@@ -2111,7 +2160,7 @@ if (copyReferralButton) {
         );
 
         copyReferralButton.textContent =
-          "Copied ✓";
+          "Copied";
 
         setTimeout(() => {
           copyReferralButton.textContent =
@@ -2130,7 +2179,7 @@ if (copyReferralButton) {
         document.execCommand("copy");
 
         copyReferralButton.textContent =
-          "Copied ✓";
+          "Copied";
 
         setTimeout(() => {
           copyReferralButton.textContent =
@@ -2265,7 +2314,7 @@ tasks.sort((a, b) => {
           disabled
           style="opacity: 0.7; cursor: not-allowed;"
         >
-          ⏳ Verification in progress...
+          Verifying (up to 24h)...
         </button>
       `;
 
@@ -2307,7 +2356,7 @@ tasks.sort((a, b) => {
       // Admin rejected the task
       buttonHtml = `
         <div class="task-verification-rejected">
-          ❌ Verification failed
+          Verification failed
         </div>
 
         <a
@@ -2375,14 +2424,14 @@ tasks.sort((a, b) => {
     console.error(error);
     alert("Unable to claim XP: " + error.message);
     button.disabled = false;
-    button.textContent = "🎁 Claim XP";
+    button.textContent = "Claim XP";
     return;
   }
 
   if (!data || !data.success) {
     alert(data?.message || "Task cannot be claimed.");
     button.disabled = false;
-    button.textContent = "🎁 Claim XP";
+    button.textContent = "Claim XP";
     return;
   }
 
@@ -2397,7 +2446,7 @@ async function startTaskVerification(event, button, taskId) {
   event.preventDefault();
 
   const originalText = button.textContent;
-  button.textContent = "⏳ Verification in progress...";
+  button.textContent = "Verification in progress...";
   button.style.pointerEvents = "none";
 
   try {
@@ -2453,7 +2502,7 @@ function getTaskIcon(type) {
   if (type === "repost") return "↗";
   if (type === "like") return "♡";
   if (type === "campaign") return "#";
-  if (type === "comment") return "💬";
+  if (type === "comment") return "»";
   if (type === "profile_badge") return "✌️";
   return "✓";
 }
@@ -2463,6 +2512,7 @@ function escapeHtml(value) {
   div.textContent = value || "";
   return div.innerHTML;
 }
+    
   connectXButton.addEventListener("click", async () => {
 
     connectXButton.disabled = true;
@@ -2567,11 +2617,11 @@ function updateDailyRewardPreview(streak) {
     `Day ${nextDay} — +${baseXP + weeklyBonus} XP`;
 
   if (weeklyBonus) {
-    text += " 🎉 +100 weekly bonus";
+    text += " +100 weekly bonus";
   }
 
   if (mysteryBox) {
-    text += " 🎁 Mystery Box";
+    text += " Mystery Box";
   }
 
   dailyRewardText.textContent = text;
@@ -2711,11 +2761,11 @@ console.log("COUNTDOWN STARTED");
   `+${todayLogin.xp_awarded + todayLogin.weekly_bonus} XP earned`;
 
 if (todayLogin.weekly_bonus > 0) {
-      text += " 🎉 +100 bonus";
+      text += " +100 bonus";
     }
 
     if (todayLogin.mystery_box) {
-      text += " 🎁 Mystery Box unlocked";
+      text += " Mystery Box unlocked";
     }
 
     if (dailyRewardText) {
@@ -2830,12 +2880,12 @@ async function claimDailyLogin() {
     `Day ${data.day_number} complete! +${data.xp_awarded} XP`;
 
   if (data.bonus_xp > 0) {
-    message += " 🎉 +100 bonus";
+    message += " +100 bonus";
   }
 
   if (data.mystery_box) {
     message +=
-      " 🎁 Mystery Box unlocked!";
+      " Mystery Box unlocked!";
   }
 
 
@@ -2922,7 +2972,7 @@ async function restoreStreak() {
 
 
   showDailyMessage(
-    "🔥 Streak restored for 1,000 XP!"
+    "Streak restored for 1,000 XP!"
   );
 
 
@@ -3687,7 +3737,7 @@ function saveMysteryBoxForLater(
   );
 
   button.textContent =
-    "Saved ✓";
+    "Saved";
 
   button.disabled =
     true;
@@ -3965,7 +4015,144 @@ if (mysteryBoxModal) {
 // Initial load
 
 loadMysteryBoxes();
-   async function loadVerunLeaderboard() {
+
+// ============================================
+// VERUN RANK SYSTEM
+// ============================================
+//
+// Ranks are based on referral milestones:
+//   Networker  : 0 - 24 referrals
+//   Ambassador : 25 - 99 referrals
+//   Legend     : 100+ referrals
+
+function getVerunRank(referralCount) {
+
+  const count = Number(referralCount || 0);
+
+  if (count >= 100) {
+    return { label: "Legend", className: "rank-badge-legend" };
+  }
+
+  if (count >= 25) {
+    return { label: "Ambassador", className: "rank-badge-ambassador" };
+  }
+
+  return { label: "Networker", className: "rank-badge-networker" };
+}
+
+// ============================================
+// VERUN LEADERBOARD (WITH TABS)
+// ============================================
+
+let verunLeaderboardData = [];
+let verunLeaderboardSort = "xp";
+
+function renderVerunLeaderboardTabs() {
+
+  const tabsContainer =
+    document.getElementById("leaderboardTabs");
+
+  if (!tabsContainer) return;
+
+  tabsContainer.querySelectorAll(".leaderboard-tab").forEach(tab => {
+    tab.classList.toggle(
+      "active",
+      tab.dataset.sort === verunLeaderboardSort
+    );
+  });
+
+}
+
+function renderVerunLeaderboardList() {
+
+  const list = document.getElementById("leaderboardList");
+
+  if (!list) return;
+
+  if (!verunLeaderboardData || verunLeaderboardData.length === 0) {
+    list.innerHTML = `
+      <div style="text-align:center;padding:20px;">
+        No leaderboard users yet.
+      </div>
+    `;
+    return;
+  }
+
+  const sortKeyMap = {
+    xp: "xp",
+    streak: "current_streak",
+    referrals: "referral_count"
+  };
+
+  const sortKey =
+    sortKeyMap[verunLeaderboardSort] || "xp";
+
+  const sorted =
+    [...verunLeaderboardData].sort(
+      (a, b) => Number(b[sortKey] || 0) - Number(a[sortKey] || 0)
+    );
+
+  list.innerHTML = sorted.map((user, index) => {
+
+    const rank = getVerunRank(user.referral_count);
+
+    return `
+      <div class="leaderboard-row"
+           style="
+             display:flex;
+             align-items:center;
+             justify-content:space-between;
+             padding:12px;
+             margin-bottom:8px;
+             border-radius:10px;
+             background:rgba(255,255,255,0.05);
+           ">
+
+        <div style="display:flex;align-items:center;gap:12px;">
+          <strong style="min-width:35px;">
+            #${index + 1}
+          </strong>
+
+          <div>
+            <div style="font-weight:600;display:flex;align-items:center;gap:6px;">
+              @${escapeHtml(user.x_username)}
+              <span class="rank-badge ${rank.className}">${rank.label}</span>
+            </div>
+
+            <div style="font-size:12px;opacity:0.7;">
+              ${user.current_streak || 0} day streak
+              · ${user.referral_count || 0} referrals
+            </div>
+          </div>
+        </div>
+
+        <strong>
+          ${Number(user.xp || 0).toLocaleString()} XP
+        </strong>
+
+      </div>
+    `;
+  }).join("");
+
+}
+
+function setVerunLeaderboardSort(sortKey) {
+  verunLeaderboardSort = sortKey;
+  renderVerunLeaderboardTabs();
+  renderVerunLeaderboardList();
+}
+
+document.addEventListener("click", event => {
+
+  const tab = event.target.closest(".leaderboard-tab");
+
+  if (!tab) return;
+
+  setVerunLeaderboardSort(tab.dataset.sort);
+
+});
+
+async function loadVerunLeaderboard() {
   const loading = document.getElementById("leaderboardLoading");
   const error = document.getElementById("leaderboardError");
   const list = document.getElementById("leaderboardList");
@@ -3989,50 +4176,10 @@ loadMysteryBoxes();
 
     loading.style.display = "none";
 
-    if (!data || data.length === 0) {
-      list.innerHTML = `
-        <div style="text-align:center;padding:20px;">
-          No leaderboard users yet.
-        </div>
-      `;
-      return;
-    }
+    verunLeaderboardData = data || [];
 
-    list.innerHTML = data.map(user => `
-      <div class="leaderboard-row"
-           style="
-             display:flex;
-             align-items:center;
-             justify-content:space-between;
-             padding:12px;
-             margin-bottom:8px;
-             border-radius:10px;
-             background:rgba(255,255,255,0.05);
-           ">
-
-        <div style="display:flex;align-items:center;gap:12px;">
-          <strong style="min-width:35px;">
-            #${user.rank}
-          </strong>
-
-          <div>
-            <div style="font-weight:600;">
-              @${escapeHtml(user.x_username)}
-            </div>
-
-            <div style="font-size:12px;opacity:0.7;">
-              🔥 ${user.current_streak || 0} day streak
-              · 👥 ${user.referral_count || 0} referrals
-            </div>
-          </div>
-        </div>
-
-        <strong>
-          ⭐ ${Number(user.xp || 0).toLocaleString()} XP
-        </strong>
-
-      </div>
-    `).join("");
+    renderVerunLeaderboardTabs();
+    renderVerunLeaderboardList();
 
 } catch (err) {
   console.error("Leaderboard error:", err);
@@ -4045,42 +4192,186 @@ loadMysteryBoxes();
     window.addEventListener("DOMContentLoaded", () => {
   loadVerunLeaderboard();
 });
-    // ============================================
-// VERUN SIDE MENU
+    
+  // ============================================
+// VERUN APP SECTION NAVIGATION
 // ============================================
 
-const verunMenuButton =
-  document.getElementById("verunMenuButton");
-
-const verunMenuClose =
-  document.getElementById("verunMenuClose");
-
-const verunSideMenu =
-  document.getElementById("verunSideMenu");
-
-const verunMenuOverlay =
-  document.getElementById("verunMenuOverlay");
-
-function openVerunMenu() {
-  if (!verunSideMenu) return;
-
-  verunSideMenu.style.right = "0";
-  verunMenuOverlay.style.display = "block";
-}
-
+const verunSections = {
+  tasks: document.getElementById("tasks"),
+  boxes: document.getElementById("mystery-boxes"),
+  referral: document.getElementById("referral"),
+  leaderboard: document.getElementById("leaderboardSection"),
+  airdrop: document.getElementById("airdropSection")
+};
 function closeVerunMenu() {
-  if (!verunSideMenu) return;
+  const menu = document.getElementById("verunSideMenu");
+  const overlay = document.getElementById("verunMenuOverlay");
 
-  verunSideMenu.style.right = "-320px";
-  verunMenuOverlay.style.display = "none";
+  if (menu) {
+    menu.style.right = "-320px";
+  }
+
+  if (overlay) {
+    overlay.style.display = "none";
+  }
+}
+function showVerunSection(sectionName) {
+
+  Object.values(verunSections).forEach(section => {
+    if (section) {
+      section.style.display = "none";
+    }
+  });
+
+  const selected = verunSections[sectionName];
+
+  if (selected) {
+    selected.style.display = "";
+  }
+
+  closeVerunMenu();
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
 }
 
-verunMenuButton?.addEventListener("click", openVerunMenu);
+document.querySelectorAll(".verun-nav-button").forEach(button => {
 
-verunMenuClose?.addEventListener("click", closeVerunMenu);
+  button.addEventListener("click", () => {
 
-verunMenuOverlay?.addEventListener("click", closeVerunMenu);
-  </script>
+    const sectionName = button.dataset.section;
+
+    if (sectionName === "home") {
+      window.location.href = "../";
+      return;
+    }
+
+    showVerunSection(sectionName);
+
+  });
+
+});
+    // ============================================
+// DEFAULT SECTION: TASKS
+// ============================================
+
+window.addEventListener("DOMContentLoaded", () => {
+  showVerunSection("tasks");
+});
+
+// (menu button open/close is wired up once, below, in the
+// "VERUN SIDE MENU - FINAL" script — see there for the single
+// source of truth for opening/closing this menu)
+</script>
+
+<!-- ============================================
+     VERUN SIDE MENU - FINAL
+     ============================================ -->
+
+<!-- TEMPORARY DEBUG PANEL — remove once the menu bug is fixed -->
+<div id="verunDebugPanel" style="
+  position:fixed;
+  top:70px;
+  left:8px;
+  right:8px;
+  max-height:35vh;
+  overflow-y:auto;
+  background:rgba(0,0,0,0.92);
+  color:#8dffb7;
+  font-size:11px;
+  font-family:monospace;
+  padding:10px;
+  border:1px solid #8dffb7;
+  border-radius:8px;
+  z-index:2147483647;
+  white-space:pre-wrap;
+"></div>
+
+<script>
+(function () {
+
+  var debugPanel = document.getElementById("verunDebugPanel");
+
+  function verunDebugLog(msg) {
+    if (debugPanel) {
+      debugPanel.textContent += msg + "\n";
+    }
+  }
+
+  verunDebugLog("Debug script loaded.");
+
+  var menuButtonEl = document.getElementById("verunMenuButton");
+  verunDebugLog("verunMenuButton found in DOM: " + !!menuButtonEl);
+
+  function openMenu() {
+    verunDebugLog("openMenu() called");
+    const menu = document.getElementById("verunSideMenu");
+    const overlay = document.getElementById("verunMenuOverlay");
+
+    if (menu) {
+      menu.style.right = "0px";
+    }
+
+    if (overlay) {
+      overlay.style.display = "block";
+    }
+  }
+
+  function closeMenu() {
+    const menu = document.getElementById("verunSideMenu");
+    const overlay = document.getElementById("verunMenuOverlay");
+
+    if (menu) {
+      menu.style.right = "-320px";
+    }
+
+    if (overlay) {
+      overlay.style.display = "none";
+    }
+  }
+
+  // Make this available to the existing section navigation
+  window.closeVerunMenu = closeMenu;
+
+  // Use document-level click handling so nothing else can break the button
+  document.addEventListener("click", function (event) {
+
+    verunDebugLog("Click on: " + event.target.tagName + (event.target.id ? ("#" + event.target.id) : "") + (event.target.className ? ("." + event.target.className) : ""));
+
+    const menuButton = event.target.closest("#verunMenuButton");
+
+    if (menuButton) {
+      verunDebugLog("Matched #verunMenuButton via closest()");
+      event.preventDefault();
+      event.stopPropagation();
+      openMenu();
+      return;
+    }
+
+    const closeButton = event.target.closest("#verunMenuClose");
+
+    if (closeButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeMenu();
+      return;
+    }
+
+    const overlay = event.target.closest("#verunMenuOverlay");
+
+    if (overlay) {
+      closeMenu();
+      return;
+    }
+
+  }, true);
+
+})();
+  
+</script>
   <!-- AIRDROP SECTION -->
 <section
   id="airdropSection"
@@ -4100,7 +4391,13 @@ verunMenuOverlay?.addEventListener("click", closeVerunMenu);
   </div>
 </section>
   <section id="leaderboardSection" class="card app-section" style="margin-top:20px;">
-  <h2>🏆 Verun Leaderboard</h2>
+  <h2>Verun Leaderboard</h2>
+
+  <div id="leaderboardTabs" class="leaderboard-tabs">
+    <button type="button" class="leaderboard-tab active" data-sort="xp">Top XP</button>
+    <button type="button" class="leaderboard-tab" data-sort="streak">Top Grinders</button>
+    <button type="button" class="leaderboard-tab" data-sort="referrals">Top Networkers</button>
+  </div>
 
   <div id="leaderboardLoading" style="text-align:center;padding:15px;">
     Loading leaderboard...
@@ -4112,5 +4409,7 @@ verunMenuOverlay?.addEventListener("click", closeVerunMenu);
 
   <div id="leaderboardList"></div>
 </section>
+
 </body>
 </html>
+
