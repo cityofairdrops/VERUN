@@ -4388,24 +4388,6 @@ async function loadVerunLeaderboard() {
   closeDrawer();
   window.scrollTo({ top: 0, behavior: "smooth" });
   }
-    Object.entries(pages).forEach(([key, element]) => {
-      if (!element) return;
-      element.style.display = key === name ? "" : "none";
-    });
-
-    const dailyLogin = document.getElementById("streak");
-    if (dailyLogin) {
-      dailyLogin.style.display = name === "tasks" ? "" : "none";
-    }
-
-    drawerLinks.forEach(link => {
-      link.classList.toggle("active", link.dataset.section === name);
-    });
-
-    history.replaceState(null, "", window.location.pathname);
-    closeDrawer();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
 
   function getAppRedirectUrl() {
     const path = window.location.pathname;
@@ -4577,14 +4559,4 @@ showSection(
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
 
