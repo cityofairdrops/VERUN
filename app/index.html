@@ -1140,7 +1140,7 @@
           Your XP
         </div>
             <div class="balance">
-  <span id="xpBalance">0</span> <span>XP</span>
+  <span id="xpBalance" style="visibility:hidden;">0</span> <span>XP</span>
 </div>
 
 <div class="balance-note">
@@ -1172,7 +1172,7 @@
         </div>
 
 
-        <div class="tasks" id="tasksContainer">
+        <div class="tasks" id="tasksContainer" style="visibility:hidden;">
 
 
           <div class="task">
@@ -1916,6 +1916,8 @@ async function processReferral() {
     if (userError || !user) {
       connectXButton.disabled = false;
       connectXButton.textContent = "Connect X";
+      const guestXpBalance = document.getElementById("xpBalance");
+      if (guestXpBalance) guestXpBalance.style.visibility = "visible";
       return;
     }
 
@@ -2317,6 +2319,9 @@ if (copyReferralButton) {
 
 async function loadTasks() {
 
+  const container =
+    document.getElementById("tasksContainer");
+
   const { data: tasks, error } =
     await supabaseClient
       .from("tasks")
@@ -2326,15 +2331,11 @@ async function loadTasks() {
 
   if (error) {
     console.error("Tasks loading error:", error);
+    if (container) container.style.visibility = "visible";
     return;
   }
 
-  const container =
-    document.getElementById("tasksContainer");
-
   if (!container) return;
-
-  container.innerHTML = "";
 
   // Get the current logged-in user
   const {
@@ -2391,6 +2392,9 @@ tasks.sort((a, b) => {
 });
     }
   }
+
+  const taskFragment =
+    document.createDocumentFragment();
 
   tasks.forEach(task => {
 
@@ -2528,8 +2532,12 @@ tasks.sort((a, b) => {
       ${buttonHtml}
     `;
 
-    container.appendChild(taskElement);
+    taskFragment.appendChild(taskElement);
   });
+
+  container.innerHTML = "";
+  container.appendChild(taskFragment);
+  container.style.visibility = "visible";
 }
     async function claimTaskXP(button, taskId) {
 
@@ -2672,6 +2680,12 @@ function escapeHtml(value) {
         "VERUN AUTH EVENT:",
         event
       );
+
+      // Skip background/no-op events (e.g. silent token refresh)
+      // that don't actually change what should be on screen.
+      if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+        return;
+      }
 
       if (session) {
 
@@ -4385,7 +4399,6 @@ async function loadVerunLeaderboard() {
   });
 
   history.replaceState(null, "", window.location.pathname);
-  closeDrawer();
   window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -4508,6 +4521,7 @@ showSection(
 
       const section = link.dataset.section;
       showSection(section);
+      closeDrawer();
 
       if (section === "boxes" && typeof loadMysteryBoxes === "function") {
         await loadMysteryBoxes();
@@ -4545,6 +4559,14 @@ showSection(
   });
 
   supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    // Skip background/no-op events (e.g. silent token refresh) and the
+    // initial session event, which is already handled by getSession()
+    // above — reacting to those too caused repeated re-renders and the
+    // side menu closing itself right after opening.
+    if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+      return;
+    }
+
     if (session) {
       setTimeout(() => updateAppAccess(session), 350);
     } else {
@@ -4559,4 +4581,16 @@ showSection(
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
 
