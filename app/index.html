@@ -1812,6 +1812,62 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 
+  // ============================================
+  // VERUN EARLY SECTION RESTORE
+  // Runs immediately (before Supabase/auth finish
+  // loading) so the correct section is shown from
+  // the very first paint — no flash of the wrong
+  // section while reloading, and a fresh visit
+  // (e.g. clicking "Enter App" from Home) always
+  // starts on Tasks instead of wherever you left off.
+  // ============================================
+  (function () {
+    function getNavigationType() {
+      try {
+        var entries = performance.getEntriesByType("navigation");
+        if (entries && entries[0] && entries[0].type) {
+          return entries[0].type;
+        }
+      } catch (e) {}
+      if (window.performance && performance.navigation) {
+        if (performance.navigation.type === 1) return "reload";
+        if (performance.navigation.type === 2) return "back_forward";
+      }
+      return "navigate";
+    }
+
+    var earlyPages = {
+      tasks: document.getElementById("tasksPage"),
+      boxes: document.getElementById("mystery-boxes"),
+      referral: document.getElementById("referral"),
+      leaderboard: document.getElementById("leaderboardSection"),
+      airdrop: document.getElementById("airdropSection")
+    };
+
+    var navType = getNavigationType();
+    var savedSection = localStorage.getItem("verunCurrentSection");
+
+    // Only honor the saved section on an actual page reload.
+    // A fresh visit always starts on Tasks.
+    var initialSection =
+      (navType === "reload" && savedSection && earlyPages[savedSection])
+        ? savedSection
+        : "tasks";
+
+    localStorage.setItem("verunCurrentSection", initialSection);
+
+    Object.keys(earlyPages).forEach(function (key) {
+      var el = earlyPages[key];
+      if (!el) return;
+      el.style.display = key === initialSection ? "" : "none";
+    });
+
+    var earlyDailyLogin = document.getElementById("streak");
+    if (earlyDailyLogin) {
+      earlyDailyLogin.style.display = initialSection === "tasks" ? "" : "none";
+    }
+  })();
+
   const SUPABASE_URL = "https://lhfgozlkeotxyzqowijz.supabase.co";
 
   const SUPABASE_PUBLISHABLE_KEY =
@@ -4581,6 +4637,18 @@ showSection(
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
