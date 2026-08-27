@@ -1112,7 +1112,7 @@
     <h1>Build.<br>Participate.</h1>
     <p>VERUN is a community participation ecosystem where contribution is tracked through XP, tasks, streaks, referrals and special rewards.</p>
     <div class="home-actions">
-      <button id="homeConnectX" class="home-button primary" type="button">Connect X</button>
+      <button id="homeConnectX" class="home-button primary" type="button" style="visibility:hidden;">Connect X</button>
       <a href="../app/" class="home-button secondary">Open Community App</a>
     </div>
   </div>
@@ -1191,6 +1191,30 @@ document.getElementById("homeConnectX").addEventListener("click", async function
     alert("Unable to connect X: " + error.message);
   }
 });
+
+// ============================================
+// Only show "Connect X" on Home when the user
+// is NOT already connected. If they're connected,
+// they can reach the app via "Enter App"/"Open
+// Community App", or disconnect from inside the app.
+// ============================================
+const homeConnectXButton = document.getElementById("homeConnectX");
+
+function setHomeConnectVisibility(session) {
+  if (!homeConnectXButton) return;
+  homeConnectXButton.style.visibility = session ? "hidden" : "visible";
+}
+
+supabaseClient.auth.getSession().then(function (result) {
+  setHomeConnectVisibility(result.data.session);
+});
+
+supabaseClient.auth.onAuthStateChange(function (event, session) {
+  // Ignore background/no-op events; only react to real sign-in/out.
+  if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") return;
+  setHomeConnectVisibility(session);
+});
 </script>
 </body>
 </html>
+
