@@ -4367,6 +4367,27 @@ async function loadVerunLeaderboard() {
   }
 
   function showSection(name) {
+
+  localStorage.setItem("verunCurrentSection", name);
+
+  Object.entries(pages).forEach(([key, element]) => {
+    if (!element) return;
+    element.style.display = key === name ? "" : "none";
+  });
+
+  const dailyLogin = document.getElementById("streak");
+  if (dailyLogin) {
+    dailyLogin.style.display = name === "tasks" ? "" : "none";
+  }
+
+  drawerLinks.forEach(link => {
+    link.classList.toggle("active", link.dataset.section === name);
+  });
+
+  history.replaceState(null, "", window.location.pathname);
+  closeDrawer();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  }
     Object.entries(pages).forEach(([key, element]) => {
       if (!element) return;
       element.style.display = key === name ? "" : "none";
@@ -4470,7 +4491,13 @@ async function loadVerunLeaderboard() {
       .maybeSingle();
 
     setDrawerUser(session.user, profile);
-    showSection("tasks");
+    const savedSection = localStorage.getItem("verunCurrentSection");
+
+showSection(
+  savedSection && pages[savedSection]
+    ? savedSection
+    : "tasks"
+);;
 
     // Keep the existing working loaders; only call them when their
     // functions are present so nothing breaks if a future version changes.
