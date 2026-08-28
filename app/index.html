@@ -453,7 +453,6 @@
 
     .task {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
       gap: 14px;
       min-width: 0;
@@ -492,7 +491,7 @@
     }
 
     .task-info {
-      flex: 1 1 150px;
+      flex: 1;
       min-width: 0;
     }
 
@@ -509,32 +508,6 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-    }
-
-    .task-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-shrink: 0;
-      margin-left: auto;
-    }
-
-    .copy-emoji-button {
-      font-family: 'IBM Plex Mono', monospace;
-      border: 1px dashed var(--border-strong);
-      background: transparent;
-      color: var(--muted);
-      padding: 8px 14px;
-      border-radius: 4px;
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.4px;
-      white-space: nowrap;
-      cursor: pointer;
-    }
-    .copy-emoji-button:hover {
-      color: var(--text);
-      border-color: var(--muted);
     }
 
     .task-reward {
@@ -738,143 +711,6 @@
       color: #071009;
     }
 
-    /* ================= REFERRAL DASHBOARD ================= */
-
-    .referral-dashboard {
-      margin-top: 20px;
-      padding: 25px;
-
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-    }
-
-    .referral-dashboard h3 {
-      font-size: 16px;
-      font-weight: 800;
-      margin-bottom: 18px;
-    }
-
-    .referral-dashboard h4 {
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 1.2px;
-      text-transform: uppercase;
-      color: var(--muted2);
-      margin: 26px 0 12px;
-    }
-
-    .referral-stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .referral-stat {
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-
-      padding: 14px;
-      background: rgba(255,255,255,0.02);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-    }
-
-    .referral-stat span {
-      color: var(--muted2);
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .referral-stat strong {
-      color: var(--text);
-      font-size: 20px;
-      font-weight: 800;
-    }
-
-    .referral-progress-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 10px;
-      margin-bottom: 10px;
-
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    .referral-progress-header strong {
-      color: var(--green);
-      font-size: 12px;
-    }
-
-    .progress-bar {
-      height: 6px;
-      background: rgba(255,255,255,0.06);
-      border-radius: 3px;
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      height: 100%;
-      background: var(--green);
-      border-radius: 3px;
-      transition: width .4s ease;
-    }
-
-    .progress-text {
-      margin-top: 6px;
-      text-align: right;
-      color: var(--muted2);
-      font-size: 10px;
-    }
-
-    #referralMilestones {
-      display: grid;
-      gap: 8px;
-    }
-
-    .milestone {
-      min-width: 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-
-      padding: 12px 14px;
-      background: rgba(255,255,255,0.02);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-
-      font-size: 11px;
-    }
-
-    .milestone span:first-child {
-      color: var(--text);
-      font-weight: 600;
-    }
-
-    .milestone span:last-child {
-      color: var(--green);
-      font-weight: 700;
-      white-space: nowrap;
-    }
-
-    #referredUsersList {
-      display: grid;
-      gap: 8px;
-    }
-
-    #noReferralsMessage {
-      color: var(--muted);
-      font-size: 11px;
-      text-align: center;
-      padding: 16px 0;
-    }
-
     /* ================= DISCLAIMER ================= */
 
     .notice {
@@ -993,23 +829,12 @@
         padding: 25px;
       }
 
-      .referral-dashboard {
-        padding: 20px;
-      }
-
       .task {
         padding: 12px;
       }
 
       .task-description {
         display: none;
-      }
-
-      .task-actions {
-        width: 100%;
-        margin-left: 0;
-        justify-content: space-between;
-        padding-left: 52px;
       }
 
       .task-button {
@@ -1083,8 +908,9 @@
   position:fixed;
   top:0;
   right:0;
-  bottom:0;
   width:min(350px,88vw);
+  height:100vh;
+  height:100svh;
   z-index:9999;
   background:linear-gradient(180deg,#0d1110,#090c0b);
   border-left:1px solid var(--border);
@@ -2913,14 +2739,14 @@ tasks.sort((a, b) => {
         ${getTaskIcon(task.task_type)}
       </div>
 
-    taskElement.innerHTML = `
-      <div class="task-num">
-        ${taskNumberHtml}
-      </div>
-
-      <div class="task-icon">
-        ${getTaskIcon(task.task_type)}
-      </div>
+      ${task.task_type === "profile_badge" ? `
+        <button
+          class="copy-emoji-button"
+          onclick="navigator.clipboard.writeText('✌️').then(() => this.textContent='✓ Copied!')"
+        >
+          ✌️ Copy
+        </button>
+      ` : ""}
 
       <div class="task-info">
 
@@ -2934,24 +2760,11 @@ tasks.sort((a, b) => {
 
       </div>
 
-      <div class="task-actions">
-
-        <div class="task-reward">
-          +${task.xp_reward} XP
-        </div>
-
-        ${task.task_type === "profile_badge" ? `
-          <button
-            class="copy-emoji-button"
-            onclick="navigator.clipboard.writeText('✌️').then(() => this.textContent='✓ Copied!')"
-          >
-            ✌️ Copy
-          </button>
-        ` : ""}
-
-        ${buttonHtml}
-
+      <div class="task-reward">
+        +${task.xp_reward} XP
       </div>
+
+      ${buttonHtml}
     `;
 
     taskFragment.appendChild(taskElement);
@@ -5012,39 +4825,6 @@ showSection(
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
