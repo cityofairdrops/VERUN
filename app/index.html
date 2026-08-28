@@ -1965,9 +1965,11 @@ async function processReferral() {
 
   async function loadUserProfile() {
     const {
-      data: { user },
+      data: { session },
       error: userError
-    } = await supabaseClient.auth.getUser();
+    } = await supabaseClient.auth.getSession();
+
+    const user = session?.user;
 
     if (userError || !user) {
       connectXButton.disabled = false;
@@ -2378,12 +2380,20 @@ async function loadTasks() {
   const container =
     document.getElementById("tasksContainer");
 
-  const { data: tasks, error } =
-    await supabaseClient
+  // Fetch the task list and the current session at the same time
+  // instead of one after another — this alone removes one full
+  // network round-trip from the delay before content appears.
+  const [
+    { data: tasks, error },
+    { data: { session } }
+  ] = await Promise.all([
+    supabaseClient
       .from("tasks")
       .select("*")
       .eq("active", true)
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true }),
+    supabaseClient.auth.getSession()
+  ]);
 
   if (error) {
     console.error("Tasks loading error:", error);
@@ -2392,11 +2402,6 @@ async function loadTasks() {
   }
 
   if (!container) return;
-
-  // Get the current logged-in user
-  const {
-    data: { session }
-  } = await supabaseClient.auth.getSession();
 
   let verifications = [];
 
@@ -4552,10 +4557,15 @@ showSection(
 
     // Keep the existing working loaders; only call them when their
     // functions are present so nothing breaks if a future version changes.
-    if (typeof loadTasks === "function") await loadTasks();
-    if (typeof loadDailyLoginStatus === "function") await loadDailyLoginStatus();
-    if (typeof loadMysteryBoxes === "function") await loadMysteryBoxes();
-    if (typeof loadVerunLeaderboard === "function") await loadVerunLeaderboard();
+    // Run them at the same time instead of one after another — each one
+    // was waiting for the previous to finish even though they don't
+    // depend on each other, which added up to a noticeable delay.
+    const sectionLoaders = [];
+    if (typeof loadTasks === "function") sectionLoaders.push(loadTasks());
+    if (typeof loadDailyLoginStatus === "function") sectionLoaders.push(loadDailyLoginStatus());
+    if (typeof loadMysteryBoxes === "function") sectionLoaders.push(loadMysteryBoxes());
+    if (typeof loadVerunLeaderboard === "function") sectionLoaders.push(loadVerunLeaderboard());
+    await Promise.all(sectionLoaders);
   }
 
   menuButton?.addEventListener("click", openDrawer);
@@ -4637,6 +4647,18 @@ showSection(
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
