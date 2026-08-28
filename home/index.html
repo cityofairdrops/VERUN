@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VERUN — Home</title>
 <meta name="theme-color" content="#070909">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
     :root {
       --bg: #070909;
@@ -33,12 +35,13 @@
       background: var(--bg);
       color: var(--text);
       font-family:
-        Inter,
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
+        'IBM Plex Mono',
+        'SFMono-Regular',
+        Menlo,
+        Consolas,
+        'Liberation Mono',
+        'Courier New',
+        monospace;
       line-height: 1.5;
     }
 
@@ -137,11 +140,13 @@
     .profile-name {
       font-size: 12px;
       font-weight: 700;
+      font-family: 'IBM Plex Mono', monospace;
     }
 
     .profile-status {
       font-size: 9px;
       color: var(--green);
+      font-family: 'IBM Plex Mono', monospace;
     }
 
     /* ================= LAYOUT ================= */
@@ -472,22 +477,61 @@
     }
 
     .task-button {
-      border: 1px solid var(--border-strong);
+      border: 1px solid var(--green);
       background: transparent;
-      color: var(--text);
+      color: var(--green);
 
-      padding: 8px 12px;
-      border-radius: 7px;
+      padding: 8px 14px;
+      border-radius: 4px;
 
       font-size: 10px;
-      font-weight: 800;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
 
       cursor: pointer;
+      transition: background .15s ease, color .15s ease;
+    }
+
+    .task-button::before {
+      content: "> ";
+      opacity: 0.6;
     }
 
     .task-button:hover {
-      border-color: var(--green-border);
+      background: var(--green);
+      color: #071009;
+    }
+
+    .task-num {
+      color: var(--muted2);
+      font-size: 10px;
+      width: 18px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .task.done {
+      background: var(--green-soft);
+    }
+
+    .task.done .task-num {
       color: var(--green);
+    }
+
+    .task.done .task-description {
+      color: var(--green);
+      opacity: 0.75;
+    }
+
+    .task-status {
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      padding: 8px 14px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      color: var(--muted);
     }
 
     /* ================= STREAK ================= */
@@ -596,17 +640,30 @@
     }
 
     .copy-button {
-      border: 0;
-      background: var(--green);
-      color: #071009;
+      border: 1px solid var(--green);
+      background: transparent;
+      color: var(--green);
 
-      border-radius: 8px;
+      border-radius: 4px;
       padding: 0 17px;
 
       font-size: 10px;
-      font-weight: 900;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
 
       cursor: pointer;
+      transition: background .15s ease, color .15s ease;
+    }
+
+    .copy-button::before {
+      content: "> ";
+      opacity: 0.6;
+    }
+
+    .copy-button:hover {
+      background: var(--green);
+      color: #071009;
     }
 
     /* ================= DISCLAIMER ================= */
@@ -617,11 +674,12 @@
       padding: 14px 16px;
 
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-left: 2px solid var(--green-border);
+      border-radius: 8px;
 
       color: var(--muted2);
       font-size: 9px;
-      line-height: 1.6;
+      line-height: 1.8;
     }
 
     /* ================= LEADERBOARD ================= */
@@ -634,16 +692,17 @@
     }
 
     .leaderboard-tab {
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.025);
+      border: 1px dashed var(--border-strong);
+      background: transparent;
       color: var(--muted);
 
-      padding: 9px 14px;
-      border-radius: 8px;
+      padding: 8px 14px;
+      border-radius: 4px;
 
       font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.3px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
 
       cursor: pointer;
       transition: 0.2s ease;
@@ -651,13 +710,13 @@
 
     .leaderboard-tab:hover {
       color: var(--text);
-      border-color: var(--green-border);
+      border-color: var(--muted);
     }
 
     .leaderboard-tab.active {
+      border: 1px solid var(--green-border);
       color: var(--green);
       background: var(--green-soft);
-      border-color: var(--green-border);
     }
 
     .rank-badge {
@@ -915,24 +974,34 @@
   width:100%;
   margin-top:12px;
   padding:10px 12px;
-  border-radius:8px;
+  border-radius:4px;
   font-size:10px;
-  font-weight:850;
+  font-weight:600;
+  letter-spacing:0.6px;
+  text-transform:uppercase;
   cursor:pointer;
 }
 .verun-disconnect-button {
-  border:1px solid rgba(255,255,255,.12);
-  background:rgba(255,255,255,.025);
+  border:1px dashed var(--border-strong);
+  background:transparent;
   color:var(--muted);
 }
 .verun-disconnect-button:hover {
   color:var(--text);
-  border-color:var(--border-strong);
+  border-color:var(--muted);
 }
 .verun-connect-small {
-  border:1px solid var(--green-border);
-  background:var(--green-soft);
+  border:1px solid var(--green);
+  background:transparent;
   color:var(--green);
+}
+.verun-connect-small::before {
+  content:"> ";
+  opacity:0.6;
+}
+.verun-connect-small:hover {
+  background:var(--green);
+  color:#071009;
 }
 
 .verun-guest-gate {
@@ -994,21 +1063,26 @@
 }
 .verun-connect-primary {
   margin-top:22px;
-  border:1px solid var(--green-border);
-  background:var(--green);
-  color:#071009;
+  border:1px solid var(--green);
+  background:transparent;
+  color:var(--green);
   padding:12px 22px;
   min-width:145px;
-  border-radius:9px;
+  border-radius:4px;
   font-size:11px;
-  font-weight:900;
+  font-weight:600;
+  letter-spacing:0.8px;
+  text-transform:uppercase;
   cursor:pointer;
-  box-shadow:0 10px 35px rgba(141,255,183,.12);
-  transition:.2s ease;
+  transition:.15s ease;
+}
+.verun-connect-primary::before {
+  content:"> ";
+  opacity:0.6;
 }
 .verun-connect-primary:hover {
-  transform:translateY(-1px);
-  box-shadow:0 14px 42px rgba(141,255,183,.18);
+  background:var(--green);
+  color:#071009;
 }
 .verun-auth-app.locked { display:none; }
 
@@ -1063,11 +1137,19 @@
 .home-actions { margin-top:28px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
 .home-button {
   display:inline-flex; align-items:center; justify-content:center;
-  min-width:145px; padding:12px 20px; border-radius:9px;
-  font-size:11px; font-weight:900; cursor:pointer;
+  min-width:145px; padding:12px 20px; border-radius:4px;
+  font-size:10px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; cursor:pointer;
+  transition:.15s ease;
 }
-.home-button.primary { background:var(--green); color:#071009; border:1px solid var(--green); }
-.home-button.secondary { background:rgba(255,255,255,.025); color:var(--text); border:1px solid var(--border); }
+.home-button.primary {
+  background:transparent; color:var(--green); border:1px solid var(--green);
+}
+.home-button.primary::before { content:"> "; opacity:0.6; }
+.home-button.primary:hover { background:var(--green); color:#071009; }
+.home-button.secondary {
+  background:transparent; color:var(--muted); border:1px dashed var(--border-strong);
+}
+.home-button.secondary:hover { color:var(--text); border-color:var(--muted); }
 .home-grid {
   display:grid; grid-template-columns:repeat(2,1fr); gap:15px; padding:0 0 70px;
 }
@@ -1217,4 +1299,6 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
 </script>
 </body>
 </html>
+
+
 
