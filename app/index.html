@@ -565,6 +565,10 @@
       opacity: 0.75;
     }
 
+    .task-description-rejected {
+      color: #ff6b6b;
+    }
+
     .task-status {
       border: 1px solid var(--border-strong);
       border-radius: 4px;
@@ -906,7 +910,7 @@
   right:0;
   width:min(350px,88vw);
   height:100vh;
-  height:100dvh;
+  height:100svh;
   z-index:9999;
   background:linear-gradient(180deg,#0d1110,#090c0b);
   border-left:1px solid var(--border);
@@ -1135,6 +1139,7 @@
   background:var(--green);
   color:#071009;
 }
+.verun-auth-app { min-width: 0; }
 .verun-auth-app.locked { display:none; }
 
 .verun-app-page,
@@ -2634,6 +2639,9 @@ tasks.sort((a, b) => {
       ? "✓"
       : String(taskIndex + 1).padStart(2, "0");
 
+    const isRejected =
+      verification && verification.status === "rejected";
+
     let buttonHtml = "";
 
     if (!verification) {
@@ -2707,12 +2715,9 @@ tasks.sort((a, b) => {
 
     } else if (verification.status === "rejected") {
 
-      // Admin rejected the task
+      // Admin rejected the task — same one-button shape as every
+      // other state, so the row stays the same size as the rest
       buttonHtml = `
-        <div class="task-verification-rejected">
-          Verification failed
-        </div>
-
         <a
           class="task-button"
           href="${task.target_url}"
@@ -2749,8 +2754,8 @@ tasks.sort((a, b) => {
           ${escapeHtml(task.title)}
         </div>
 
-        <div class="task-description">
-          ${escapeHtml(task.description || "")}
+        <div class="task-description ${isRejected ? "task-description-rejected" : ""}">
+          ${isRejected ? "Verification failed" : escapeHtml(task.description || "")}
         </div>
 
       </div>
@@ -3866,6 +3871,8 @@ async function loadMysteryBoxes() {
 
     element.style.cssText = `
 
+      min-width:0;
+
       padding:18px;
 
       background:
@@ -3900,6 +3907,7 @@ async function loadMysteryBoxes() {
 
           <div style="
             flex:1;
+            min-width:0;
           ">
 
             <div style="
@@ -4020,6 +4028,7 @@ async function loadMysteryBoxes() {
 
           <div style="
             flex:1;
+            min-width:0;
           ">
 
             <div style="
@@ -4816,6 +4825,7 @@ showSection(
 </script>
 </body>
 </html>
+
 
 
 
