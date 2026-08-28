@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VERUN — App</title>
 <meta name="theme-color" content="#070909">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
     :root {
       --bg: #070909;
@@ -33,12 +35,13 @@
       background: var(--bg);
       color: var(--text);
       font-family:
-        Inter,
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
+        'IBM Plex Mono',
+        'SFMono-Regular',
+        Menlo,
+        Consolas,
+        'Liberation Mono',
+        'Courier New',
+        monospace;
       line-height: 1.5;
     }
 
@@ -137,11 +140,13 @@
     .profile-name {
       font-size: 12px;
       font-weight: 700;
+      font-family: 'IBM Plex Mono', monospace;
     }
 
     .profile-status {
       font-size: 9px;
       color: var(--green);
+      font-family: 'IBM Plex Mono', monospace;
     }
 
     /* ================= LAYOUT ================= */
@@ -325,6 +330,46 @@
       letter-spacing: 0;
     }
 
+    .bal-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .bal-chip {
+      border: 1px solid var(--green-border);
+      background: var(--green-soft);
+      color: var(--green);
+      font-size: 9px;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .bar-track {
+      height: 6px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 14px;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--green);
+      border-radius: 3px;
+    }
+
+    .bar-caption {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted2);
+      font-size: 9px;
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
     .balance-note {
       color: var(--muted);
       font-size: 11px;
@@ -472,22 +517,61 @@
     }
 
     .task-button {
-      border: 1px solid var(--border-strong);
+      border: 1px solid var(--green);
       background: transparent;
-      color: var(--text);
+      color: var(--green);
 
-      padding: 8px 12px;
-      border-radius: 7px;
+      padding: 8px 14px;
+      border-radius: 4px;
 
       font-size: 10px;
-      font-weight: 800;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
 
       cursor: pointer;
+      transition: background .15s ease, color .15s ease;
+    }
+
+    .task-button::before {
+      content: "> ";
+      opacity: 0.6;
     }
 
     .task-button:hover {
-      border-color: var(--green-border);
+      background: var(--green);
+      color: #071009;
+    }
+
+    .task-num {
+      color: var(--muted2);
+      font-size: 10px;
+      width: 18px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .task.done {
+      background: var(--green-soft);
+    }
+
+    .task.done .task-num {
       color: var(--green);
+    }
+
+    .task.done .task-description {
+      color: var(--green);
+      opacity: 0.75;
+    }
+
+    .task-status {
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      padding: 8px 14px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      color: var(--muted);
     }
 
     /* ================= STREAK ================= */
@@ -596,17 +680,30 @@
     }
 
     .copy-button {
-      border: 0;
-      background: var(--green);
-      color: #071009;
+      border: 1px solid var(--green);
+      background: transparent;
+      color: var(--green);
 
-      border-radius: 8px;
+      border-radius: 4px;
       padding: 0 17px;
 
       font-size: 10px;
-      font-weight: 900;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
 
       cursor: pointer;
+      transition: background .15s ease, color .15s ease;
+    }
+
+    .copy-button::before {
+      content: "> ";
+      opacity: 0.6;
+    }
+
+    .copy-button:hover {
+      background: var(--green);
+      color: #071009;
     }
 
     /* ================= DISCLAIMER ================= */
@@ -617,11 +714,12 @@
       padding: 14px 16px;
 
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-left: 2px solid var(--green-border);
+      border-radius: 8px;
 
       color: var(--muted2);
       font-size: 9px;
-      line-height: 1.6;
+      line-height: 1.8;
     }
 
     /* ================= LEADERBOARD ================= */
@@ -634,16 +732,17 @@
     }
 
     .leaderboard-tab {
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.025);
+      border: 1px dashed var(--border-strong);
+      background: transparent;
       color: var(--muted);
 
-      padding: 9px 14px;
-      border-radius: 8px;
+      padding: 8px 14px;
+      border-radius: 4px;
 
       font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.3px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
 
       cursor: pointer;
       transition: 0.2s ease;
@@ -651,13 +750,13 @@
 
     .leaderboard-tab:hover {
       color: var(--text);
-      border-color: var(--green-border);
+      border-color: var(--muted);
     }
 
     .leaderboard-tab.active {
+      border: 1px solid var(--green-border);
       color: var(--green);
       background: var(--green-soft);
-      border-color: var(--green-border);
     }
 
     .rank-badge {
@@ -881,6 +980,12 @@
   text-align:center;
   color:currentColor;
 }
+.verun-drawer-link svg.drawer-icon {
+  width:18px;
+  height:18px;
+  flex-shrink:0;
+  color:currentColor;
+}
 
 .verun-drawer-account {
   border-top:1px solid var(--border);
@@ -915,24 +1020,34 @@
   width:100%;
   margin-top:12px;
   padding:10px 12px;
-  border-radius:8px;
+  border-radius:4px;
   font-size:10px;
-  font-weight:850;
+  font-weight:600;
+  letter-spacing:0.6px;
+  text-transform:uppercase;
   cursor:pointer;
 }
 .verun-disconnect-button {
-  border:1px solid rgba(255,255,255,.12);
-  background:rgba(255,255,255,.025);
+  border:1px dashed var(--border-strong);
+  background:transparent;
   color:var(--muted);
 }
 .verun-disconnect-button:hover {
   color:var(--text);
-  border-color:var(--border-strong);
+  border-color:var(--muted);
 }
 .verun-connect-small {
-  border:1px solid var(--green-border);
-  background:var(--green-soft);
+  border:1px solid var(--green);
+  background:transparent;
   color:var(--green);
+}
+.verun-connect-small::before {
+  content:"> ";
+  opacity:0.6;
+}
+.verun-connect-small:hover {
+  background:var(--green);
+  color:#071009;
 }
 
 .verun-guest-gate {
@@ -994,21 +1109,26 @@
 }
 .verun-connect-primary {
   margin-top:22px;
-  border:1px solid var(--green-border);
-  background:var(--green);
-  color:#071009;
+  border:1px solid var(--green);
+  background:transparent;
+  color:var(--green);
   padding:12px 22px;
   min-width:145px;
-  border-radius:9px;
+  border-radius:4px;
   font-size:11px;
-  font-weight:900;
+  font-weight:600;
+  letter-spacing:0.8px;
+  text-transform:uppercase;
   cursor:pointer;
-  box-shadow:0 10px 35px rgba(141,255,183,.12);
-  transition:.2s ease;
+  transition:.15s ease;
+}
+.verun-connect-primary::before {
+  content:"> ";
+  opacity:0.6;
 }
 .verun-connect-primary:hover {
-  transform:translateY(-1px);
-  box-shadow:0 14px 42px rgba(141,255,183,.18);
+  background:var(--green);
+  color:#071009;
 }
 .verun-auth-app.locked { display:none; }
 
@@ -1083,12 +1203,12 @@
   </div>
 
   <nav class="verun-drawer-nav">
-    <a href="../home/" class="verun-drawer-link" data-nav="home"><span>⌂</span><span>Home</span></a>
-    <button class="verun-drawer-link" type="button" data-section="tasks"><span>✓</span><span>Tasks</span></button>
-    <button class="verun-drawer-link" type="button" data-section="boxes"><span>◇</span><span>Boxes</span></button>
-    <button class="verun-drawer-link" type="button" data-section="referral"><span>↗</span><span>Referral</span></button>
-    <button class="verun-drawer-link" type="button" data-section="leaderboard"><span>≡</span><span>Leaderboard</span></button>
-    <button class="verun-drawer-link" type="button" data-section="airdrop"><span>✦</span><span>Airdrop</span></button>
+    <a href="../home/" class="verun-drawer-link" data-nav="home"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Home</span></a>
+    <button class="verun-drawer-link" type="button" data-section="tasks"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span>Tasks</span></button>
+    <button class="verun-drawer-link" type="button" data-section="boxes"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11C4 6.6 7.5 3.8 12 3.8s8 2.8 8 7.2"/><path d="M3.6 11h16.8"/><rect x="4" y="12.6" width="16" height="7.2" rx="1.3"/><rect x="10.4" y="10.4" width="3.2" height="2.8" rx="0.5"/><path d="M11.2 10.4v-0.9a0.8 0.8 0 0 1 1.6 0v0.9"/></svg><span>Boxes</span></button>
+    <button class="verun-drawer-link" type="button" data-section="referral"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg><span>Referral</span></button>
+    <button class="verun-drawer-link" type="button" data-section="leaderboard"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V10"/><path d="M12 21V4"/><path d="M20 21v-7"/></svg><span>Leaderboard</span></button>
+    <button class="verun-drawer-link" type="button" data-section="airdrop"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10C3 10 5 3 12 3C19 3 21 10 21 10"/><path d="M3 10C6 12 9 12.5 12 10"/><path d="M21 10C18 12 15 12.5 12 10"/><line x1="3" y1="10" x2="10" y2="19"/><line x1="21" y1="10" x2="14" y2="19"/><rect x="9.3" y="19" width="5.4" height="3.6" rx="0.8"/></svg><span>Airdrop</span></button>
   </nav>
 
   <div class="verun-drawer-account">
@@ -1136,8 +1256,16 @@
 
         <div class="balance-card">
 
-        <div class="balance-label">
-          Your XP
+        <div class="bal-top">
+          <div class="balance-label">
+            Your XP
+          </div>
+          <!--
+            Weekly-change chip — hidden until real "XP earned in the
+            last 7 days" data exists. Set its text and remove
+            style="display:none" once that value is available.
+          -->
+          <div class="bal-chip" id="xpWeeklyChip" style="display:none;"></div>
         </div>
             <div class="balance">
   <span id="xpBalance" style="visibility:hidden;">0</span> <span>XP</span>
@@ -1145,6 +1273,21 @@
 
 <div class="balance-note">
   Complete tasks to earn XP.
+</div>
+
+<!--
+  Tier-progress bar — hidden until an XP tier system exists.
+  Your current rank badges (Ambassador/Legend) are based on
+  referral count, not XP, so this isn't wired to real data yet.
+  Set --xp-progress and the two labels below, then remove
+  style="display:none" once XP tiers are defined.
+-->
+<div class="bar-track" id="xpBarTrack" style="display:none;">
+  <div class="bar-fill" id="xpBarFill"></div>
+</div>
+<div class="bar-caption" id="xpBarCaption" style="display:none;">
+  <span id="xpTierCurrent"></span>
+  <span id="xpTierNext"></span>
 </div>
 
 </div>
@@ -1176,6 +1319,8 @@
 
 
           <div class="task">
+
+            <div class="task-num">01</div>
 
             <div class="task-icon">
               X
@@ -1209,6 +1354,8 @@
 
           <div class="task">
 
+            <div class="task-num">02</div>
+
             <div class="task-icon">
               ↗
             </div>
@@ -1238,6 +1385,8 @@
 
           <div class="task">
 
+            <div class="task-num">03</div>
+
             <div class="task-icon">
               ♡
             </div>
@@ -1266,6 +1415,8 @@
 
 
           <div class="task">
+
+            <div class="task-num">04</div>
 
             <div class="task-icon">
               #
@@ -1767,15 +1918,15 @@
   class="section-card"
   style="display:none;margin-top:20px;"
 >
-  <div style="text-align:center;padding:40px 20px;">
-    <div style="font-size:48px;margin-bottom:15px;">◇</div>
+  <div style="text-align:center;padding:38px 20px;border:1px solid var(--border);border-radius:14px;background:var(--panel);">
+    <div class="verun-guest-mark" style="margin:0 auto 16px;width:44px;height:44px;"><span style="width:13px;height:13px;"></span></div>
 
-    <h2 style="margin-bottom:10px;">
+    <h2 style="margin-bottom:8px;font-size:16px;font-weight:600;">
       VERUN Airdrop
     </h2>
 
-    <p style="opacity:0.7;font-size:16px;">
-      Coming Soon
+    <p style="color:var(--green);font-size:9px;letter-spacing:1.2px;text-transform:uppercase;">
+      Coming soon
     </p>
   </div>
 </section>
@@ -2457,17 +2608,26 @@ tasks.sort((a, b) => {
   const taskFragment =
     document.createDocumentFragment();
 
-  tasks.forEach(task => {
+  tasks.forEach((task, taskIndex) => {
 
     const taskElement =
       document.createElement("div");
-
-    taskElement.className = "task";
 
     const verification =
       verifications.find(
         item => Number(item.task_id) === Number(task.id)
       );
+
+    const isDone =
+      verification &&
+      verification.status === "approved" &&
+      verification.claimed_at;
+
+    taskElement.className = isDone ? "task done" : "task";
+
+    const taskNumberHtml = isDone
+      ? "✓"
+      : String(taskIndex + 1).padStart(2, "0");
 
     let buttonHtml = "";
 
@@ -2499,7 +2659,7 @@ tasks.sort((a, b) => {
       // Verification is waiting for admin approval
       buttonHtml = `
         <button
-          class="task-button"
+          class="task-status"
           disabled
           style="opacity: 0.7; cursor: not-allowed;"
         >
@@ -2515,7 +2675,7 @@ tasks.sort((a, b) => {
   // XP was already claimed — permanently completed
   buttonHtml = `
     <div
-      class="task-button"
+      class="task-status"
       style="
         color:var(--green);
         border-color:var(--green-border);
@@ -2523,7 +2683,7 @@ tasks.sort((a, b) => {
         cursor:default;
       "
     >
-      ✓ Completed
+      Completed
     </div>
   `;
 
@@ -2561,6 +2721,10 @@ tasks.sort((a, b) => {
     }
 
     taskElement.innerHTML = `
+      <div class="task-num">
+        ${taskNumberHtml}
+      </div>
+
       <div class="task-icon">
         ${getTaskIcon(task.task_type)}
       </div>
@@ -4607,7 +4771,7 @@ showSection(
     disconnectButton.disabled = true;
     disconnectButton.textContent = "Disconnecting...";
 
-    const { error } = await supabaseClient.auth.signOut();
+    const { error } = await supabaseCauth.signOut();
 
     if (error) {
       disconnectButton.disabled = false;
@@ -4647,40 +4811,5 @@ showSection(
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
