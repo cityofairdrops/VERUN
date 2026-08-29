@@ -848,6 +848,57 @@
       font-size: 10px;
     }
 
+    /* ================= REFERRAL ANIMATED ICON ================= */
+    /* Same float + glow language as the mystery box chest, so the
+       Referral section doesn't feel visually disconnected from it. */
+
+    .verun-referral-icon-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 46px;
+      height: 46px;
+      flex-shrink: 0;
+      --rarity-glow: #8dffb7;
+    }
+
+    .verun-referral-icon-svg {
+      overflow: visible;
+      animation: verunReferralIdle 3.2s ease-in-out infinite;
+    }
+
+    .referral-ring {
+      fill: none;
+      stroke: var(--rarity-glow);
+      stroke-width: 3;
+    }
+
+    .referral-ring-pulse {
+      fill: none;
+      stroke: var(--rarity-glow);
+      stroke-width: 1.4;
+      opacity: .5;
+      animation: verunReferralPulse 2.4s ease-out infinite;
+      transform-origin: center;
+    }
+
+    @keyframes verunReferralIdle {
+      0%, 100% {
+        transform: translateY(0);
+        filter: drop-shadow(0 0 6px var(--rarity-glow));
+      }
+      50% {
+        transform: translateY(-3px);
+        filter: drop-shadow(0 0 13px var(--rarity-glow));
+      }
+    }
+
+    @keyframes verunReferralPulse {
+      0% { transform: scale(.75); opacity: .55; }
+      100% { transform: scale(1.35); opacity: 0; }
+    }
+
     /* ================= REFERRAL DASHBOARD ================= */
     /* This whole block previously had no CSS at all, so it rendered
        as unstyled, unconstrained text that could run past the edge
@@ -1105,34 +1156,6 @@
       border: 1px solid var(--green-border);
       color: var(--green);
       background: var(--green-soft);
-    }
-
-    .rank-badge {
-      display: inline-flex;
-      align-items: center;
-
-      padding: 2px 7px;
-      border-radius: 5px;
-
-      font-size: 8px;
-      font-weight: 900;
-      letter-spacing: 0.6px;
-      text-transform: uppercase;
-
-      border: 1px solid var(--border);
-      color: var(--muted);
-    }
-
-    .rank-badge-ambassador {
-      color: var(--green);
-      background: var(--green-soft);
-      border-color: var(--green-border);
-    }
-
-    .rank-badge-legend {
-      color: #071009;
-      background: var(--green);
-      border-color: var(--green);
     }
 
     /* ================= MOBILE ================= */
@@ -1688,20 +1711,6 @@
 
 </div>
 
-<!-- NOTICE -->
-<div class="notice">
-
-  VERUN is a 100% community-bootstrapped initiative with no
-  private presales, venture capital allocations, or paid
-  influencers. We are currently in our community-building
-  phase. XP displayed in this interface is a participation
-  tracking mechanism and will determine your allocation
-  during our fair launch. Final token distribution and
-  eligibility conditions will be subject to the project's
-  official announcements.
-
-</div>
-          
 <section class="section app-section" id="tasks">
 
         <div class="section-head" id="tasksSectionHead">
@@ -1963,6 +1972,21 @@
 </div>
 
 </section>
+
+<!-- NOTICE -->
+<div class="notice">
+
+  VERUN is a 100% community-bootstrapped initiative with no
+  private presales, venture capital allocations, or paid
+  influencers. We are currently in our community-building
+  phase. XP displayed in this interface is a participation
+  tracking mechanism and will determine your allocation
+  during our fair launch. Final token distribution and
+  eligibility conditions will be subject to the project's
+  official announcements.
+
+</div>
+
 </div>
       
 <!-- MYSTERY BOXES -->
@@ -2140,47 +2164,22 @@
 
 <section class="section app-section" id="referral">
   <div class="section-head">
-    <div>
-      <h2 class="section-title">Referrals</h2>
-      <p class="section-description">
-        Invite people to join the VERUN community. Grow the network and earn referral XP.
-      </p>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="verun-referral-icon-wrap" style="--rarity-glow:#8dffb7;">
+        <svg class="verun-referral-icon-svg" viewBox="0 0 48 48" width="42" height="42" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle class="referral-ring-pulse" cx="24" cy="24" r="16"/>
+          <rect class="referral-ring" x="6" y="17" width="15" height="15" rx="7.5" transform="rotate(-18 13.5 24.5)"/>
+          <rect class="referral-ring" x="26" y="16" width="15" height="15" rx="7.5" transform="rotate(-18 33.5 23.5)"/>
+        </svg>
+      </div>
+      <div>
+        <h2 class="section-title">Referrals</h2>
+        <p class="section-description">
+          Invite people to join the VERUN community. Grow the network and earn referral XP.
+        </p>
+      </div>
     </div>
   </div>
-
-  <!-- Referral Link -->
-  <div class="referral-card">
-
-    <div class="referral-title">
-      Your Referral Link
-    </div>
-
-    <div class="referral-text">
-      Connect your X account to unlock your personal referral link.
-    </div>
-
-    <div class="referral-box">
-
-      <input
-        id="referralLinkInput"
-        class="referral-input"
-        type="text"
-        readonly
-        value="Connect X to generate your referral link"
-      >
-
-      <button
-        id="copyReferralButton"
-        class="copy-button"
-        type="button"
-      >
-        Copy
-      </button>
-
-    </div>
-
-  </div>
-
 
   <!-- Referral Dashboard -->
 
@@ -2289,9 +2288,44 @@
 
   </div>
 
+
+  <!-- Referral Link -->
+  <div class="referral-card" style="margin-top:15px;">
+
+    <div class="referral-title">
+      Your Referral Link
+    </div>
+
+    <div class="referral-text">
+      Connect your X account to unlock your personal referral link.
+    </div>
+
+    <div class="referral-box">
+
+      <input
+        id="referralLinkInput"
+        class="referral-input"
+        type="text"
+        readonly
+        value="Connect X to generate your referral link"
+      >
+
+      <button
+        id="copyReferralButton"
+        class="copy-button"
+        type="button"
+      >
+        Copy
+      </button>
+
+    </div>
+
+  </div>
+
 </section>
 
 <!-- END REFERRALS -->
+
 
 <!-- AIRDROP SECTION -->
 <section
@@ -2300,10 +2334,16 @@
   style="display:none;"
 >
   <div style="text-align:center;padding:38px 20px;border:1px solid var(--border);border-radius:14px;background:var(--panel);max-width:360px;margin:0 auto;">
-    <div class="verun-guest-mark" style="margin:0 auto 16px;width:44px;height:44px;"><span style="width:13px;height:13px;"></span></div>
+    <div style="margin:0 auto 16px;width:48px;height:48px;border-radius:50%;border:1px solid var(--border);background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="5" y="10.5" width="14" height="10" rx="2" stroke="var(--green)" stroke-width="1.6"/>
+        <path d="M8 10.5V7.8a4 4 0 0 1 8 0" stroke="var(--green)" stroke-width="1.6" stroke-linecap="round"/>
+        <circle cx="12" cy="15" r="1.6" fill="var(--green)"/>
+      </svg>
+    </div>
 
     <h2 style="margin-bottom:8px;font-size:16px;font-weight:600;">
-      VERUN Airdrop
+      $VERUN AIRDROP
     </h2>
 
     <p style="color:var(--green);font-size:9px;letter-spacing:1.2px;text-transform:uppercase;">
@@ -2315,9 +2355,8 @@
   <h2>Leaderboard</h2>
 
   <div id="leaderboardTabs" class="leaderboard-tabs">
-    <button type="button" class="leaderboard-tab active" data-sort="xp">Top XP</button>
-    <button type="button" class="leaderboard-tab" data-sort="streak">Top Grinders</button>
-    <button type="button" class="leaderboard-tab" data-sort="referrals">Top Networkers</button>
+    <button type="button" class="leaderboard-tab active" data-sort="xp">XP Leaderboard</button>
+    <button type="button" class="leaderboard-tab" data-sort="referrals">Referral Leaderboard</button>
   </div>
 
   <div id="leaderboardLoading" style="text-align:center;padding:15px;">
@@ -2603,20 +2642,53 @@ async function loadReferralDashboard() {
     }
   }
 
-  // Best-effort list of referred users. If the referred-by relationship
-  // isn't queryable this way, this quietly no-ops and the "No referrals
-  // yet" placeholder stays as-is rather than showing an error.
+  // List of people the user referred. Reading another user's profile
+  // row directly is usually blocked by Supabase Row Level Security
+  // (the same reason the leaderboard needs its own RPC instead of a
+  // plain table query), so this tries a dedicated RPC first — add a
+  // `get_referred_users()` Postgres function (SECURITY DEFINER,
+  // returning x_username/current_streak for auth.uid()'s referrals)
+  // on the Supabase side for this to work. Only if the RPC isn't
+  // available yet does this fall back to the old plain query, and if
+  // both come back empty while `count` says otherwise, that's shown
+  // as a distinct message instead of silently claiming "no referrals".
   if (referredUsersList) {
 
     try {
 
-      const { data: referredUsers, error: referredError } =
-        await supabaseClient
-          .from("profiles")
-          .select("x_username,current_streak")
-          .eq("referred_by", session.user.id);
+      let referredUsers = null;
 
-      if (!referredError && referredUsers && referredUsers.length > 0) {
+      const { data: rpcUsers, error: rpcError } =
+        await supabaseClient.rpc("get_referred_users");
+
+      if (!rpcError && rpcUsers) {
+
+        referredUsers = rpcUsers;
+
+      } else {
+
+        if (rpcError) {
+          console.warn(
+            "get_referred_users RPC unavailable, falling back to direct query:",
+            rpcError
+          );
+        }
+
+        const { data: fallbackUsers, error: fallbackError } =
+          await supabaseClient
+            .from("profiles")
+            .select("x_username,current_streak")
+            .eq("referred_by", session.user.id);
+
+        if (fallbackError) {
+          console.error("Referred users list error:", fallbackError);
+        } else {
+          referredUsers = fallbackUsers;
+        }
+
+      }
+
+      if (referredUsers && referredUsers.length > 0) {
 
         referredUsersList.innerHTML = referredUsers.map(user => `
           <div style="
@@ -2638,10 +2710,21 @@ async function loadReferralDashboard() {
 
         referredUsersList.innerHTML =
           `<p id="noReferralsMessage">No referrals yet.</p>`;
+
+      } else {
+
+        // count > 0 but no rows came back — don't claim "no referrals",
+        // that's actively wrong and confusing when the stat above says
+        // otherwise.
+        referredUsersList.innerHTML =
+          `<p id="noReferralsMessage">Referral count is up to date, but the usernames aren't available to display yet.</p>`;
       }
 
     } catch (referredListError) {
       console.error("Referred users list error:", referredListError);
+
+      referredUsersList.innerHTML =
+        `<p id="noReferralsMessage">Couldn't load your referred users right now.</p>`;
     }
   }
 
@@ -2830,6 +2913,10 @@ async function loadReferralDashboard() {
 
     referralLinkInput.value =
       referralLink;
+  }
+
+  if (typeof refreshTodaysReward === "function" && profile.id) {
+    refreshTodaysReward(profile.id);
   }
 
 }  // ← closes updateDashboard()
@@ -3500,28 +3587,106 @@ function showDailyMessage(message) {
 }
 
 
-function updateDailyRewardPreview(streak) {
+// "#Today's Reward" is meant to show the total XP actually earned
+// today (tasks claimed + daily login + mystery boxes opened today),
+// not a preview/guess of tomorrow's login bonus. It's computed fresh
+// from the real records below so it always matches what's on screen
+// elsewhere (e.g. "Completed" tasks), instead of drifting from it.
+let todaysRewardRequestId = 0;
 
-  if (!dailyRewardText) return;
+async function refreshTodaysReward(userId) {
 
-  const nextDay =
-    Math.max(1, Number(streak || 0) + 1);
+  if (!dailyRewardText || !userId) return;
 
-  const baseXP = nextDay * 10;
+  const requestId = ++todaysRewardRequestId;
 
-  const weeklyBonus =
-    nextDay % 7 === 0 ? 100 : 0;
+  const todayStr =
+    new Date().toISOString().slice(0, 10);
 
-  const mysteryBox =
-    nextDay % 30 === 0;
+  try {
 
-  const text =
-    `+${baseXP + weeklyBonus} XP`;
+    const [
+      { data: verifications },
+      { data: taskList },
+      { data: todayLogin },
+      { data: boxes }
+    ] = await Promise.all([
+      supabaseClient
+        .from("task_verifications")
+        .select("task_id,status,claimed_at")
+        .eq("user_id", userId)
+        .eq("status", "approved"),
+      supabaseClient
+        .from("tasks")
+        .select("id,xp_reward"),
+      supabaseClient
+        .from("daily_logins")
+        .select("xp_awarded,weekly_bonus")
+        .eq("user_id", userId)
+        .eq("login_date", todayStr)
+        .maybeSingle(),
+      supabaseClient
+        .from("mystery_boxes")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("status", "opened")
+    ]);
 
-  dailyRewardText.textContent = text;
+    if (requestId !== todaysRewardRequestId) return;
+
+    let total = 0;
+
+    if (verifications && taskList) {
+
+      const xpByTaskId = {};
+
+      taskList.forEach(task => {
+        xpByTaskId[task.id] = Number(task.xp_reward || 0);
+      });
+
+      verifications.forEach(verification => {
+        if (
+          verification.claimed_at &&
+          verification.claimed_at.slice(0, 10) === todayStr
+        ) {
+          total += xpByTaskId[verification.task_id] || 0;
+        }
+      });
+
+    }
+
+    if (todayLogin) {
+      total +=
+        Number(todayLogin.xp_awarded || 0) +
+        Number(todayLogin.weekly_bonus || 0);
+    }
+
+    if (boxes) {
+      boxes.forEach(box => {
+        // Best-effort: only counts a box toward "today" if the row
+        // exposes a timestamp we can check (opened_at/updated_at).
+        const openedTimestamp =
+          box.opened_at || box.updated_at || null;
+
+        const openedToday =
+          openedTimestamp &&
+          String(openedTimestamp).slice(0, 10) === todayStr;
+
+        if (openedToday && box.reward_type === "xp") {
+          total += Number(box.reward_xp || 0);
+        }
+      });
+    }
+
+    dailyRewardText.textContent =
+      `+${total.toLocaleString()} XP`;
+
+  } catch (rewardError) {
+    console.error("Today's reward calculation error:", rewardError);
+  }
 
 }
-    
+
 function startDailyCountdown() {
 
   clearInterval(window.dailyCountdownTimer);
@@ -3631,7 +3796,10 @@ async function loadDailyLoginStatus() {
   }
 
 
-  updateDailyRewardPreview(streak);
+  // "#Today's Reward" is now driven by refreshTodaysReward(), called
+  // from updateDashboard() — it reflects real XP earned today across
+  // tasks, daily login and mystery boxes, not just a login preview.
+  refreshTodaysReward(session.user.id);
 
 
   const today =
@@ -3665,13 +3833,6 @@ console.log("COUNTDOWN STARTED");
     if (dailyLoginText) {
       dailyLoginText.textContent =
         `Day ${todayLogin.day_number} completed today.`;
-    }
-
-    const text =
-  `+${todayLogin.xp_awarded + todayLogin.weekly_bonus} XP`;
-
-    if (dailyRewardText) {
-      dailyRewardText.textContent = text;
     }
 
     return;
@@ -3801,10 +3962,8 @@ startDailyCountdown();
   }
 
 
-  if (dailyRewardText) {
-    dailyRewardText.textContent =
-      `+${Number(data.xp_awarded || 0) + Number(data.bonus_xp || 0)} XP`;
-  }
+  // loadUserProfile() below refreshes "#Today's Reward" with the
+  // real total (this claim included), so no separate write here.
 
 
   await loadUserProfile();
@@ -3963,21 +4122,36 @@ mysteryBoxStyle.textContent = `
 }
 
 .chest-body {
-  fill:#0d1512;
+  fill:#0f1713;
   stroke:var(--rarity-glow);
   stroke-width:1.6;
+}
+
+/* Faint darker duplicate behind the body/lid, offset by nothing but
+   used to give the wood a bit of depth without changing the silhouette */
+.chest-side {
+  fill:#0a100d;
+  opacity:.5;
 }
 
 .chest-lid,
 .chest-lid-open {
-  fill:#131c17;
+  fill:#161f1a;
   stroke:var(--rarity-glow);
   stroke-width:1.6;
 }
 
+/* Subtle plank lines across the lid/body so it reads as a wooden
+   crate rather than a smooth cartoon blob */
+.chest-seam {
+  stroke:#000;
+  stroke-opacity:.35;
+  stroke-width:1;
+}
+
 .chest-band {
   fill:var(--rarity-glow);
-  opacity:.55;
+  opacity:.6;
 }
 
 .chest-lock-plate {
@@ -4205,23 +4379,33 @@ function getChestSvgMarkup(open) {
   if (!open) {
     return `
       <svg class="verun-chest-svg" viewBox="0 0 64 58" width="52" height="48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path class="chest-lid" d="M6 26 C6 12 14 6 32 6 C50 6 58 12 58 26 Z"/>
-        <rect class="chest-body" x="6" y="26" width="52" height="24" rx="5"/>
-        <rect class="chest-band" x="27" y="6" width="10" height="44"/>
-        <rect class="chest-band" x="4" y="23" width="56" height="6"/>
-        <rect class="chest-lock-plate" x="25" y="20" width="14" height="13" rx="2"/>
-        <path class="chest-shackle" d="M28 20 v-4 a4 4 0 0 1 8 0 v4"/>
-        <circle class="chest-keyhole" cx="32" cy="26" r="1.8"/>
+        <rect class="chest-side" x="9" y="12" width="46" height="38" rx="2"/>
+        <rect class="chest-lid" x="9" y="8" width="46" height="15" rx="2"/>
+        <rect class="chest-body" x="9" y="23" width="46" height="27" rx="2"/>
+        <line class="chest-seam" x1="9" y1="15.5" x2="55" y2="15.5"/>
+        <line class="chest-seam" x1="9" y1="35" x2="55" y2="35"/>
+        <line class="chest-seam" x1="9" y1="43" x2="55" y2="43"/>
+        <rect class="chest-band" x="7" y="20.5" width="50" height="5" rx="1"/>
+        <rect class="chest-band" x="28" y="8" width="8" height="42"/>
+        <rect class="chest-lock-plate" x="24.5" y="26" width="15" height="13" rx="2"/>
+        <path class="chest-shackle" d="M28 26 v-5 a4 4 0 0 1 8 0 v5"/>
+        <circle class="chest-keyhole" cx="32" cy="31" r="1.8"/>
       </svg>
     `;
   }
 
   return `
     <svg class="verun-chest-svg verun-chest-svg-open" viewBox="0 0 64 58" width="52" height="48" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect class="chest-body" x="6" y="26" width="52" height="24" rx="5"/>
-      <path class="chest-lid-open" d="M8 26 C4 12 10 2 26 1 C38 0 50 6 52 15 C53 20 49 23 44 24 L10 26 Z"/>
-      <rect class="chest-band" x="27" y="26" width="10" height="24"/>
-      <rect class="chest-band" x="4" y="23" width="56" height="6"/>
+      <rect class="chest-side" x="9" y="23" width="46" height="27" rx="2"/>
+      <rect class="chest-body" x="9" y="23" width="46" height="27" rx="2"/>
+      <line class="chest-seam" x1="9" y1="35" x2="55" y2="35"/>
+      <line class="chest-seam" x1="9" y1="43" x2="55" y2="43"/>
+      <rect class="chest-band" x="7" y="20.5" width="50" height="5" rx="1"/>
+      <rect class="chest-band" x="28" y="23" width="8" height="27"/>
+      <g transform="translate(9,22) rotate(-38)">
+        <rect class="chest-lid-open" x="0" y="-15" width="46" height="15" rx="2"/>
+        <line class="chest-seam" x1="0" y1="-7.5" x2="46" y2="-7.5"/>
+      </g>
     </svg>
   `;
 
@@ -4984,21 +5168,6 @@ loadMysteryBoxes();
 //   Ambassador : 25 - 99 referrals
 //   Legend     : 100+ referrals
 
-function getVerunRank(referralCount) {
-
-  const count = Number(referralCount || 0);
-
-  if (count >= 100) {
-    return { label: "Legend", className: "rank-badge-legend" };
-  }
-
-  if (count >= 25) {
-    return { label: "Ambassador", className: "rank-badge-ambassador" };
-  }
-
-  return { label: "Networker", className: "rank-badge-networker" };
-}
-
 // ============================================
 // VERUN LEADERBOARD (WITH TABS)
 // ============================================
@@ -5039,7 +5208,6 @@ function renderVerunLeaderboardList() {
 
   const sortKeyMap = {
     xp: "xp",
-    streak: "current_streak",
     referrals: "referral_count"
   };
 
@@ -5052,8 +5220,6 @@ function renderVerunLeaderboardList() {
     );
 
   list.innerHTML = sorted.map((user, index) => {
-
-    const rank = getVerunRank(user.referral_count);
 
     return `
       <div class="leaderboard-row"
@@ -5073,20 +5239,26 @@ function renderVerunLeaderboardList() {
           </strong>
 
           <div>
-            <div style="font-weight:600;display:flex;align-items:center;gap:6px;">
+            <div style="font-weight:600;">
               @${escapeHtml(user.x_username)}
-              <span class="rank-badge ${rank.className}">${rank.label}</span>
             </div>
 
             <div style="font-size:12px;opacity:0.7;">
-              ${user.current_streak || 0} day streak
-              · ${user.referral_count || 0} referrals
+              ${
+                verunLeaderboardSort === "referrals"
+                  ? `${user.referral_count || 0} referrals`
+                  : `${Number(user.xp || 0).toLocaleString()} XP`
+              }
             </div>
           </div>
         </div>
 
         <strong>
-          ${Number(user.xp || 0).toLocaleString()} XP
+          ${
+            verunLeaderboardSort === "referrals"
+              ? `${user.referral_count || 0} referrals`
+              : `${Number(user.xp || 0).toLocaleString()} XP`
+          }
         </strong>
 
       </div>
@@ -5220,7 +5392,14 @@ async function loadVerunLeaderboard() {
   });
 
   history.replaceState(null, "", window.location.pathname);
-  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  // Instant, not smooth: an animated scroll can still be mid-flight
+  // when async section content (referral/leaderboard data) finishes
+  // loading and changes the page height, which is what was leaving
+  // these sections scrolled to the middle instead of the top.
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
   }
 
   function getAppRedirectUrl() {
@@ -5360,6 +5539,14 @@ showSection(
       if (section === "leaderboard" && typeof loadVerunLeaderboard === "function") {
         await loadVerunLeaderboard();
       }
+
+      // Re-assert scroll-to-top now that the section's content has
+      // actually finished loading and settled — content height
+      // changing after the first scroll (while data was still
+      // loading) is what made these sections land mid-page.
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
     });
   });
 
