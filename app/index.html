@@ -514,6 +514,7 @@
       max-width: 480px;
       margin-left: auto;
       margin-right: auto;
+      margin-top: 20px;
     }
 
     /* ================= TASKS ================= */
@@ -669,6 +670,32 @@
       color: #071009;
     }
 
+    /* Claim buttons are filled solid so they stand out from the
+       outlined start/try-again/status buttons at a glance. */
+    .claim-task-button {
+      border: 1px solid var(--green);
+      background: var(--green);
+      color: #071009;
+      cursor: pointer;
+      transition: opacity .15s ease;
+    }
+
+    .claim-task-button::before {
+      content: none;
+    }
+
+    .claim-task-button:hover {
+      background: var(--green);
+      color: #071009;
+      opacity: 0.85;
+    }
+
+    .task-button:disabled,
+    .claim-task-button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
     .task.done {
       background: var(--green-soft);
     }
@@ -704,10 +731,9 @@
     /* ================= STREAK ================= */
 
     .streak-card {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center;
-      gap: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
 
       padding: 20px;
 
@@ -720,6 +746,22 @@
 
       border: 1px solid var(--border);
       border-radius: 14px;
+    }
+
+    .streak-top {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .streak-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
     }
 
     .fire {
@@ -1145,7 +1187,7 @@
         font-size: 9px;
       }
 
-      .streak-card {
+      .streak-top {
         grid-template-columns: auto 1fr auto;
         gap: 12px;
       }
@@ -1587,7 +1629,7 @@
           <div class="bal-top-right">
 
             <div class="balance-today-reward">
-              <span class="balance-today-reward-label">Today's Reward</span>
+              <span class="balance-today-reward-label">#Today's Reward</span>
               <span id="dailyRewardText">Connect X to see your reward</span>
             </div>
 
@@ -1813,64 +1855,61 @@
 
   <div class="streak-card">
 
-    <div class="fire">
-      ✦
+    <div class="streak-top">
+
+      <div class="fire">
+        ✦
+      </div>
+
+      <div>
+        <div class="streak-title" id="dailyLoginTitle">
+          Daily participation
+        </div>
+
+        <div class="streak-text" id="dailyLoginText">
+          Claim today's XP to continue your streak.
+        </div>
+      </div>
+
+      <div class="streak-count">
+        <div class="streak-number" id="dailyStreakNumber">
+          0
+        </div>
+
+        <div class="streak-days">
+          DAYS
+        </div>
+      </div>
+
     </div>
 
-    <div>
-      <div class="streak-title" id="dailyLoginTitle">
-        Daily participation
-      </div>
-
-      <div class="streak-text" id="dailyLoginText">
-        Claim today's XP to continue your streak.
-      </div>
-    </div>
-
-    <div class="streak-count">
-      <div class="streak-number" id="dailyStreakNumber">
-        0
-      </div>
-
-      <div class="streak-days">
-        DAYS
-      </div>
-    </div>
-
-  </div>
-
-  <div
-    id="dailyLoginReward"
-    style="
-      margin-top:10px;
-      padding:15px;
-      background:var(--panel);
-      border:1px solid var(--border);
-      border-radius:12px;
-    "
-  >
-
-    <button
-      id="dailyLoginButton"
-      type="button"
-      class="task-button"
+    <div
+      id="dailyLoginReward"
+      class="streak-actions"
     >
-      Claim Daily XP
-    </button>
 
-    <button
-      id="restoreStreakButton"
-      type="button"
-      class="task-button"
-      style="
-        display:none;
-        margin-top:8px;
-        border-color:rgba(255,180,80,0.35);
-      "
-    >
-      Restore Streak — 1,000 XP
-    </button>
-    
+      <button
+        id="dailyLoginButton"
+        type="button"
+        class="task-button claim-task-button"
+      >
+        Claim Daily XP
+      </button>
+
+      <button
+        id="restoreStreakButton"
+        type="button"
+        class="task-button"
+        style="
+          display:none;
+          border-color:rgba(255,180,80,0.35);
+        "
+      >
+        Restore Streak — 1,000 XP
+      </button>
+
+    </div>
+
   </div>
 
   <div
