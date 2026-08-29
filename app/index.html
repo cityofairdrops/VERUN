@@ -471,6 +471,18 @@
       margin-top: 38px;
     }
 
+    /* Mystery Boxes, Referral, Leaderboard, and Airdrop are each the
+       sole content of their own tab/page (no section above them on
+       that page), so the generic .section top margin just pushes
+       them down with nothing to space out. Zero it so they sit
+       higher on screen. */
+    #mystery-boxes,
+    #referral,
+    #leaderboardSection,
+    #airdropSection {
+      margin-top: 0;
+    }
+
     .section-head {
       display: flex;
       align-items: flex-end;
@@ -1879,6 +1891,20 @@
 
         </div>
 
+        <!-- NOTICE -->
+        <div class="notice">
+
+          VERUN is a 100% community-bootstrapped initiative with no
+          private presales, venture capital allocations, or paid
+          influencers. We are currently in our community-building
+          phase. XP displayed in this interface is a participation
+          tracking mechanism and will determine your allocation
+          during our fair launch. Final token distribution and
+          eligibility conditions will be subject to the project's
+          official announcements.
+
+        </div>
+
       </section>
 
 
@@ -1969,23 +1995,8 @@
       font-size:10px;
     "
   ></div>
-</div>
 
 </section>
-
-<!-- NOTICE -->
-<div class="notice">
-
-  VERUN is a 100% community-bootstrapped initiative with no
-  private presales, venture capital allocations, or paid
-  influencers. We are currently in our community-building
-  phase. XP displayed in this interface is a participation
-  tracking mechanism and will determine your allocation
-  during our fair launch. Final token distribution and
-  eligibility conditions will be subject to the project's
-  official announcements.
-
-</div>
 
 </div>
       
