@@ -883,7 +883,19 @@
     .referral-ring {
       fill: none;
       stroke: var(--rarity-glow);
-      stroke-width: 3;
+      stroke-width: 2.4;
+    }
+
+    .referral-plus-bg {
+      fill: var(--panel);
+      stroke: var(--rarity-glow);
+      stroke-width: 1.6;
+    }
+
+    .referral-plus {
+      stroke: var(--rarity-glow);
+      stroke-width: 1.8;
+      stroke-linecap: round;
     }
 
     .referral-ring-pulse {
@@ -1891,20 +1903,6 @@
 
         </div>
 
-        <!-- NOTICE -->
-        <div class="notice">
-
-          VERUN is a 100% community-bootstrapped initiative with no
-          private presales, venture capital allocations, or paid
-          influencers. We are currently in our community-building
-          phase. XP displayed in this interface is a participation
-          tracking mechanism and will determine your allocation
-          during our fair launch. Final token distribution and
-          eligibility conditions will be subject to the project's
-          official announcements.
-
-        </div>
-
       </section>
 
 
@@ -1995,6 +1993,20 @@
       font-size:10px;
     "
   ></div>
+
+  <!-- NOTICE -->
+  <div class="notice">
+
+    VERUN is a 100% community-bootstrapped initiative with no
+    private presales, venture capital allocations, or paid
+    influencers. We are currently in our community-building
+    phase. XP displayed in this interface is a participation
+    tracking mechanism and will determine your allocation
+    during our fair launch. Final token distribution and
+    eligibility conditions will be subject to the project's
+    official announcements.
+
+  </div>
 
 </section>
 
@@ -2179,8 +2191,12 @@
       <div class="verun-referral-icon-wrap" style="--rarity-glow:#8dffb7;">
         <svg class="verun-referral-icon-svg" viewBox="0 0 48 48" width="42" height="42" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle class="referral-ring-pulse" cx="24" cy="24" r="16"/>
-          <rect class="referral-ring" x="6" y="17" width="15" height="15" rx="7.5" transform="rotate(-18 13.5 24.5)"/>
-          <rect class="referral-ring" x="26" y="16" width="15" height="15" rx="7.5" transform="rotate(-18 33.5 23.5)"/>
+          <circle class="referral-ring" cx="15" cy="18" r="5"/>
+          <path class="referral-ring" d="M6 36a9 9 0 0 1 18 0"/>
+          <circle class="referral-ring" cx="31" cy="18" r="5"/>
+          <path class="referral-ring" d="M22 36a9 9 0 0 1 18 0"/>
+          <circle class="referral-plus-bg" cx="24" cy="9" r="5.5"/>
+          <path class="referral-plus" d="M24 6.3v5.4M21.3 9h5.4"/>
         </svg>
       </div>
       <div>
@@ -4181,6 +4197,23 @@ mysteryBoxStyle.textContent = `
   fill:var(--rarity-glow);
 }
 
+/* Corner rivets/bolts — the detail that reads as "heavy welded
+   metal crate" rather than a smooth wooden chest. */
+.chest-bolt {
+  fill:var(--rarity-glow);
+  opacity:.9;
+}
+
+/* Faint hazard-stripe accent near a corner, like stenciled markings
+   on an industrial supply crate. Kept subtle so it doesn't clutter
+   the icon at small sizes. */
+.chest-stripe {
+  stroke:var(--rarity-glow);
+  stroke-width:1.4;
+  stroke-linecap:round;
+  opacity:.3;
+}
+
 @keyframes verunChestIdle {
 
   0%,100% {
@@ -4390,32 +4423,46 @@ function getChestSvgMarkup(open) {
   if (!open) {
     return `
       <svg class="verun-chest-svg" viewBox="0 0 64 58" width="52" height="48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect class="chest-side" x="9" y="12" width="46" height="38" rx="2"/>
-        <rect class="chest-lid" x="9" y="8" width="46" height="15" rx="2"/>
-        <rect class="chest-body" x="9" y="23" width="46" height="27" rx="2"/>
+        <rect class="chest-side" x="9" y="12" width="46" height="38" rx="1.5"/>
+        <rect class="chest-lid" x="9" y="8" width="46" height="15" rx="1.5"/>
+        <rect class="chest-body" x="9" y="23" width="46" height="27" rx="1.5"/>
         <line class="chest-seam" x1="9" y1="15.5" x2="55" y2="15.5"/>
         <line class="chest-seam" x1="9" y1="35" x2="55" y2="35"/>
         <line class="chest-seam" x1="9" y1="43" x2="55" y2="43"/>
         <rect class="chest-band" x="7" y="20.5" width="50" height="5" rx="1"/>
         <rect class="chest-band" x="28" y="8" width="8" height="42"/>
-        <rect class="chest-lock-plate" x="24.5" y="26" width="15" height="13" rx="2"/>
+        <circle class="chest-bolt" cx="12" cy="11.5" r="1.6"/>
+        <circle class="chest-bolt" cx="52" cy="11.5" r="1.6"/>
+        <circle class="chest-bolt" cx="12" cy="46.5" r="1.6"/>
+        <circle class="chest-bolt" cx="52" cy="46.5" r="1.6"/>
+        <rect class="chest-lock-plate" x="24" y="26" width="16" height="13" rx="2"/>
         <path class="chest-shackle" d="M28 26 v-5 a4 4 0 0 1 8 0 v5"/>
-        <circle class="chest-keyhole" cx="32" cy="31" r="1.8"/>
+        <circle class="chest-keyhole" cx="32" cy="32" r="1.8"/>
+        <path class="chest-stripe" d="M42 47 L48 41"/>
+        <path class="chest-stripe" d="M36 47 L45 38"/>
       </svg>
     `;
   }
 
   return `
     <svg class="verun-chest-svg verun-chest-svg-open" viewBox="0 0 64 58" width="52" height="48" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect class="chest-side" x="9" y="23" width="46" height="27" rx="2"/>
-      <rect class="chest-body" x="9" y="23" width="46" height="27" rx="2"/>
+      <rect class="chest-side" x="9" y="23" width="46" height="27" rx="1.5"/>
+      <rect class="chest-body" x="9" y="23" width="46" height="27" rx="1.5"/>
       <line class="chest-seam" x1="9" y1="35" x2="55" y2="35"/>
       <line class="chest-seam" x1="9" y1="43" x2="55" y2="43"/>
       <rect class="chest-band" x="7" y="20.5" width="50" height="5" rx="1"/>
       <rect class="chest-band" x="28" y="23" width="8" height="27"/>
+      <circle class="chest-bolt" cx="12" cy="46.5" r="1.6"/>
+      <circle class="chest-bolt" cx="52" cy="46.5" r="1.6"/>
+      <rect class="chest-lock-plate" x="24" y="26" width="16" height="13" rx="2" transform="rotate(-18 32 32)"/>
+      <path class="chest-shackle" d="M28 26 v-5 a4 4 0 0 1 8 0 v5" transform="rotate(-18 32 32)"/>
+      <path class="chest-stripe" d="M42 47 L48 41"/>
+      <path class="chest-stripe" d="M36 47 L45 38"/>
       <g transform="translate(9,22) rotate(-38)">
-        <rect class="chest-lid-open" x="0" y="-15" width="46" height="15" rx="2"/>
+        <rect class="chest-lid-open" x="0" y="-15" width="46" height="15" rx="1.5"/>
         <line class="chest-seam" x1="0" y1="-7.5" x2="46" y2="-7.5"/>
+        <circle class="chest-bolt" cx="4" cy="-11" r="1.6"/>
+        <circle class="chest-bolt" cx="42" cy="-11" r="1.6"/>
       </g>
     </svg>
   `;
