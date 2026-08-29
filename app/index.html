@@ -491,26 +491,29 @@
       margin-top: 3px;
     }
 
-    /* "Available tasks" header only: title centered in the row,
-       "View all" stays pinned to the right. */
+    /* "Available Tasks" header: title and description centered */
     #tasksSectionHead {
-      position: relative;
-      justify-content: flex-end;
-    }
-
-    #tasksSectionHead .section-title {
-      position: absolute;
-      left: 0;
-      right: 0;
+      flex-direction: column;
+      align-items: center;
       text-align: center;
-      pointer-events: none;
+      gap: 6px;
     }
 
-    .view-all {
-      color: var(--green);
-      font-size: 10px;
-      font-weight: 800;
-      white-space: nowrap;
+    #tasksSectionHead .section-description {
+      max-width: 480px;
+    }
+
+    /* "Daily Login" header: title and description centered */
+    #dailyLoginSectionHead {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    #dailyLoginSectionHead .section-description {
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     /* ================= TASKS ================= */
@@ -522,16 +525,16 @@
 
     .task {
       display: flex;
-      align-items: center;
-      gap: 14px;
+      flex-direction: column;
+      gap: 12px;
       min-width: 0;
-      min-height: 68px; /* keeps every task box the same size */
+      min-height: 116px; /* keeps every task box a similar size */
 
       background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 12px;
 
-      padding: 15px;
+      padding: 16px;
 
       transition: 0.2s ease;
     }
@@ -539,6 +542,13 @@
     .task:hover {
       border-color: var(--border-strong);
       background: var(--panel2);
+    }
+
+    .task-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      min-width: 0;
     }
 
     .task-info {
@@ -553,29 +563,57 @@
       width: 10px;
       flex-shrink: 0;
       text-align: center;
+      margin-top: 2px;
     }
 
     .task.done .task-bullet {
       color: var(--green);
     }
 
+    /* Bigger and wrapped (up to 2 lines) instead of a single
+       ellipsis-truncated line, so the task name is fully readable. */
     .task-name {
-      font-size: 13px;
+      font-size: 15px;
       font-weight: 750;
+      line-height: 1.35;
 
-      white-space: nowrap;
+      white-space: normal;
+      overflow-wrap: break-word;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
       overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     .task-description {
       color: var(--muted);
-      font-size: 10px;
-      margin-top: 2px;
+      font-size: 11px;
+      margin-top: 4px;
+      line-height: 1.4;
 
-      white-space: nowrap;
+      white-space: normal;
+      overflow-wrap: break-word;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
       overflow: hidden;
-      text-overflow: ellipsis;
+    }
+
+    /* Reward + action buttons live in a row under the nameplate,
+       instead of squeezed onto the same line as the task name. */
+    .task-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding-left: 24px; /* aligns under the name, past the bullet */
+    }
+
+    .task-buttons {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
     }
 
     .task-reward {
@@ -586,9 +624,9 @@
       flex-shrink: 0;
     }
 
-    /* Shared box model for every action element that can appear on
-       the right of a task row (start/claim/status/copy). Keeping
-       these identical is what keeps every task box the same size,
+    /* Shared box model for every action element that can appear
+       under a task's nameplate (start/claim/status/copy). Keeping
+       these identical is what keeps every task box a similar size,
        whatever state that particular task is in. No max-width/
        ellipsis here — the text (countdown timers, status labels)
        must stay fully readable; nowrap alone is enough to stop it
@@ -1087,11 +1125,16 @@
 
       .task {
         padding: 12px;
-        min-height: 60px;
+        min-height: 92px;
+        gap: 10px;
       }
 
       .task-description {
         display: none;
+      }
+
+      .task-actions {
+        padding-left: 0;
       }
 
       .task-button,
@@ -1544,7 +1587,7 @@
           <div class="bal-top-right">
 
             <div class="balance-today-reward">
-              <span class="balance-today-reward-label">Today's reward</span>
+              <span class="balance-today-reward-label">Today's Reward</span>
               <span id="dailyRewardText">Connect X to see your reward</span>
             </div>
 
@@ -1562,7 +1605,7 @@
 </div>
 
 <div class="balance-note">
-  Complete tasks to earn XP.
+  Complete tasks to earn XP, which will later be convertible into $VERUN.
 </div>
 
 <!--
@@ -1587,12 +1630,12 @@
         <div class="section-head" id="tasksSectionHead">
 
           <h2 class="section-title">
-            Available tasks
+            Available Tasks
           </h2>
 
-          <a href="#" class="view-all">
-            View all →
-          </a>
+          <p class="section-description">
+            Tasks are verified manually. Once your task is approved, you can claim your XP.
+          </p>
 
         </div>
 
@@ -1602,111 +1645,148 @@
 
           <div class="task">
 
-            <div class="task-bullet">•</div>
+            <div class="task-top">
 
-            <div class="task-info">
+              <div class="task-bullet">•</div>
 
-              <div class="task-name">
-                Follow a VERUN account
-              </div>
+              <div class="task-info">
 
-              <div class="task-description">
-                Follow the official VERUN account on X.
+                <div class="task-name">
+                  Follow a VERUN account
+                </div>
+
+                <div class="task-description">
+                  Follow the official VERUN account on X.
+                </div>
+
               </div>
 
             </div>
 
-            <div class="task-reward">
-              +XP
-            </div>
+            <div class="task-actions">
 
-            <button
-  class="task-button"
-  data-task-url="${task.target_url}"
->
-  Start
-</button>
+              <div class="task-reward">
+                +XP
+              </div>
+
+              <div class="task-buttons">
+                <button class="task-button" data-task-url="${task.target_url}">
+                  Start
+                </button>
+              </div>
+
+            </div>
 
           </div>
 
 
           <div class="task">
 
-            <div class="task-bullet">•</div>
+            <div class="task-top">
 
-            <div class="task-info">
+              <div class="task-bullet">•</div>
 
-              <div class="task-name">
-                Repost a VERUN post
-              </div>
+              <div class="task-info">
 
-              <div class="task-description">
-                Repost an eligible campaign post.
+                <div class="task-name">
+                  Repost a VERUN post
+                </div>
+
+                <div class="task-description">
+                  Repost an eligible campaign post.
+                </div>
+
               </div>
 
             </div>
 
-            <div class="task-reward">
-              +XP
-            </div>
+            <div class="task-actions">
 
-            <button class="task-button">
-              Start
-            </button>
+              <div class="task-reward">
+                +XP
+              </div>
+
+              <div class="task-buttons">
+                <button class="task-button">
+                  Start
+                </button>
+              </div>
+
+            </div>
 
           </div>
 
 
           <div class="task">
 
-            <div class="task-bullet">•</div>
+            <div class="task-top">
 
-            <div class="task-info">
+              <div class="task-bullet">•</div>
 
-              <div class="task-name">
-                Like a VERUN post
-              </div>
+              <div class="task-info">
 
-              <div class="task-description">
-                Like an eligible campaign post on X.
+                <div class="task-name">
+                  Like a VERUN post
+                </div>
+
+                <div class="task-description">
+                  Like an eligible campaign post on X.
+                </div>
+
               </div>
 
             </div>
 
-            <div class="task-reward">
-              +XP
-            </div>
+            <div class="task-actions">
 
-            <button class="task-button">
-              Start
-            </button>
+              <div class="task-reward">
+                +XP
+              </div>
+
+              <div class="task-buttons">
+                <button class="task-button">
+                  Start
+                </button>
+              </div>
+
+            </div>
 
           </div>
 
 
           <div class="task">
 
-            <div class="task-bullet">•</div>
+            <div class="task-top">
 
-            <div class="task-info">
+              <div class="task-bullet">•</div>
 
-              <div class="task-name">
-                Join a VERUN campaign
-              </div>
+              <div class="task-info">
 
-              <div class="task-description">
-                Participate in an active community campaign.
+                <div class="task-name">
+                  Join a VERUN campaign
+                </div>
+
+                <div class="task-description">
+                  Participate in an active community campaign.
+                </div>
+
               </div>
 
             </div>
 
-            <div class="task-reward">
-              +XP
-            </div>
+            <div class="task-actions">
 
-            <button class="task-button">
-              Start
-            </button>
+              <div class="task-reward">
+                +XP
+              </div>
+
+              <div class="task-buttons">
+                <button class="task-button">
+                  Start
+                </button>
+              </div>
+
+            </div>
 
           </div>
 
@@ -1722,11 +1802,11 @@
 
 <section class="section" id="streak">
 
-  <div class="section-head">
+  <div class="section-head" id="dailyLoginSectionHead">
     <div>
       <h2 class="section-title">Daily Login</h2>
       <p class="section-description">
-        Come back every day to increase your streak and earn more XP.
+        Come back every day to increase your streak and earn more XP. If you miss a day, restoring a broken streak costs a 1000 XP penalty.
       </p>
     </div>
   </div>
@@ -2959,34 +3039,46 @@ tasks.sort((a, b) => {
     }
 
     taskElement.innerHTML = `
-      <div class="task-bullet">•</div>
+      <div class="task-top">
 
-      <div class="task-info">
+        <div class="task-bullet">•</div>
 
-        <div class="task-name">
-          ${escapeHtml(task.title)}
-        </div>
+        <div class="task-info">
 
-        <div class="task-description ${isRejected ? "task-description-rejected" : ""}">
-          ${isRejected ? "Verification failed" : escapeHtml(task.description || "")}
+          <div class="task-name">
+            ${escapeHtml(task.title)}
+          </div>
+
+          <div class="task-description ${isRejected ? "task-description-rejected" : ""}">
+            ${isRejected ? "Verification failed" : escapeHtml(task.description || "")}
+          </div>
+
         </div>
 
       </div>
 
-      <div class="task-reward">
-        +${task.xp_reward} XP
+      <div class="task-actions">
+
+        <div class="task-reward">
+          +${task.xp_reward} XP
+        </div>
+
+        <div class="task-buttons">
+
+          ${task.task_type === "profile_badge" ? `
+            <button
+              class="copy-emoji-button"
+              onclick="navigator.clipboard.writeText('✌️').then(() => this.textContent='✓ Copied!')"
+            >
+              ✌️ Copy
+            </button>
+          ` : ""}
+
+          ${buttonHtml}
+
+        </div>
+
       </div>
-
-      ${task.task_type === "profile_badge" ? `
-        <button
-          class="copy-emoji-button"
-          onclick="navigator.clipboard.writeText('✌️').then(() => this.textContent='✓ Copied!')"
-        >
-          ✌️ Copy
-        </button>
-      ` : ""}
-
-      ${buttonHtml}
     `;
 
     taskFragment.appendChild(taskElement);
@@ -3208,16 +3300,8 @@ function updateDailyRewardPreview(streak) {
   const mysteryBox =
     nextDay % 30 === 0;
 
-  let text =
-    `Day ${nextDay} — +${baseXP + weeklyBonus} XP`;
-
-  if (weeklyBonus) {
-    text += " +100 weekly bonus";
-  }
-
-  if (mysteryBox) {
-    text += " Mystery Box";
-  }
+  const text =
+    `+${baseXP + weeklyBonus} XP`;
 
   dailyRewardText.textContent = text;
 
@@ -3352,16 +3436,8 @@ console.log("COUNTDOWN STARTED");
         `Day ${todayLogin.day_number} completed today.`;
     }
 
-    let text =
-  `+${todayLogin.xp_awarded + todayLogin.weekly_bonus} XP earned`;
-
-if (todayLogin.weekly_bonus > 0) {
-      text += " +100 bonus";
-    }
-
-    if (todayLogin.mystery_box) {
-      text += " Mystery Box unlocked";
-    }
+    const text =
+  `+${todayLogin.xp_awarded + todayLogin.weekly_bonus} XP`;
 
     if (dailyRewardText) {
       dailyRewardText.textContent = text;
@@ -3496,7 +3572,7 @@ startDailyCountdown();
 
   if (dailyRewardText) {
     dailyRewardText.textContent =
-      `+${data.xp_awarded} XP earned`;
+      `+${data.xp_awarded} XP`;
   }
 
 
