@@ -1002,6 +1002,21 @@
       flex-shrink: 0;
     }
 
+    .milestone.completed {
+      background: var(--green-soft);
+      border-color: var(--green-border);
+    }
+
+    .milestone.completed span:first-child {
+      color: var(--text);
+    }
+
+    .milestone.completed span:first-child::before {
+      content: "✓ ";
+      color: var(--green);
+      font-weight: 800;
+    }
+
     #referredUsersList {
       display: grid;
       gap: 6px;
@@ -1518,6 +1533,12 @@
   letter-spacing:-.5px;
   margin-bottom:15px;
 }
+#airdropSection {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:calc(100dvh - 160px);
+}
 
 @media (max-width:520px) {
   .verun-drawer { padding:18px; }
@@ -1664,6 +1685,20 @@
   <span id="xpTierCurrent"></span>
   <span id="xpTierNext"></span>
 </div>
+
+</div>
+
+<!-- NOTICE -->
+<div class="notice">
+
+  VERUN is a 100% community-bootstrapped initiative with no
+  private presales, venture capital allocations, or paid
+  influencers. We are currently in our community-building
+  phase. XP displayed in this interface is a participation
+  tracking mechanism and will determine your allocation
+  during our fair launch. Final token distribution and
+  eligibility conditions will be subject to the project's
+  official announcements.
 
 </div>
           
@@ -2206,27 +2241,27 @@
 
       <div id="referralMilestones">
 
-        <div class="milestone">
+        <div class="milestone" data-threshold="10">
           <span>10 Referrals</span>
           <span>+500 XP</span>
         </div>
 
-        <div class="milestone">
+        <div class="milestone" data-threshold="25">
           <span>25 Referrals</span>
           <span>+1,500 XP</span>
         </div>
 
-        <div class="milestone">
+        <div class="milestone" data-threshold="50">
           <span>50 Referrals</span>
           <span>+3,000 XP</span>
         </div>
 
-        <div class="milestone">
+        <div class="milestone" data-threshold="75">
           <span>75 Referrals</span>
           <span>+5,000 XP</span>
         </div>
 
-        <div class="milestone">
+        <div class="milestone" data-threshold="100">
           <span>100 Referrals</span>
           <span>Mystery Box</span>
         </div>
@@ -2257,29 +2292,14 @@
 </section>
 
 <!-- END REFERRALS -->
-      <!-- NOTICE -->
-
-      <div class="notice">
-
-        VERUN is a 100% community-bootstrapped initiative with no
-        private presales, venture capital allocations, or paid
-        influencers. We are currently in our community-building
-        phase. XP displayed in this interface is a participation
-        tracking mechanism and will determine your allocation
-        during our fair launch. Final token distribution and
-        eligibility conditions will be subject to the project's
-        official announcements.
-
-      </div>
-
 
 <!-- AIRDROP SECTION -->
 <section
   id="airdropSection"
   class="section-card"
-  style="display:none;margin-top:20px;"
+  style="display:none;"
 >
-  <div style="text-align:center;padding:38px 20px;border:1px solid var(--border);border-radius:14px;background:var(--panel);">
+  <div style="text-align:center;padding:38px 20px;border:1px solid var(--border);border-radius:14px;background:var(--panel);max-width:360px;margin:0 auto;">
     <div class="verun-guest-mark" style="margin:0 auto 16px;width:44px;height:44px;"><span style="width:13px;height:13px;"></span></div>
 
     <h2 style="margin-bottom:8px;font-size:16px;font-weight:600;">
@@ -2291,8 +2311,8 @@
     </p>
   </div>
 </section>
-  <section id="leaderboardSection" class="section-card app-section" style="margin-top:20px;">
-  <h2>Verun Leaderboard</h2>
+  <section id="leaderboardSection" class="section-card app-section">
+  <h2>Leaderboard</h2>
 
   <div id="leaderboardTabs" class="leaderboard-tabs">
     <button type="button" class="leaderboard-tab active" data-sort="xp">Top XP</button>
@@ -2467,6 +2487,162 @@ async function processReferral() {
       "verun_referral_code"
     );
 
+  }
+
+}
+
+
+// ============================================
+// VERUN REFERRAL DASHBOARD
+// ============================================
+// Milestones mirror the "Referral Milestones" list rendered in the
+// markup above — keep the two in sync if those numbers ever change.
+const REFERRAL_MILESTONES = [
+  { threshold: 10, bonusXp: 500 },
+  { threshold: 25, bonusXp: 1500 },
+  { threshold: 50, bonusXp: 3000 },
+  { threshold: 75, bonusXp: 5000 },
+  { threshold: 100, bonusXp: 0 } // mystery box, not XP
+];
+
+async function loadReferralDashboard() {
+
+  const totalReferralsEl = document.getElementById("totalReferrals");
+  const referralXpEl = document.getElementById("referralXp");
+  const nextMilestoneEl = document.getElementById("nextReferralMilestone");
+  const progressBarEl = document.getElementById("referralProgressBar");
+  const progressTextEl = document.getElementById("referralProgressText");
+  const referredUsersList = document.getElementById("referredUsersList");
+  const referralLinkInput = document.getElementById("referralLinkInput");
+
+  const {
+    data: { session }
+  } = await supabaseClient.auth.getSession();
+
+  if (!session) return;
+
+  const { data: profile, error } =
+    await supabaseClient
+      .from("profiles")
+      .select("referrals_count,referral_code")
+      .eq("id", session.user.id)
+      .maybeSingle();
+
+  if (error) {
+    console.error("Referral dashboard error:", error);
+    return;
+  }
+
+  const count = Number(profile?.referrals_count || 0);
+
+  if (totalReferralsEl) {
+    totalReferralsEl.textContent = count;
+  }
+
+  if (referralLinkInput && profile?.referral_code) {
+    referralLinkInput.value =
+      `${window.location.origin}${window.location.pathname}?ref=${encodeURIComponent(profile.referral_code)}`;
+  }
+
+  // XP earned so far from milestones already reached
+  const earnedXp = REFERRAL_MILESTONES
+    .filter(m => count >= m.threshold)
+    .reduce((sum, m) => sum + m.bonusXp, 0);
+
+  if (referralXpEl) {
+    referralXpEl.textContent = `${earnedXp.toLocaleString()} XP`;
+  }
+
+  // Mark milestones already reached
+  document.querySelectorAll("#referralMilestones .milestone")
+    .forEach(el => {
+      const threshold = Number(el.dataset.threshold || 0);
+      el.classList.toggle("completed", count >= threshold);
+    });
+
+  // Progress toward the next milestone
+  const nextMilestone =
+    REFERRAL_MILESTONES.find(m => count < m.threshold);
+
+  if (nextMilestone) {
+
+    const previousThreshold =
+      REFERRAL_MILESTONES
+        .filter(m => m.threshold < nextMilestone.threshold)
+        .reduce((max, m) => Math.max(max, m.threshold), 0);
+
+    const span = nextMilestone.threshold - previousThreshold;
+    const progressInStep = count - previousThreshold;
+    const pct = Math.max(0, Math.min(100, (progressInStep / span) * 100));
+
+    if (nextMilestoneEl) {
+      nextMilestoneEl.textContent = `${nextMilestone.threshold} Referrals`;
+    }
+
+    if (progressBarEl) {
+      progressBarEl.style.width = `${pct}%`;
+    }
+
+    if (progressTextEl) {
+      progressTextEl.textContent = `${count} / ${nextMilestone.threshold}`;
+    }
+
+  } else {
+
+    // All milestones reached
+    if (nextMilestoneEl) {
+      nextMilestoneEl.textContent = "All milestones reached";
+    }
+
+    if (progressBarEl) {
+      progressBarEl.style.width = "100%";
+    }
+
+    if (progressTextEl) {
+      progressTextEl.textContent = `${count} / ${count}`;
+    }
+  }
+
+  // Best-effort list of referred users. If the referred-by relationship
+  // isn't queryable this way, this quietly no-ops and the "No referrals
+  // yet" placeholder stays as-is rather than showing an error.
+  if (referredUsersList) {
+
+    try {
+
+      const { data: referredUsers, error: referredError } =
+        await supabaseClient
+          .from("profiles")
+          .select("x_username,current_streak")
+          .eq("referred_by", session.user.id);
+
+      if (!referredError && referredUsers && referredUsers.length > 0) {
+
+        referredUsersList.innerHTML = referredUsers.map(user => `
+          <div style="
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding:10px 12px;
+            background:var(--panel2);
+            border:1px solid var(--border);
+            border-radius:8px;
+            font-size:11px;
+          ">
+            <span>@${escapeHtml(user.x_username || "verun_user")}</span>
+            <span style="color:var(--muted2);">${user.current_streak || 0} day streak</span>
+          </div>
+        `).join("");
+
+      } else if (count === 0) {
+
+        referredUsersList.innerHTML =
+          `<p id="noReferralsMessage">No referrals yet.</p>`;
+      }
+
+    } catch (referredListError) {
+      console.error("Referred users list error:", referredListError);
+    }
   }
 
 }
@@ -3398,11 +3574,23 @@ function startDailyCountdown() {
     setInterval(updateCountdown, 1000);
   }
 
+// Multiple things trigger loadDailyLoginStatus() in quick succession on
+// load (auth state can fire more than once, section loaders, etc). Each
+// call re-reads the DB, so if two overlap, whichever network response
+// lands last "wins" and can overwrite a fresh result with a stale one —
+// that's what was showing an XP number that didn't match the real streak.
+// This token makes every call check it's still the most recent one
+// before touching the DOM.
+let dailyLoginRequestId = 0;
+
 async function loadDailyLoginStatus() {
-console.log("DAILY STATUS FUNCTION RUNNING");
+  const requestId = ++dailyLoginRequestId;
+
   const {
     data: { session }
   } = await supabaseClient.auth.getSession();
+
+  if (requestId !== dailyLoginRequestId) return;
 
   if (!session) {
 
@@ -3423,6 +3611,8 @@ console.log("DAILY STATUS FUNCTION RUNNING");
       .eq("id", session.user.id)
       .maybeSingle();
 
+
+  if (requestId !== dailyLoginRequestId) return;
 
   if (error || !profile) {
     console.error(
@@ -3458,6 +3648,8 @@ console.log("DAILY STATUS FUNCTION RUNNING");
       .eq("login_date", today)
       .maybeSingle();
 
+
+  if (requestId !== dailyLoginRequestId) return;
 
   if (todayLogin) {
 
@@ -3611,7 +3803,7 @@ startDailyCountdown();
 
   if (dailyRewardText) {
     dailyRewardText.textContent =
-      `+${data.xp_awarded} XP`;
+      `+${Number(data.xp_awarded || 0) + Number(data.bonus_xp || 0)} XP`;
   }
 
 
@@ -3754,135 +3946,157 @@ const mysteryBoxStyle = document.createElement("style");
 
 mysteryBoxStyle.textContent = `
 
-.verun-mystery-wrap {
+.verun-chest-wrap {
+  position:relative;
   display:flex;
   align-items:center;
   justify-content:center;
   width:70px;
   height:70px;
   flex-shrink:0;
+  --rarity-glow: #8dffb7;
 }
 
-.verun-mystery-box {
-  position:relative;
-  width:54px;
-  height:50px;
-  transform:perspective(160px) rotateX(3deg);
-  filter:drop-shadow(0 0 12px rgba(141,255,183,.18));
-  animation:verunBoxPulse 2.8s ease-in-out infinite;
+.verun-chest-svg {
+  overflow:visible;
+  animation: verunChestIdle 3.2s ease-in-out infinite;
 }
 
-.verun-box-top {
-  position:absolute;
-  left:3px;
-  top:4px;
-  width:48px;
-  height:17px;
-
-  background:
-    linear-gradient(
-      135deg,
-      #1c2520,
-      #0b100e
-    );
-
-  border:1px solid rgba(141,255,183,.45);
-
-  transform:skewY(-8deg);
-
-  box-shadow:
-    inset 0 0 12px rgba(141,255,183,.08),
-    0 0 8px rgba(141,255,183,.08);
+.chest-body {
+  fill:#0d1512;
+  stroke:var(--rarity-glow);
+  stroke-width:1.6;
 }
 
-.verun-box-front {
-  position:absolute;
-  left:3px;
-  top:19px;
-  width:48px;
-  height:30px;
-
-  background:
-    linear-gradient(
-      145deg,
-      #111815,
-      #070a09
-    );
-
-  border:1px solid rgba(141,255,183,.38);
-
-  box-shadow:
-    inset 0 0 18px rgba(141,255,183,.06);
+.chest-lid,
+.chest-lid-open {
+  fill:#131c17;
+  stroke:var(--rarity-glow);
+  stroke-width:1.6;
 }
 
-.verun-box-line {
-  position:absolute;
-  left:24px;
-  top:19px;
-  width:5px;
-  height:30px;
-
-  background:
-    linear-gradient(
-      to bottom,
-      rgba(141,255,183,.65),
-      rgba(141,255,183,.12)
-    );
-
-  box-shadow:
-    0 0 8px rgba(141,255,183,.3);
+.chest-band {
+  fill:var(--rarity-glow);
+  opacity:.55;
 }
 
-.verun-box-core {
-  position:absolute;
-  left:18px;
-  top:27px;
-
-  width:17px;
-  height:17px;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  background:#08100c;
-
-  border:1px solid #8dffb7;
-
-  transform:rotate(45deg);
-
-  box-shadow:
-    0 0 8px rgba(141,255,183,.45),
-    inset 0 0 7px rgba(141,255,183,.18);
+.chest-lock-plate {
+  fill:#08100c;
+  stroke:var(--rarity-glow);
+  stroke-width:1.3;
 }
 
-.verun-box-core span {
-  transform:rotate(-45deg);
-
-  color:#8dffb7;
-
-  font-size:9px;
-  font-weight:950;
-  letter-spacing:0;
+.chest-shackle {
+  stroke:var(--rarity-glow);
+  stroke-width:2.2;
+  fill:none;
 }
 
-@keyframes verunBoxPulse {
+.chest-keyhole {
+  fill:var(--rarity-glow);
+}
+
+@keyframes verunChestIdle {
 
   0%,100% {
-    filter:
-      drop-shadow(
-        0 0 8px
-        rgba(141,255,183,.12)
-      );
+    transform:translateY(0);
+    filter:drop-shadow(0 0 6px var(--rarity-glow));
   }
 
   50% {
-    filter:
-      drop-shadow(
-        0 0 17px
-        rgba(141,255,183,.32)
-      );
+    transform:translateY(-3px);
+    filter:drop-shadow(0 0 14px var(--rarity-glow));
   }
+
+}
+
+/* Anticipation shake right before a box opens */
+@keyframes verunChestShake {
+
+  0%, 100% { transform:translateX(0) rotate(0); }
+  10% { transform:translateX(-3px) rotate(-4deg); }
+  20% { transform:translateX(3px) rotate(4deg); }
+  30% { transform:translateX(-4px) rotate(-5deg); }
+  40% { transform:translateX(4px) rotate(5deg); }
+  50% { transform:translateX(-3px) rotate(-3deg); }
+  60% { transform:translateX(3px) rotate(3deg); }
+  70% { transform:translateX(-2px) rotate(-2deg); }
+  80% { transform:translateX(2px) rotate(2deg); }
+  90% { transform:translateX(-1px) rotate(0); }
+
+}
+
+.verun-chest-shake {
+  animation: verunChestShake .55s ease-in-out 3, verunChestIdle 3.2s ease-in-out infinite;
+}
+
+/* Pop the chest open once the reward is known */
+@keyframes verunChestBurst {
+
+  0% { transform:scale(.75) rotate(-4deg); opacity:0; }
+  55% { transform:scale(1.18) rotate(2deg); opacity:1; }
+  75% { transform:scale(.96) rotate(0); }
+  100% { transform:scale(1); }
+
+}
+
+.verun-chest-open-anim {
+  animation: verunChestBurst .6s cubic-bezier(.34,1.56,.64,1) both;
+}
+
+.verun-reveal-core {
+  position:relative;
+  width:130px;
+  height:120px;
+  margin:0 auto 4px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* Radial flash behind the chest at the moment it opens */
+.verun-burst-rays {
+  position:absolute;
+  inset:-30px;
+  border-radius:50%;
+  background:radial-gradient(circle, var(--rarity-glow) 0%, transparent 68%);
+  opacity:0;
+  animation: verunBurstFlash .8s ease-out both;
+  pointer-events:none;
+}
+
+@keyframes verunBurstFlash {
+
+  0% { opacity:0; transform:scale(.3); }
+  35% { opacity:.6; transform:scale(1); }
+  100% { opacity:0; transform:scale(1.7); }
+
+}
+
+/* Sparkle particles flying outward from the open chest */
+.verun-sparks {
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+
+.verun-spark {
+  position:absolute;
+  top:50%;
+  left:50%;
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:var(--rarity-glow);
+  box-shadow:0 0 7px var(--rarity-glow);
+  opacity:0;
+  animation: verunSparkFly .9s ease-out both;
+}
+
+@keyframes verunSparkFly {
+
+  0% { transform:translate(-50%,-50%) scale(0); opacity:1; }
+  100% { transform:translate(calc(-50% + var(--sx)), calc(-50% + var(--sy))) scale(1); opacity:0; }
 
 }
 
@@ -3902,99 +4116,38 @@ mysteryBoxStyle.textContent = `
   margin-top:8px;
 }
 
-.verun-opened-icon {
-  width:70px;
-  height:70px;
+/* The reward callout — pops in and gets a rarity-tinted glow + shimmer sweep */
+@keyframes verunRewardPop {
 
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  0% { transform:scale(.75); opacity:0; }
+  60% { transform:scale(1.06); opacity:1; }
+  100% { transform:scale(1); }
 
-  border-radius:16px;
-
-  background:
-    radial-gradient(
-      circle,
-      rgba(141,255,183,.12),
-      rgba(141,255,183,.02)
-    );
-
-  border:1px solid
-    rgba(141,255,183,.25);
-
-  font-size:26px;
 }
 
-.verun-reveal-core {
-  width:110px;
-  height:110px;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  margin:auto;
-
-  border-radius:24px;
-
-  background:
-    radial-gradient(
-      circle,
-      rgba(141,255,183,.18),
-      rgba(141,255,183,.025)
-    );
-
-  border:1px solid
-    rgba(141,255,183,.35);
-
-  box-shadow:
-    0 0 35px
-    rgba(141,255,183,.16);
-
-  animation:
-    verunRevealPulse 1.4s
-    ease-in-out infinite;
+@keyframes verunShimmer {
+  to { transform:translateX(130%); }
 }
 
-.verun-reveal-symbol {
-  width:52px;
-  height:52px;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  border:1px solid
-    rgba(141,255,183,.75);
-
-  transform:rotate(45deg);
-
-  background:#08100c;
-
-  box-shadow:
-    0 0 22px
-    rgba(141,255,183,.35);
+.verun-reward-glorious {
+  position:relative;
+  overflow:hidden;
+  animation: verunRewardPop .5s cubic-bezier(.34,1.56,.64,1) both;
 }
 
-.verun-reveal-symbol span {
-  transform:rotate(-45deg);
-
-  color:#8dffb7;
-
-  font-size:24px;
-  font-weight:950;
-}
-
-@keyframes verunRevealPulse {
-
-  0%,100% {
-    transform:scale(.96);
-  }
-
-  50% {
-    transform:scale(1.05);
-  }
-
+.verun-reward-glorious::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  width:60%;
+  background:linear-gradient(
+    120deg,
+    transparent 10%,
+    rgba(255,255,255,.4) 50%,
+    transparent 90%
+  );
+  transform:translateX(-130%);
+  animation: verunShimmer 1.5s ease-in-out .35s 2;
 }
 
 `;
@@ -4030,34 +4183,96 @@ const MYSTERY_RARITY = {
 
 };
 
+// Glow tint per rarity, used to color the chest, burst and reward callout
+const MYSTERY_RARITY_GLOW = {
+  special: "#ffb84d",
+  rare: "#ffe37a",
+  uncommon: "#baffd1",
+  common: "#8dffb7"
+};
+
+function getRarityGlow(rarity) {
+  return MYSTERY_RARITY_GLOW[rarity] || MYSTERY_RARITY_GLOW.common;
+}
+
 
 // ============================================================
-// VERUN BOX GRAPHIC
+// VERUN CHEST GRAPHIC
 // ============================================================
 
-function getVerunBoxGraphic() {
+function getChestSvgMarkup(open) {
+
+  if (!open) {
+    return `
+      <svg class="verun-chest-svg" viewBox="0 0 64 58" width="52" height="48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path class="chest-lid" d="M6 26 C6 12 14 6 32 6 C50 6 58 12 58 26 Z"/>
+        <rect class="chest-body" x="6" y="26" width="52" height="24" rx="5"/>
+        <rect class="chest-band" x="27" y="6" width="10" height="44"/>
+        <rect class="chest-band" x="4" y="23" width="56" height="6"/>
+        <rect class="chest-lock-plate" x="25" y="20" width="14" height="13" rx="2"/>
+        <path class="chest-shackle" d="M28 20 v-4 a4 4 0 0 1 8 0 v4"/>
+        <circle class="chest-keyhole" cx="32" cy="26" r="1.8"/>
+      </svg>
+    `;
+  }
 
   return `
-
-    <div class="verun-mystery-wrap">
-
-      <div class="verun-mystery-box">
-
-        <div class="verun-box-top"></div>
-
-        <div class="verun-box-front"></div>
-
-        <div class="verun-box-line"></div>
-
-        <div class="verun-box-core">
-          <span>V</span>
-        </div>
-
-      </div>
-
-    </div>
-
+    <svg class="verun-chest-svg verun-chest-svg-open" viewBox="0 0 64 58" width="52" height="48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect class="chest-body" x="6" y="26" width="52" height="24" rx="5"/>
+      <path class="chest-lid-open" d="M8 26 C4 12 10 2 26 1 C38 0 50 6 52 15 C53 20 49 23 44 24 L10 26 Z"/>
+      <rect class="chest-band" x="27" y="26" width="10" height="24"/>
+      <rect class="chest-band" x="4" y="23" width="56" height="6"/>
+    </svg>
   `;
+
+}
+
+function getVerunBoxGraphic(rarity) {
+
+  const glow = rarity ? getRarityGlow(rarity) : MYSTERY_RARITY_GLOW.common;
+
+  return `
+    <div class="verun-chest-wrap" style="--rarity-glow:${glow};">
+      ${getChestSvgMarkup(false)}
+    </div>
+  `;
+
+}
+
+function getVerunOpenedGraphic(rarity) {
+
+  const glow = getRarityGlow(rarity);
+
+  return `
+    <div class="verun-chest-wrap" style="--rarity-glow:${glow};">
+      ${getChestSvgMarkup(true)}
+    </div>
+  `;
+
+}
+
+// Radial spark particles used in the box-opening reveal
+function buildSparkMarkup() {
+
+  const count = 10;
+  const sparks = [];
+
+  for (let i = 0; i < count; i++) {
+
+    const angle = (360 / count) * i;
+    const rad = (angle * Math.PI) / 180;
+    const distance = 55 + (i % 3) * 10;
+    const sx = (Math.cos(rad) * distance).toFixed(1);
+    const sy = (Math.sin(rad) * distance).toFixed(1);
+    const delay = ((i % 4) * 0.05).toFixed(2);
+
+    sparks.push(
+      `<span class="verun-spark" style="--sx:${sx}px;--sy:${sy}px;animation-delay:${delay}s;"></span>`
+    );
+
+  }
+
+  return sparks.join("");
 
 }
 
@@ -4359,9 +4574,7 @@ async function loadMysteryBoxes() {
           gap:15px;
         ">
 
-          <div class="verun-opened-icon">
-            V
-          </div>
+          ${getVerunOpenedGraphic(rarity)}
 
           <div style="
             flex:1;
@@ -4475,12 +4688,19 @@ async function openMysteryBox(boxId) {
     "flex";
 
 
+  // Reset classes/styles from any previous open so animations replay
+  mysteryBoxReward.className = "";
+  mysteryBoxReward.style.borderColor = "";
+  mysteryBoxReward.style.boxShadow = "";
+  mysteryBoxReward.style.background = "";
+
+
   mysteryBoxGraphic.innerHTML = `
 
     <div class="verun-reveal-core">
 
-      <div class="verun-reveal-symbol">
-        <span>V</span>
+      <div class="verun-chest-wrap verun-chest-shake" style="--rarity-glow:#8dffb7;">
+        ${getChestSvgMarkup(false)}
       </div>
 
     </div>
@@ -4493,7 +4713,7 @@ async function openMysteryBox(boxId) {
 
 
   mysteryBoxModalSubtitle.textContent =
-    "Decrypting your VERUN reward...";
+    "Hold tight — unsealing your reward...";
 
 
   mysteryBoxReward.style.display =
@@ -4545,6 +4765,7 @@ async function openMysteryBox(boxId) {
   }
 
 
+  // Let the chest shake for a beat before it bursts open
   setTimeout(() => {
 
     const rarity =
@@ -4562,12 +4783,19 @@ async function openMysteryBox(boxId) {
       MYSTERY_RARITY.common;
 
 
+    const glow = getRarityGlow(rarity);
+
+
     mysteryBoxGraphic.innerHTML = `
 
-      <div class="verun-reveal-core">
+      <div class="verun-reveal-core" style="--rarity-glow:${glow};">
 
-        <div class="verun-reveal-symbol">
-          <span>${rarityInfo.symbol}</span>
+        <div class="verun-burst-rays"></div>
+
+        <div class="verun-sparks">${buildSparkMarkup()}</div>
+
+        <div class="verun-chest-wrap verun-chest-open-anim" style="--rarity-glow:${glow};">
+          ${getChestSvgMarkup(true)}
         </div>
 
       </div>
@@ -4576,7 +4804,7 @@ async function openMysteryBox(boxId) {
 
 
     mysteryBoxModalTitle.textContent =
-      rarityInfo.label;
+      `${rarityInfo.symbol} ${rarityInfo.label}`;
 
 
     mysteryBoxModalSubtitle.textContent =
@@ -4594,7 +4822,7 @@ async function openMysteryBox(boxId) {
       html = `
 
         <div style="
-          color:var(--green);
+          color:${glow};
           font-size:18px;
           font-weight:950;
         ">
@@ -4625,7 +4853,7 @@ async function openMysteryBox(boxId) {
       html = `
 
         <div style="
-          color:var(--green);
+          color:${glow};
           font-size:22px;
           font-weight:950;
         ">
@@ -4646,7 +4874,7 @@ async function openMysteryBox(boxId) {
       html = `
 
         <div style="
-          color:var(--green);
+          color:${glow};
           font-size:22px;
           font-weight:950;
         ">
@@ -4664,6 +4892,23 @@ async function openMysteryBox(boxId) {
       html;
 
 
+    mysteryBoxReward.classList.add(
+      "verun-reward-glorious"
+    );
+
+
+    mysteryBoxReward.style.borderColor =
+      glow;
+
+
+    mysteryBoxReward.style.boxShadow =
+      `0 0 26px ${glow}66, inset 0 0 24px ${glow}22`;
+
+
+    mysteryBoxReward.style.background =
+      `radial-gradient(circle at 50% 0%, ${glow}22, var(--green-soft))`;
+
+
     mysteryBoxReward.style.display =
       "block";
 
@@ -4676,7 +4921,7 @@ async function openMysteryBox(boxId) {
       "block";
 
 
-  }, 800);
+  }, 900);
 
 }
 
