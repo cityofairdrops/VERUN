@@ -54,14 +54,6 @@
       font: inherit;
     }
 
-    html, body {
-      /* Stops the iOS/Android rubber-band overscroll that used to
-         yank the sticky header loose and flash a gap underneath it
-         whenever the address bar animated in/out or the page was
-         pulled past its top edge. */
-      overscroll-behavior-y: none;
-    }
-
     .app {
       min-height: 100vh;
       min-height: 100dvh; /* stays correct as the address bar shows/hides */
@@ -356,6 +348,46 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 12px;
+    }
+
+    .bal-top-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex-shrink: 0;
+    }
+
+    .balance-today-reward {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      min-width: 0;
+      max-width: 100%;
+
+      color: var(--muted);
+      font-size: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: right;
+    }
+
+    .balance-today-reward-label {
+      color: var(--muted2);
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      font-size: 9px;
+      flex-shrink: 0;
+    }
+
+    .balance-today-reward #dailyRewardText {
+      color: var(--green);
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .bal-chip {
@@ -459,6 +491,21 @@
       margin-top: 3px;
     }
 
+    /* "Available tasks" header only: title centered in the row,
+       "View all" stays pinned to the right. */
+    #tasksSectionHead {
+      position: relative;
+      justify-content: flex-end;
+    }
+
+    #tasksSectionHead .section-title {
+      position: absolute;
+      left: 0;
+      right: 0;
+      text-align: center;
+      pointer-events: none;
+    }
+
     .view-all {
       color: var(--green);
       font-size: 10px;
@@ -499,6 +546,19 @@
       min-width: 0;
     }
 
+    .task-bullet {
+      color: var(--muted2);
+      font-size: 20px;
+      line-height: 1;
+      width: 10px;
+      flex-shrink: 0;
+      text-align: center;
+    }
+
+    .task.done .task-bullet {
+      color: var(--green);
+    }
+
     .task-name {
       font-size: 13px;
       font-weight: 750;
@@ -529,7 +589,10 @@
     /* Shared box model for every action element that can appear on
        the right of a task row (start/claim/status/copy). Keeping
        these identical is what keeps every task box the same size,
-       whatever state that particular task is in. */
+       whatever state that particular task is in. No max-width/
+       ellipsis here — the text (countdown timers, status labels)
+       must stay fully readable; nowrap alone is enough to stop it
+       from wrapping and growing the row taller. */
     .task-button,
     .task-status,
     .claim-task-button,
@@ -546,9 +609,6 @@
       text-transform: uppercase;
 
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 130px;
       flex-shrink: 0;
     }
 
@@ -1017,6 +1077,14 @@
         padding: 25px;
       }
 
+      .bal-top {
+        gap: 8px;
+      }
+
+      .balance-today-reward {
+        font-size: 9px;
+      }
+
       .task {
         padding: 12px;
         min-height: 60px;
@@ -1030,8 +1098,8 @@
       .task-status,
       .claim-task-button,
       .copy-emoji-button {
-        padding: 7px 9px;
-        max-width: 96px;
+        padding: 7px 8px;
+        font-size: 9px;
       }
 
       .streak-card {
@@ -1109,9 +1177,10 @@
   position:fixed;
   top:0;
   right:0;
+  bottom:0; /* stretches to the real viewport edge, not a vh snapshot,
+               so no gap opens up under it when the address bar
+               shows/hides or the page rubber-bands */
   width:min(350px,88vw);
-  height:100vh;
-  height:100svh;
   z-index:9999;
   background:linear-gradient(180deg,#0d1110,#090c0b);
   border-left:1px solid var(--border);
@@ -1471,12 +1540,22 @@
           <div class="balance-label">
             Your XP
           </div>
-          <!--
-            Weekly-change chip — hidden until real "XP earned in the
-            last 7 days" data exists. Set its text and remove
-            style="display:none" once that value is available.
-          -->
-          <div class="bal-chip" id="xpWeeklyChip" style="display:none;"></div>
+
+          <div class="bal-top-right">
+
+            <div class="balance-today-reward">
+              <span class="balance-today-reward-label">Today's reward</span>
+              <span id="dailyRewardText">Connect X to see your reward</span>
+            </div>
+
+            <!--
+              Weekly-change chip — hidden until real "XP earned in the
+              last 7 days" data exists. Set its text and remove
+              style="display:none" once that value is available.
+            -->
+            <div class="bal-chip" id="xpWeeklyChip" style="display:none;"></div>
+
+          </div>
         </div>
             <div class="balance">
   <span id="xpBalance" style="visibility:hidden;">0</span> <span>XP</span>
@@ -1505,19 +1584,11 @@
           
 <section class="section app-section" id="tasks">
 
-        <div class="section-head">
+        <div class="section-head" id="tasksSectionHead">
 
-          <div>
-
-            <h2 class="section-title">
-              Available tasks
-            </h2>
-
-            <p class="section-description">
-              Complete campaigns to earn XP.
-            </p>
-
-          </div>
+          <h2 class="section-title">
+            Available tasks
+          </h2>
 
           <a href="#" class="view-all">
             View all →
@@ -1530,6 +1601,8 @@
 
 
           <div class="task">
+
+            <div class="task-bullet">•</div>
 
             <div class="task-info">
 
@@ -1559,6 +1632,8 @@
 
           <div class="task">
 
+            <div class="task-bullet">•</div>
+
             <div class="task-info">
 
               <div class="task-name">
@@ -1584,6 +1659,8 @@
 
           <div class="task">
 
+            <div class="task-bullet">•</div>
+
             <div class="task-info">
 
               <div class="task-name">
@@ -1608,6 +1685,8 @@
 
 
           <div class="task">
+
+            <div class="task-bullet">•</div>
 
             <div class="task-info">
 
@@ -1691,34 +1770,10 @@
     "
   >
 
-    <div
-      style="
-        color:var(--muted2);
-        font-size:9px;
-        font-weight:800;
-        letter-spacing:1.2px;
-        text-transform:uppercase;
-      "
-    >
-      Today's reward
-    </div>
-
-    <div
-      id="dailyRewardText"
-      style="
-        margin-top:6px;
-        font-size:18px;
-        font-weight:850;
-      "
-    >
-      Connect X to see your reward
-    </div>
-
     <button
       id="dailyLoginButton"
       type="button"
       class="task-button"
-      style="margin-top:12px;"
     >
       Claim Daily XP
     </button>
@@ -2904,6 +2959,8 @@ tasks.sort((a, b) => {
     }
 
     taskElement.innerHTML = `
+      <div class="task-bullet">•</div>
+
       <div class="task-info">
 
         <div class="task-name">
