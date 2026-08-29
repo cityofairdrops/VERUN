@@ -54,20 +54,37 @@
       font: inherit;
     }
 
+    html, body {
+      /* Stops the iOS/Android rubber-band overscroll that used to
+         yank the sticky header loose and flash a gap underneath it
+         whenever the address bar animated in/out or the page was
+         pulled past its top edge. */
+      overscroll-behavior-y: none;
+    }
+
     .app {
       min-height: 100vh;
+      min-height: 100dvh; /* stays correct as the address bar shows/hides */
     }
 
     /* ================= NAV ================= */
 
     .topbar {
       height: 68px;
-      position: sticky;
+      /* Fixed instead of sticky: pinned straight to the viewport, so
+         it can't be knocked loose (and leave a gap) by the mobile
+         address bar showing/hiding or by scroll-bounce. It behaves
+         exactly like the old sticky bar once .layout below picks up
+         the matching padding-top. */
+      position: fixed;
       top: 0;
+      left: 0;
+      right: 0;
       z-index: 50;
       background: rgba(7,9,9,0.86);
       backdrop-filter: blur(18px);
       border-bottom: 1px solid var(--border);
+      transform: translateZ(0); /* own compositor layer: avoids repaint gap */
     }
 
     .topbar-inner {
@@ -160,6 +177,10 @@
       grid-template-columns: 210px 1fr;
 
       gap: 28px;
+
+      /* Reserves the space the fixed topbar used to occupy in normal
+         flow, so nothing shifts now that it's taken out of flow. */
+      padding-top: 68px;
     }
 
     /* ================= SIDEBAR ================= */
@@ -168,6 +189,7 @@
       position: sticky;
       top: 92px;
       height: calc(100vh - 110px);
+      height: calc(100dvh - 110px);
 
       padding-top: 25px;
     }
@@ -456,6 +478,7 @@
       align-items: center;
       gap: 14px;
       min-width: 0;
+      min-height: 68px; /* keeps every task box the same size */
 
       background: var(--panel);
       border: 1px solid var(--border);
@@ -471,25 +494,6 @@
       background: var(--panel2);
     }
 
-    .task-icon {
-      width: 38px;
-      height: 38px;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      background: var(--green-soft);
-      border: 1px solid var(--green-border);
-      border-radius: 9px;
-
-      color: var(--green);
-      font-size: 14px;
-      font-weight: 900;
-
-      flex-shrink: 0;
-    }
-
     .task-info {
       flex: 1;
       min-width: 0;
@@ -498,6 +502,10 @@
     .task-name {
       font-size: 13px;
       font-weight: 750;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .task-description {
@@ -515,20 +523,39 @@
       font-size: 11px;
       font-weight: 850;
       white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Shared box model for every action element that can appear on
+       the right of a task row (start/claim/status/copy). Keeping
+       these identical is what keeps every task box the same size,
+       whatever state that particular task is in. */
+    .task-button,
+    .task-status,
+    .claim-task-button,
+    .copy-emoji-button {
+      display: inline-block;
+      box-sizing: border-box;
+      padding: 8px 14px;
+      border-radius: 4px;
+
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 130px;
+      flex-shrink: 0;
     }
 
     .task-button {
       border: 1px solid var(--green);
       background: transparent;
       color: var(--green);
-
-      padding: 8px 14px;
-      border-radius: 4px;
-
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.6px;
-      text-transform: uppercase;
 
       cursor: pointer;
       transition: background .15s ease, color .15s ease;
@@ -544,20 +571,8 @@
       color: #071009;
     }
 
-    .task-num {
-      color: var(--muted2);
-      font-size: 10px;
-      width: 18px;
-      text-align: center;
-      flex-shrink: 0;
-    }
-
     .task.done {
       background: var(--green-soft);
-    }
-
-    .task.done .task-num {
-      color: var(--green);
     }
 
     .task.done .task-description {
@@ -571,12 +586,21 @@
 
     .task-status {
       border: 1px solid var(--border-strong);
-      border-radius: 4px;
-      padding: 8px 14px;
-      font-size: 10px;
-      font-weight: 600;
       letter-spacing: 0.4px;
       color: var(--muted);
+    }
+
+    .copy-emoji-button {
+      border: 1px solid var(--green);
+      background: transparent;
+      color: var(--green);
+      cursor: pointer;
+      transition: background .15s ease, color .15s ease;
+    }
+
+    .copy-emoji-button:hover {
+      background: var(--green);
+      color: #071009;
     }
 
     /* ================= STREAK ================= */
@@ -682,6 +706,170 @@
       padding: 11px;
 
       font-size: 10px;
+    }
+
+    /* ================= REFERRAL DASHBOARD ================= */
+    /* This whole block previously had no CSS at all, so it rendered
+       as unstyled, unconstrained text that could run past the edge
+       of the screen. Everything below is sized to the same
+       box-sizing: border-box as the rest of the page, so it can
+       never grow wider than its container. */
+
+    .referral-dashboard {
+      margin-top: 15px;
+      padding: 25px;
+
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .referral-dashboard h3 {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    .referral-dashboard h4 {
+      color: var(--muted2);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .referral-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .referral-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .referral-stat span {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .referral-stat strong {
+      font-size: 18px;
+      font-weight: 850;
+      color: var(--green);
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .referral-progress {
+      margin-bottom: 20px;
+    }
+
+    .referral-progress-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 8px;
+    }
+
+    .referral-progress-header strong {
+      color: var(--text);
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+
+      background: rgba(255,255,255,0.06);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      max-width: 100%;
+      background: var(--green);
+      border-radius: 999px;
+      transition: width .3s ease;
+    }
+
+    .progress-text {
+      margin-top: 6px;
+      color: var(--muted2);
+      font-size: 10px;
+    }
+
+    .referral-milestones {
+      margin-bottom: 20px;
+    }
+
+    #referralMilestones {
+      display: grid;
+      gap: 6px;
+    }
+
+    .milestone {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+
+      font-size: 11px;
+    }
+
+    .milestone span:first-child {
+      color: var(--muted);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .milestone span:last-child {
+      color: var(--green);
+      font-weight: 700;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    #referredUsersList {
+      display: grid;
+      gap: 6px;
+    }
+
+    #noReferralsMessage {
+      color: var(--muted2);
+      font-size: 11px;
     }
 
     .copy-button {
@@ -831,14 +1019,19 @@
 
       .task {
         padding: 12px;
+        min-height: 60px;
       }
 
       .task-description {
         display: none;
       }
 
-      .task-button {
+      .task-button,
+      .task-status,
+      .claim-task-button,
+      .copy-emoji-button {
         padding: 7px 9px;
+        max-width: 96px;
       }
 
       .streak-card {
@@ -852,6 +1045,14 @@
 
       .copy-button {
         height: 38px;
+      }
+
+      .referral-dashboard {
+        padding: 18px;
+      }
+
+      .referral-stats {
+        grid-template-columns: 1fr;
       }
     }
   
@@ -1330,12 +1531,6 @@
 
           <div class="task">
 
-            <div class="task-num">01</div>
-
-            <div class="task-icon">
-              X
-            </div>
-
             <div class="task-info">
 
               <div class="task-name">
@@ -1364,12 +1559,6 @@
 
           <div class="task">
 
-            <div class="task-num">02</div>
-
-            <div class="task-icon">
-              ↗
-            </div>
-
             <div class="task-info">
 
               <div class="task-name">
@@ -1395,12 +1584,6 @@
 
           <div class="task">
 
-            <div class="task-num">03</div>
-
-            <div class="task-icon">
-              ♡
-            </div>
-
             <div class="task-info">
 
               <div class="task-name">
@@ -1425,12 +1608,6 @@
 
 
           <div class="task">
-
-            <div class="task-num">04</div>
-
-            <div class="task-icon">
-              #
-            </div>
 
             <div class="task-info">
 
@@ -2635,10 +2812,6 @@ tasks.sort((a, b) => {
 
     taskElement.className = isDone ? "task done" : "task";
 
-    const taskNumberHtml = isDone
-      ? "✓"
-      : String(taskIndex + 1).padStart(2, "0");
-
     const isRejected =
       verification && verification.status === "rejected";
 
@@ -2731,23 +2904,6 @@ tasks.sort((a, b) => {
     }
 
     taskElement.innerHTML = `
-      <div class="task-num">
-        ${taskNumberHtml}
-      </div>
-
-      <div class="task-icon">
-        ${getTaskIcon(task.task_type)}
-      </div>
-
-      ${task.task_type === "profile_badge" ? `
-        <button
-          class="copy-emoji-button"
-          onclick="navigator.clipboard.writeText('✌️').then(() => this.textContent='✓ Copied!')"
-        >
-          ✌️ Copy
-        </button>
-      ` : ""}
-
       <div class="task-info">
 
         <div class="task-name">
@@ -2763,6 +2919,15 @@ tasks.sort((a, b) => {
       <div class="task-reward">
         +${task.xp_reward} XP
       </div>
+
+      ${task.task_type === "profile_badge" ? `
+        <button
+          class="copy-emoji-button"
+          onclick="navigator.clipboard.writeText('✌️').then(() => this.textContent='✓ Copied!')"
+        >
+          ✌️ Copy
+        </button>
+      ` : ""}
 
       ${buttonHtml}
     `;
