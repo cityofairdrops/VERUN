@@ -2669,54 +2669,90 @@ async function loadReferralDashboard() {
     }
   }
 
-  // ============================================
-// LOAD PEOPLE YOU REFERRED
-// ============================================
+  // List of people the user referred. Reading another user's profile
+  // row directly is usually blocked by Supabase Row Level Security
+  // (the same reason the leaderboard needs its own RPC instead of a
+  // plain table query), so this tries a dedicated RPC first — add a
+  // `get_referred_users()` Postgres function (SECURITY DEFINER,
+  // returning x_username/current_streak for auth.uid()'s referrals)
+  // on the Supabase side for this to work. Only if the RPC isn't
+  // available yet does this fall back to the old plain query, and if
+  // both come back empty while `count` says otherwise, that's shown
+  // as a distinct message instead of silently claiming "no referrals".
+  if (referredUsersList) {
 
-if (referredUsersList) {
+    try {
 
-  try {
+      let referredUsers = null;
 
-    const { data: referredUsers, error } =
-      await supabaseClient.rpc("get_referred_users");
+      const { data: rpcUsers, error: rpcError } =
+        await supabaseClient.rpc("get_referred_users");
 
-    if (error) {
-      console.error("Referred users error:", error);
-      referredUsersList.innerHTML =
-        `<p id="noReferralsMessage">Couldn't load your referrals right now.</p>`;
-      return;
-    }
+      if (!rpcError && rpcUsers) {
 
-    if (referredUsers && referredUsers.length > 0) {
+        referredUsers = rpcUsers;
 
-      referredUsersList.innerHTML = referredUsers
-        .map(user => `
+      } else {
+
+        if (rpcError) {
+          console.warn(
+            "get_referred_users RPC unavailable, falling back to direct query:",
+            rpcError
+          );
+        }
+
+        const { data: fallbackUsers, error: fallbackError } =
+          await supabaseClient
+            .from("profiles")
+            .select("x_username,current_streak")
+            .eq("referred_by", session.user.id);
+
+        if (fallbackError) {
+          console.error("Referred users list error:", fallbackError);
+        } else {
+          referredUsers = fallbackUsers;
+        }
+
+      }
+
+      if (referredUsers && referredUsers.length > 0) {
+
+        referredUsersList.innerHTML = referredUsers.map(user => `
           <div style="
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
             padding:10px 12px;
             background:var(--panel2);
             border:1px solid var(--border);
             border-radius:8px;
             font-size:11px;
           ">
-            @${escapeHtml(user.x_username || "verun_user")}
+            <span>@${escapeHtml(user.x_username || "verun_user")}</span>
+            <span style="color:var(--muted2);">${user.current_streak || 0} day streak</span>
           </div>
-        `)
-        .join("");
+        `).join("");
 
-    } else {
+      } else if (count === 0) {
+
+        referredUsersList.innerHTML =
+          `<p id="noReferralsMessage">No referrals yet.</p>`;
+
+      } else {
+
+        // count > 0 but no rows came back — don't claim "no referrals",
+        // that's actively wrong and confusing when the stat above says
+        // otherwise.
+        referredUsersList.innerHTML =
+          `<p id="noReferralsMessage">Referral count is up to date, but the usernames aren't available to display yet.</p>`;
+      }
+
+    } catch (referredListError) {
+      console.error("Referred users list error:", referredListError);
 
       referredUsersList.innerHTML =
-        `<p id="noReferralsMessage">No referrals yet.</p>`;
-
+        `<p id="noReferralsMessage">Couldn't load your referred users right now.</p>`;
     }
-
-  } catch (error) {
-
-    console.error("Referred users list error:", error);
-
-    referredUsersList.innerHTML =
-      `<p id="noReferralsMessage">Couldn't load your referrals right now.</p>`;
-
   }
 
 }
