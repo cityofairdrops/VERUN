@@ -5608,6 +5608,13 @@ showSection(
     if (typeof loadDailyLoginStatus === "function") sectionLoaders.push(loadDailyLoginStatus());
     if (typeof loadMysteryBoxes === "function") sectionLoaders.push(loadMysteryBoxes());
     if (typeof loadVerunLeaderboard === "function") sectionLoaders.push(loadVerunLeaderboard());
+    // Referral was missing from this list entirely — every other
+    // section preloads on page load/reload regardless of which tab
+    // is active, but referral only ever loaded on an explicit click.
+    // That's why reloading while already on the Referral tab showed
+    // nothing but the static zero-state placeholder: nothing had
+    // fetched real data yet.
+    if (typeof loadReferralDashboard === "function") sectionLoaders.push(loadReferralDashboard());
     await Promise.all(sectionLoaders);
   }
 
