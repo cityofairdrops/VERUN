@@ -1305,6 +1305,129 @@
 }
 .verun-menu-button:hover span { background:var(--green); }
 
+/* ================= NOTIFICATIONS ================= */
+
+.verun-notif-button {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.025);
+  border-radius: 10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:.2s ease;
+  margin-right: 8px;
+}
+.verun-notif-button:hover {
+  border-color:var(--green-border);
+  background:var(--green-soft);
+}
+
+.verun-notif-badge {
+  position:absolute;
+  top:-4px;
+  right:-4px;
+  min-width:16px;
+  height:16px;
+  padding:0 4px;
+  border-radius:8px;
+  background:#ff6b6b;
+  color:#0a0a0a;
+  font-size:9px;
+  font-weight:900;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  border:1.5px solid #070909;
+}
+
+.verun-notif-panel {
+  position:fixed;
+  top:64px;
+  right:15px;
+  width: min(360px, calc(100% - 30px));
+  max-height: min(480px, 70vh);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.5);
+  z-index: 60;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+.verun-notif-panel.open { display:flex; }
+
+.verun-notif-panel-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 16px;
+  border-bottom:1px solid var(--border);
+  font-size:13px;
+  font-weight:850;
+}
+
+.verun-notif-panel-body {
+  overflow-y:auto;
+  padding:8px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.verun-notif-item {
+  display:flex;
+  gap:10px;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid transparent;
+  background: rgba(255,255,255,.02);
+}
+.verun-notif-item.unread {
+  background: var(--green-soft);
+  border-color: var(--green-border);
+}
+
+.verun-notif-icon {
+  flex-shrink:0;
+  width:32px;
+  height:32px;
+  border-radius:9px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:15px;
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--border);
+}
+
+.verun-notif-title {
+  font-size:12px;
+  font-weight:800;
+}
+.verun-notif-message {
+  font-size:11px;
+  color:var(--muted);
+  margin-top:2px;
+  line-height:1.4;
+}
+.verun-notif-time {
+  font-size:9px;
+  color:var(--muted2);
+  margin-top:4px;
+}
+
+.verun-notif-empty {
+  padding:30px 16px;
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+}
+
 .verun-menu-overlay {
   position:fixed;
   inset:0;
@@ -1611,17 +1734,47 @@
     </a>
 
     
-    <button
-      id="verunMenuButton"
-      class="verun-menu-button"
-      type="button"
-      aria-label="Open menu"
-      aria-expanded="false"
-    >
-      <span></span><span></span><span></span>
-    </button>
+    <div style="display:flex; align-items:center;">
+
+      <button
+        id="verunNotifButton"
+        class="verun-notif-button"
+        type="button"
+        aria-label="Notifications"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 3.5c-3.2 0-5.4 2.4-5.4 5.6v2.9c0 .7-.3 1.7-.7 2.3l-1.4 1.9c-.9 1.2-.3 2.5 1.1 3 4.4 1.5 9.4 1.5 13.8 0 1.3-.4 2-1.9 1.1-3l-1.4-1.9c-.4-.6-.7-1.6-.7-2.3V9.1c0-3.2-2.3-5.6-5.4-5.6Z"
+            fill="#ffb84d" stroke="#ffb84d" stroke-width="1.3" stroke-linejoin="round"/>
+          <path d="M14.6 3.9a3 3 0 0 0-5.2 0" stroke="#8dffb7" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M9.8 20a2.3 2.3 0 0 0 4.4 0" fill="none" stroke="#8dffb7" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span id="verunNotifBadge" class="verun-notif-badge">0</span>
+      </button>
+
+      <button
+        id="verunMenuButton"
+        class="verun-menu-button"
+        type="button"
+        aria-label="Open menu"
+        aria-expanded="false"
+      >
+        <span></span><span></span><span></span>
+      </button>
+
+    </div>
   </div>
 </header>
+
+<!-- VERUN NOTIFICATIONS PANEL -->
+<div id="verunNotifPanel" class="verun-notif-panel">
+  <div class="verun-notif-panel-head">
+    <span>Notifications</span>
+    <span id="verunNotifMarkAll" style="font-size:10px; color:var(--muted); cursor:pointer; font-weight:600;">Mark all read</span>
+  </div>
+  <div id="verunNotifBody" class="verun-notif-panel-body">
+    <div class="verun-notif-empty">No notifications yet.</div>
+  </div>
+</div>
 
 <!-- VERUN APP DRAWER -->
 <div id="verunMenuOverlay" class="verun-menu-overlay"></div>
@@ -2788,6 +2941,167 @@ async function loadReferralDashboard() {
 
   const connectXButton = document.getElementById("connectXButton") || { disabled:false, textContent:"Connect X", addEventListener:()=>{} };
 
+// ============================================================
+// VERUN NOTIFICATIONS
+// ============================================================
+
+const NOTIF_ICONS = {
+  xp: { symbol: "⚡", color: "#8dffb7" },
+  task: { symbol: "✓", color: "#8dffb7" },
+  referral: { symbol: "◇", color: "#baffd1" },
+  box: { symbol: "◆", color: "#ffe37a" },
+  streak: { symbol: "✦", color: "#ffb84d" },
+  sale_eligibility: { symbol: "★", color: "#ffb84d" },
+  default: { symbol: "•", color: "#8dffb7" }
+};
+
+function verunTimeAgo(dateString) {
+  const then = new Date(dateString).getTime();
+  const diffSec = Math.max(0, Math.floor((Date.now() - then) / 1000));
+
+  if (diffSec < 60) return "just now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 30) return `${diffDay}d ago`;
+  return new Date(dateString).toLocaleDateString();
+}
+
+// Writes a notification for the CURRENT logged-in user only — RLS
+// only allows inserting rows where user_id = auth.uid(), so this can
+// never be used to notify anyone else (referral notifications, which
+// need to reach a different user, are written server-side instead).
+async function insertSelfNotification(type, title, message) {
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+
+    await supabaseClient.from("notifications").insert({
+      user_id: session.user.id,
+      type,
+      title,
+      message
+    });
+
+    await loadNotifications();
+  } catch (err) {
+    console.error("Failed to write notification:", err);
+  }
+}
+
+let verunNotifications = [];
+
+function renderNotifications() {
+  const body = document.getElementById("verunNotifBody");
+  const badge = document.getElementById("verunNotifBadge");
+  if (!body || !badge) return;
+
+  const unreadCount = verunNotifications.filter(n => !n.read).length;
+
+  if (unreadCount > 0) {
+    badge.textContent = unreadCount > 99 ? "99+" : String(unreadCount);
+    badge.style.display = "flex";
+  } else {
+    badge.style.display = "none";
+  }
+
+  if (verunNotifications.length === 0) {
+    body.innerHTML = `<div class="verun-notif-empty">No notifications yet.</div>`;
+    return;
+  }
+
+  body.innerHTML = verunNotifications.map(n => {
+    const iconInfo = NOTIF_ICONS[n.type] || NOTIF_ICONS.default;
+    return `
+      <div class="verun-notif-item ${n.read ? "" : "unread"}">
+        <div class="verun-notif-icon" style="color:${iconInfo.color};">${iconInfo.symbol}</div>
+        <div style="min-width:0; flex:1;">
+          <div class="verun-notif-title">${escapeHtml(n.title || "")}</div>
+          ${n.message ? `<div class="verun-notif-message">${escapeHtml(n.message)}</div>` : ""}
+          <div class="verun-notif-time">${verunTimeAgo(n.created_at)}</div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+async function loadNotifications() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session) return;
+
+  const { data, error } = await supabaseClient
+    .from("notifications")
+    .select("id,type,title,message,read,created_at")
+    .eq("user_id", session.user.id)
+    .order("created_at", { ascending: false })
+    .limit(30);
+
+  if (error) {
+    console.error("Failed to load notifications:", error);
+    return;
+  }
+
+  verunNotifications = data || [];
+  renderNotifications();
+}
+
+async function markAllNotificationsRead() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session) return;
+
+  const unreadIds = verunNotifications.filter(n => !n.read).map(n => n.id);
+  if (unreadIds.length === 0) return;
+
+  verunNotifications = verunNotifications.map(n => ({ ...n, read: true }));
+  renderNotifications();
+
+  const { error } = await supabaseClient
+    .from("notifications")
+    .update({ read: true })
+    .eq("user_id", session.user.id)
+    .in("id", unreadIds);
+
+  if (error) {
+    console.error("Failed to mark notifications read:", error);
+  }
+}
+
+(function initVerunNotifPanel() {
+  const button = document.getElementById("verunNotifButton");
+  const panel = document.getElementById("verunNotifPanel");
+  const markAllLink = document.getElementById("verunNotifMarkAll");
+
+  if (!button || !panel) return;
+
+  button.addEventListener("click", async (event) => {
+    event.stopPropagation();
+    const isOpen = panel.classList.contains("open");
+
+    if (isOpen) {
+      panel.classList.remove("open");
+      return;
+    }
+
+    panel.classList.add("open");
+    await loadNotifications();
+  });
+
+  markAllLink?.addEventListener("click", async (event) => {
+    event.stopPropagation();
+    await markAllNotificationsRead();
+  });
+
+  panel.addEventListener("click", (event) => event.stopPropagation());
+
+  document.addEventListener("click", () => {
+    panel.classList.remove("open");
+  });
+})();
+
+
+
   async function loadUserProfile() {
     const {
       data: { session },
@@ -3476,6 +3790,12 @@ tasks.sort((a, b) => {
     button.textContent = "✓ Completed";
 button.disabled = true;
 
+await insertSelfNotification(
+  "task",
+  "Task completed!",
+  data.xp_awarded ? `+${data.xp_awarded} XP claimed.` : "XP claimed."
+);
+
 await loadUserProfile();
 await loadTasks();
 }
@@ -4019,6 +4339,17 @@ startDailyCountdown();
   // loadUserProfile() below refreshes "#Today's Reward" with the
   // real total (this claim included), so no separate write here.
 
+  await insertSelfNotification(
+    "xp",
+    `Day ${data.day_number} login claimed!`,
+    `+${data.xp_awarded} XP` + (data.bonus_xp > 0 ? " (includes +100 weekly bonus)" : "") + "."
+  );
+
+  // Note: no separate notification here for data.mystery_box — the
+  // server-side create_mystery_box() function already writes a
+  // "New Mystery Box!" notification whenever any box is granted
+  // (streak, referral, XP milestone, lucky login), so adding one
+  // here too would just duplicate it.
 
   await loadUserProfile();
 
@@ -5034,6 +5365,13 @@ async function openMysteryBox(boxId) {
   }
 
 
+  insertSelfNotification(
+    data.reward_type === "sale_eligibility" ? "sale_eligibility" : "box",
+    data.reward_type === "sale_eligibility" ? "Private Sale Eligibility!" : "Mystery Box opened!",
+    data.message || "Reward received."
+  );
+
+
   // Let the chest shake for a beat before it bursts open
   setTimeout(() => {
 
@@ -5615,6 +5953,7 @@ showSection(
     // nothing but the static zero-state placeholder: nothing had
     // fetched real data yet.
     if (typeof loadReferralDashboard === "function") sectionLoaders.push(loadReferralDashboard());
+    if (typeof loadNotifications === "function") sectionLoaders.push(loadNotifications());
     await Promise.all(sectionLoaders);
   }
 
