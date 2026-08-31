@@ -2571,7 +2571,20 @@ const REFERRAL_MILESTONES = [
   { threshold: 100, bonusXp: 0 } // mystery box, not XP
 ];
 
+// True while a call to loadReferralDashboard() is already in flight.
+// If it somehow gets triggered twice close together (e.g. an auth
+// event racing a manual tab click), the second call used to be able
+// to resolve with an empty/not-yet-ready result and overwrite the
+// first, correct render with zeros. Skipping an overlapping call
+// entirely removes that race instead of trying to out-guess timing.
+let verunReferralDashboardLoading = false;
+
 async function loadReferralDashboard() {
+
+  if (verunReferralDashboardLoading) return;
+  verunReferralDashboardLoading = true;
+
+  try {
 
   const totalReferralsEl = document.getElementById("totalReferrals");
   const referralXpEl = document.getElementById("referralXp");
@@ -2596,6 +2609,16 @@ async function loadReferralDashboard() {
 
   if (error) {
     console.error("Referral dashboard error:", error);
+    return;
+  }
+
+  if (!profile) {
+    // A logged-in user should always have a profile row. Coming back
+    // null almost always means the query raced session/RLS setup
+    // rather than the user genuinely having no profile — so leave
+    // whatever is already on screen alone instead of flashing it to
+    // zero, and log it so a *real* missing-profile case is visible.
+    console.warn("Referral dashboard: profile came back empty, leaving current display as-is.");
     return;
   }
 
@@ -2753,6 +2776,10 @@ async function loadReferralDashboard() {
       referredUsersList.innerHTML =
         `<p id="noReferralsMessage">Couldn't load your referred users right now.</p>`;
     }
+  }
+
+  } finally {
+    verunReferralDashboardLoading = false;
   }
 
 }
@@ -5377,10 +5404,11 @@ async function loadVerunLeaderboard() {
   error.style.display = "block";
   error.textContent = "Leaderboard error: " + (err.message || err);
 }
-} 
-    window.addEventListener("DOMContentLoaded", () => {
-  loadVerunLeaderboard();
-});
+}
+    // Leaderboard loading is handled by updateAppAccess() once the
+    // session is known — an unconditional call here (with no session
+    // check at all) was one of the sources of the "loads multiple
+    // times" flicker on reload, so it's been removed.
     
   // ============================================================
 // VERUN TWO-URL APP NAVIGATION + DRAWER
@@ -5526,13 +5554,31 @@ async function loadVerunLeaderboard() {
     if (connectedDrawer) connectedDrawer.style.display = "block";
   }
 
-  async function updateAppAccess(session) {
+  // Tracks which user we've already run the full section-load
+  // sequence for. Supabase can fire more than one auth event for the
+  // same restored session on a normal page load (getSession() resolves
+  // AND onAuthStateChange fires again shortly after), which was causing
+  // every section loader — leaderboard especially — to run twice, and
+  // occasionally letting a slightly-early second run race the first
+  // and overwrite correct data with an empty/zero result. Skipping a
+  // repeat call for the same already-processed user fixes both.
+  let verunLastProcessedUserId = null;
+
+  async function updateAppAccess(session, opts) {
+    const force = opts && opts.force;
+
     if (!session) {
+      verunLastProcessedUserId = null;
       guestGate?.classList.add("visible");
       authApp?.classList.add("locked");
       setDrawerGuest();
       return;
     }
+
+    if (!force && session.user.id === verunLastProcessedUserId) {
+      return;
+    }
+    verunLastProcessedUserId = session.user.id;
 
     guestGate?.classList.remove("visible");
     authApp?.classList.remove("locked");
