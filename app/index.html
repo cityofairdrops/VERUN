@@ -471,14 +471,15 @@
       margin-top: 38px;
     }
 
-    /* Mystery Boxes, Referral, Leaderboard, and Airdrop are each the
-       sole content of their own tab/page (no section above them on
+    /* Genesis Pass, Referral, Leaderboard, Mining, and Airdrop are each
+       the sole content of their own tab/page (no section above them on
        that page), so the generic .section top margin just pushes
        them down with nothing to space out. Zero it so they sit
        higher on screen. */
-    #mystery-boxes,
+    #genesis-pass,
     #referral,
     #leaderboardSection,
+    #miningSection,
     #airdropSection {
       margin-top: 0;
     }
@@ -861,8 +862,8 @@
     }
 
     /* ================= REFERRAL ANIMATED ICON ================= */
-    /* Same float + glow language as the mystery box chest, so the
-       Referral section doesn't feel visually disconnected from it. */
+    /* Float + glow language matching the app's other animated icons,
+       so the Referral section doesn't feel visually disconnected. */
 
     .verun-referral-icon-wrap {
       position: relative;
@@ -1791,9 +1792,10 @@
   <nav class="verun-drawer-nav">
     <a href="../home/" class="verun-drawer-link" data-nav="home"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Home</span></a>
     <button class="verun-drawer-link" type="button" data-section="tasks"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span>Tasks</span></button>
-    <button class="verun-drawer-link" type="button" data-section="boxes"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11C4 6.6 7.5 3.8 12 3.8s8 2.8 8 7.2"/><path d="M3.6 11h16.8"/><rect x="4" y="12.6" width="16" height="7.2" rx="1.3"/><rect x="10.4" y="10.4" width="3.2" height="2.8" rx="0.5"/><path d="M11.2 10.4v-0.9a0.8 0.8 0 0 1 1.6 0v0.9"/></svg><span>Boxes</span></button>
+    <button class="verun-drawer-link" type="button" data-section="genesisPass"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg><span>Genesis Pass</span></button>
     <button class="verun-drawer-link" type="button" data-section="referral"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg><span>Referral</span></button>
     <button class="verun-drawer-link" type="button" data-section="leaderboard"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V10"/><path d="M12 21V4"/><path d="M20 21v-7"/></svg><span>Leaderboard</span></button>
+    <button class="verun-drawer-link" type="button" data-section="mining"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.53 3.53a3 3 0 0 1 4.24 4.24l-2.02 2.02-4.24-4.24Z"/><path d="M16.75 5.75L4.5 18a2 2 0 1 0 2.83 2.83L18 8.5"/><path d="M9.53 8.53l4.24 4.24"/><path d="M2 22l3-3"/></svg><span>Mining</span></button>
     <button class="verun-drawer-link" type="button" data-section="airdrop"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10C3 10 5 3 12 3C19 3 21 10 21 10"/><path d="M3 10C6 12 9 12.5 12 10"/><path d="M21 10C18 12 15 12.5 12 10"/><line x1="3" y1="10" x2="10" y2="19"/><line x1="21" y1="10" x2="14" y2="19"/><rect x="9.3" y="19" width="5.4" height="3.6" rx="0.8"/></svg><span>Airdrop</span></button>
   </nav>
 
@@ -1817,7 +1819,7 @@
     <div class="verun-guest-mark"><span></span></div>
     <div class="verun-guest-kicker">VERUN COMMUNITY APP</div>
     <h1>Connect X to enter.</h1>
-    <p>Connect the X account to unlock Tasks, Mystery Boxes, Referral, Leaderboard and Airdrop.</p>
+    <p>Connect the X account to unlock Tasks, Genesis Pass, Referral, Leaderboard, Mining and Airdrop.</p>
     <button id="guestConnectXButton" class="verun-connect-primary" type="button">Connect X</button>
   </div>
 </div>
@@ -2165,177 +2167,40 @@
 
 </div>
       
-<!-- MYSTERY BOXES -->
+<!-- GENESIS PASS -->
 
-<section class="section app-section" id="mystery-boxes">
+<section class="section app-section" id="genesis-pass">
 
   <div class="section-head">
 
     <div>
       <h2 class="section-title">
-        Mystery Boxes
+        Genesis Pass
       </h2>
 
       <p class="section-description">
-        Special rewards earned through participation.
+        Coming soon.
       </p>
     </div>
 
-    <div
-      id="mysteryBoxCount"
-      style="
-        color:var(--green);
-        font-size:10px;
-        font-weight:900;
-        white-space:nowrap;
-      "
-    >
-      0 Boxes
-    </div>
-
   </div>
 
-
-  <!-- MYSTERY BOX LIST -->
-
   <div
-    id="mysteryBoxesContainer"
     style="
-      display:grid;
-      gap:12px;
-    "
-  >
-
-    <div
-      style="
-        padding:20px;
-        background:var(--panel);
-        border:1px solid var(--border);
-        border-radius:14px;
-        color:var(--muted);
-        font-size:11px;
-        text-align:center;
-      "
-    >
-      Connect X to see your Mystery Boxes.
-    </div>
-
-  </div>
-
-
-  <!-- MYSTERY BOX REVEAL MODAL -->
-
-  <div
-    id="mysteryBoxModal"
-    style="
-      display:none;
-      position:fixed;
-      inset:0;
-      z-index:1000;
-      background:rgba(0,0,0,0.82);
-      backdrop-filter:blur(10px);
-      align-items:center;
-      justify-content:center;
       padding:20px;
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:14px;
+      color:var(--muted);
+      font-size:11px;
+      text-align:center;
     "
   >
-
-    <div
-      id="mysteryBoxModalCard"
-      style="
-        width:min(420px,100%);
-        background:var(--panel);
-        border:1px solid var(--green-border);
-        border-radius:18px;
-        padding:28px;
-        text-align:center;
-        box-shadow:0 20px 80px rgba(0,0,0,0.55);
-      "
-    >
-
-      <!-- BOX GRAPHIC -->
-
-      <div
-        id="mysteryBoxGraphic"
-        style="
-          width:110px;
-          height:110px;
-          margin:0 auto 18px;
-          border-radius:22px;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          background:
-            radial-gradient(
-              circle,
-              rgba(141,255,183,0.18),
-              rgba(141,255,183,0.03)
-            );
-          border:1px solid var(--green-border);
-          font-size:40px;
-          font-weight:900;
-          color:var(--green);
-        "
-      >
-        V
-      </div>
-
-
-      <div
-        id="mysteryBoxModalTitle"
-        style="
-          font-size:22px;
-          font-weight:900;
-        "
-      >
-        Mystery Box
-      </div>
-
-
-      <div
-        id="mysteryBoxModalSubtitle"
-        style="
-          color:var(--muted);
-          font-size:11px;
-          margin-top:6px;
-        "
-      >
-        Your reward is being revealed...
-      </div>
-
-
-      <div
-        id="mysteryBoxReward"
-        style="
-          display:none;
-          margin-top:18px;
-          padding:18px;
-          border-radius:12px;
-          background:var(--green-soft);
-          border:1px solid var(--green-border);
-        "
-      ></div>
-
-
-      <button
-        id="mysteryBoxCloseButton"
-        type="button"
-        class="task-button"
-        style="
-          display:none;
-          width:100%;
-          margin-top:16px;
-        "
-      >
-        Continue
-      </button>
-
-    </div>
-
+    Genesis Pass details will be available soon.
   </div>
 
 </section>
-      
+
   <!-- REFERRALS -->
 
 <section class="section app-section" id="referral">
@@ -2442,7 +2307,7 @@
 
         <div class="milestone" data-threshold="100">
           <span>100 Referrals</span>
-          <span>Mystery Box</span>
+          <span>Bonus Reward</span>
         </div>
 
       </div>
@@ -2507,6 +2372,58 @@
 <!-- END REFERRALS -->
 
 
+  <section id="leaderboardSection" class="section-card app-section">
+  <h2>Leaderboard</h2>
+
+  <div id="leaderboardTabs" class="leaderboard-tabs">
+    <button type="button" class="leaderboard-tab active" data-sort="xp">XP Leaderboard</button>
+    <button type="button" class="leaderboard-tab" data-sort="referrals">Referral Leaderboard</button>
+  </div>
+
+  <div id="leaderboardLoading" style="text-align:center;padding:15px;">
+    Loading leaderboard...
+  </div>
+
+  <div id="leaderboardError"
+       style="display:none;color:#ff6b6b;text-align:center;padding:15px;">
+  </div>
+
+  <div id="leaderboardList"></div>
+</section>
+
+<!-- MINING SECTION -->
+<section class="section app-section" id="miningSection">
+
+  <div class="section-head">
+
+    <div>
+      <h2 class="section-title">
+        Mining
+      </h2>
+
+      <p class="section-description">
+        Coming soon.
+      </p>
+    </div>
+
+  </div>
+
+  <div
+    style="
+      padding:20px;
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:14px;
+      color:var(--muted);
+      font-size:11px;
+      text-align:center;
+    "
+  >
+    Mining details will be available soon.
+  </div>
+
+</section>
+
 <!-- AIRDROP SECTION -->
 <section
   id="airdropSection"
@@ -2530,24 +2447,6 @@
       Coming soon
     </p>
   </div>
-</section>
-  <section id="leaderboardSection" class="section-card app-section">
-  <h2>Leaderboard</h2>
-
-  <div id="leaderboardTabs" class="leaderboard-tabs">
-    <button type="button" class="leaderboard-tab active" data-sort="xp">XP Leaderboard</button>
-    <button type="button" class="leaderboard-tab" data-sort="referrals">Referral Leaderboard</button>
-  </div>
-
-  <div id="leaderboardLoading" style="text-align:center;padding:15px;">
-    Loading leaderboard...
-  </div>
-
-  <div id="leaderboardError"
-       style="display:none;color:#ff6b6b;text-align:center;padding:15px;">
-  </div>
-
-  <div id="leaderboardList"></div>
 </section>
 
 
@@ -2589,9 +2488,10 @@
 
     var earlyPages = {
       tasks: document.getElementById("tasksPage"),
-      boxes: document.getElementById("mystery-boxes"),
+      genesisPass: document.getElementById("genesis-pass"),
       referral: document.getElementById("referral"),
       leaderboard: document.getElementById("leaderboardSection"),
+      mining: document.getElementById("miningSection"),
       airdrop: document.getElementById("airdropSection")
     };
 
@@ -2721,7 +2621,7 @@ const REFERRAL_MILESTONES = [
   { threshold: 25, bonusXp: 1500 },
   { threshold: 50, bonusXp: 3000 },
   { threshold: 75, bonusXp: 5000 },
-  { threshold: 100, bonusXp: 0 } // mystery box, not XP
+  { threshold: 100, bonusXp: 0 } // bonus reward, not XP
 ];
 
 // True while a call to loadReferralDashboard() is already in flight.
@@ -3962,10 +3862,10 @@ function showDailyMessage(message) {
 
 
 // "#Today's Reward" is meant to show the total XP actually earned
-// today (tasks claimed + daily login + mystery boxes opened today),
-// not a preview/guess of tomorrow's login bonus. It's computed fresh
-// from the real records below so it always matches what's on screen
-// elsewhere (e.g. "Completed" tasks), instead of drifting from it.
+// today (tasks claimed + daily login), not a preview/guess of
+// tomorrow's login bonus. It's computed fresh from the real records
+// below so it always matches what's on screen elsewhere (e.g.
+// "Completed" tasks), instead of drifting from it.
 let todaysRewardRequestId = 0;
 
 async function refreshTodaysReward(userId) {
@@ -3982,8 +3882,7 @@ async function refreshTodaysReward(userId) {
     const [
       { data: verifications },
       { data: taskList },
-      { data: todayLogin },
-      { data: boxes }
+      { data: todayLogin }
     ] = await Promise.all([
       supabaseClient
         .from("task_verifications")
@@ -3998,12 +3897,7 @@ async function refreshTodaysReward(userId) {
         .select("xp_awarded,weekly_bonus")
         .eq("user_id", userId)
         .eq("login_date", todayStr)
-        .maybeSingle(),
-      supabaseClient
-        .from("mystery_boxes")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("status", "opened")
+        .maybeSingle()
     ]);
 
     if (requestId !== todaysRewardRequestId) return;
@@ -4033,23 +3927,6 @@ async function refreshTodaysReward(userId) {
       total +=
         Number(todayLogin.xp_awarded || 0) +
         Number(todayLogin.weekly_bonus || 0);
-    }
-
-    if (boxes) {
-      boxes.forEach(box => {
-        // Best-effort: only counts a box toward "today" if the row
-        // exposes a timestamp we can check (opened_at/updated_at).
-        const openedTimestamp =
-          box.opened_at || box.updated_at || null;
-
-        const openedToday =
-          openedTimestamp &&
-          String(openedTimestamp).slice(0, 10) === todayStr;
-
-        if (openedToday && box.reward_type === "xp") {
-          total += Number(box.reward_xp || 0);
-        }
-      });
     }
 
     dailyRewardText.textContent =
@@ -4172,7 +4049,7 @@ async function loadDailyLoginStatus() {
 
   // "#Today's Reward" is now driven by refreshTodaysReward(), called
   // from updateDashboard() — it reflects real XP earned today across
-  // tasks, daily login and mystery boxes, not just a login preview.
+  // tasks and daily login, not just a login preview.
   refreshTodaysReward(session.user.id);
 
 
@@ -4184,7 +4061,7 @@ async function loadDailyLoginStatus() {
     await supabaseClient
       .from("daily_logins")
       .select(
-  "id,day_number,streak_day,xp_awarded,weekly_bonus,mystery_box"
+  "id,day_number,streak_day,xp_awarded,weekly_bonus"
 )
       .eq("user_id", session.user.id)
       .eq("login_date", today)
@@ -4320,11 +4197,6 @@ async function claimDailyLogin() {
     message += " +100 bonus";
   }
 
-  if (data.mystery_box) {
-    message +=
-      " Mystery Box unlocked!";
-  }
-
 
   showDailyMessage(message);
 
@@ -4344,12 +4216,6 @@ startDailyCountdown();
     `Day ${data.day_number} login claimed!`,
     `+${data.xp_awarded} XP` + (data.bonus_xp > 0 ? " (includes +100 weekly bonus)" : "") + "."
   );
-
-  // Note: no separate notification here for data.mystery_box — the
-  // server-side create_mystery_box() function already writes a
-  // "New Mystery Box!" notification whenever any box is granted
-  // (streak, referral, XP milestone, lucky login), so adding one
-  // here too would just duplicate it.
 
   await loadUserProfile();
 
@@ -4453,1135 +4319,6 @@ if (restoreStreakButton) {
 
 
 loadDailyLoginStatus();
- // ============================================
-// VERUN MYSTERY BOXES — PREMIUM V3
-// ============================================
-
-const mysteryBoxesContainer =
-  document.getElementById("mysteryBoxesContainer");
-
-const mysteryBoxCount =
-  document.getElementById("mysteryBoxCount");
-
-const mysteryBoxModal =
-  document.getElementById("mysteryBoxModal");
-
-const mysteryBoxGraphic =
-  document.getElementById("mysteryBoxGraphic");
-
-const mysteryBoxModalTitle =
-  document.getElementById("mysteryBoxModalTitle");
-
-const mysteryBoxModalSubtitle =
-  document.getElementById("mysteryBoxModalSubtitle");
-
-const mysteryBoxReward =
-  document.getElementById("mysteryBoxReward");
-
-const mysteryBoxCloseButton =
-  document.getElementById("mysteryBoxCloseButton");
-
-
-// ============================================================
-// PREMIUM VERUN BOX STYLE
-// ============================================================
-
-const mysteryBoxStyle = document.createElement("style");
-
-mysteryBoxStyle.textContent = `
-
-.verun-chest-wrap {
-  position:relative;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width:70px;
-  height:70px;
-  flex-shrink:0;
-  --rarity-glow: #8dffb7;
-}
-
-.verun-chest-svg {
-  overflow:visible;
-  animation: verunChestIdle 3.2s ease-in-out infinite;
-}
-
-.chest-body {
-  fill:#0f1713;
-  stroke:var(--rarity-glow);
-  stroke-width:1.6;
-}
-
-/* Faint darker duplicate behind the body/lid, offset by nothing but
-   used to give the wood a bit of depth without changing the silhouette */
-.chest-side {
-  fill:#0a100d;
-  opacity:.5;
-}
-
-.chest-lid,
-.chest-lid-open {
-  fill:#161f1a;
-  stroke:var(--rarity-glow);
-  stroke-width:1.6;
-}
-
-/* Subtle plank lines across the lid/body so it reads as a wooden
-   crate rather than a smooth cartoon blob */
-.chest-seam {
-  stroke:#000;
-  stroke-opacity:.35;
-  stroke-width:1;
-}
-
-.chest-band {
-  fill:var(--rarity-glow);
-  opacity:.6;
-}
-
-.chest-lock-plate {
-  fill:#08100c;
-  stroke:var(--rarity-glow);
-  stroke-width:1.3;
-}
-
-.chest-shackle {
-  stroke:var(--rarity-glow);
-  stroke-width:2.2;
-  fill:none;
-}
-
-.chest-keyhole {
-  fill:var(--rarity-glow);
-}
-
-/* Corner rivets/bolts — the detail that reads as "heavy welded
-   metal crate" rather than a smooth wooden chest. */
-.chest-bolt {
-  fill:var(--rarity-glow);
-  opacity:.9;
-}
-
-/* Faint hazard-stripe accent near a corner, like stenciled markings
-   on an industrial supply crate. Kept subtle so it doesn't clutter
-   the icon at small sizes. */
-.chest-stripe {
-  stroke:var(--rarity-glow);
-  stroke-width:1.4;
-  stroke-linecap:round;
-  opacity:.3;
-}
-
-@keyframes verunChestIdle {
-
-  0%,100% {
-    transform:translateY(0);
-    filter:drop-shadow(0 0 6px var(--rarity-glow));
-  }
-
-  50% {
-    transform:translateY(-3px);
-    filter:drop-shadow(0 0 14px var(--rarity-glow));
-  }
-
-}
-
-/* Anticipation shake right before a box opens */
-@keyframes verunChestShake {
-
-  0%, 100% { transform:translateX(0) rotate(0); }
-  10% { transform:translateX(-3px) rotate(-4deg); }
-  20% { transform:translateX(3px) rotate(4deg); }
-  30% { transform:translateX(-4px) rotate(-5deg); }
-  40% { transform:translateX(4px) rotate(5deg); }
-  50% { transform:translateX(-3px) rotate(-3deg); }
-  60% { transform:translateX(3px) rotate(3deg); }
-  70% { transform:translateX(-2px) rotate(-2deg); }
-  80% { transform:translateX(2px) rotate(2deg); }
-  90% { transform:translateX(-1px) rotate(0); }
-
-}
-
-.verun-chest-shake {
-  animation: verunChestShake .55s ease-in-out 3, verunChestIdle 3.2s ease-in-out infinite;
-}
-
-/* Pop the chest open once the reward is known */
-@keyframes verunChestBurst {
-
-  0% { transform:scale(.75) rotate(-4deg); opacity:0; }
-  55% { transform:scale(1.18) rotate(2deg); opacity:1; }
-  75% { transform:scale(.96) rotate(0); }
-  100% { transform:scale(1); }
-
-}
-
-.verun-chest-open-anim {
-  animation: verunChestBurst .6s cubic-bezier(.34,1.56,.64,1) both;
-}
-
-.verun-reveal-core {
-  position:relative;
-  width:130px;
-  height:120px;
-  margin:0 auto 4px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-/* Radial flash behind the chest at the moment it opens */
-.verun-burst-rays {
-  position:absolute;
-  inset:-30px;
-  border-radius:50%;
-  background:radial-gradient(circle, var(--rarity-glow) 0%, transparent 68%);
-  opacity:0;
-  animation: verunBurstFlash .8s ease-out both;
-  pointer-events:none;
-}
-
-@keyframes verunBurstFlash {
-
-  0% { opacity:0; transform:scale(.3); }
-  35% { opacity:.6; transform:scale(1); }
-  100% { opacity:0; transform:scale(1.7); }
-
-}
-
-/* Sparkle particles flying outward from the open chest */
-.verun-sparks {
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-}
-
-.verun-spark {
-  position:absolute;
-  top:50%;
-  left:50%;
-  width:5px;
-  height:5px;
-  border-radius:50%;
-  background:var(--rarity-glow);
-  box-shadow:0 0 7px var(--rarity-glow);
-  opacity:0;
-  animation: verunSparkFly .9s ease-out both;
-}
-
-@keyframes verunSparkFly {
-
-  0% { transform:translate(-50%,-50%) scale(0); opacity:1; }
-  100% { transform:translate(calc(-50% + var(--sx)), calc(-50% + var(--sy))) scale(1); opacity:0; }
-
-}
-
-.verun-rarity-badge {
-  display:inline-flex;
-  align-items:center;
-  gap:5px;
-
-  padding:5px 8px;
-
-  border-radius:6px;
-
-  font-size:8px;
-  font-weight:950;
-  letter-spacing:1px;
-
-  margin-top:8px;
-}
-
-/* The reward callout — pops in and gets a rarity-tinted glow + shimmer sweep */
-@keyframes verunRewardPop {
-
-  0% { transform:scale(.75); opacity:0; }
-  60% { transform:scale(1.06); opacity:1; }
-  100% { transform:scale(1); }
-
-}
-
-@keyframes verunShimmer {
-  to { transform:translateX(130%); }
-}
-
-.verun-reward-glorious {
-  position:relative;
-  overflow:hidden;
-  animation: verunRewardPop .5s cubic-bezier(.34,1.56,.64,1) both;
-}
-
-.verun-reward-glorious::before {
-  content:"";
-  position:absolute;
-  inset:0;
-  width:60%;
-  background:linear-gradient(
-    120deg,
-    transparent 10%,
-    rgba(255,255,255,.4) 50%,
-    transparent 90%
-  );
-  transform:translateX(-130%);
-  animation: verunShimmer 1.5s ease-in-out .35s 2;
-}
-
-`;
-
-document.head.appendChild(mysteryBoxStyle);
-
-
-// ============================================================
-// RARITY
-// ============================================================
-
-const MYSTERY_RARITY = {
-
-  special: {
-    label: "SPECIAL",
-    symbol: "✦"
-  },
-
-  rare: {
-    label: "RARE",
-    symbol: "◆"
-  },
-
-  uncommon: {
-    label: "UNCOMMON",
-    symbol: "◇"
-  },
-
-  common: {
-    label: "COMMON",
-    symbol: "•"
-  }
-
-};
-
-// Glow tint per rarity, used to color the chest, burst and reward callout
-const MYSTERY_RARITY_GLOW = {
-  special: "#ffb84d",
-  rare: "#ffe37a",
-  uncommon: "#baffd1",
-  common: "#8dffb7"
-};
-
-function getRarityGlow(rarity) {
-  return MYSTERY_RARITY_GLOW[rarity] || MYSTERY_RARITY_GLOW.common;
-}
-
-
-// ============================================================
-// VERUN CHEST GRAPHIC
-// ============================================================
-
-function getChestSvgMarkup(open) {
-
-  if (!open) {
-    return `
-      <svg class="verun-chest-svg" viewBox="0 0 64 58" width="52" height="48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect class="chest-side" x="9" y="12" width="46" height="38" rx="1.5"/>
-        <rect class="chest-lid" x="9" y="8" width="46" height="15" rx="1.5"/>
-        <rect class="chest-body" x="9" y="23" width="46" height="27" rx="1.5"/>
-        <line class="chest-seam" x1="9" y1="15.5" x2="55" y2="15.5"/>
-        <line class="chest-seam" x1="9" y1="35" x2="55" y2="35"/>
-        <line class="chest-seam" x1="9" y1="43" x2="55" y2="43"/>
-        <rect class="chest-band" x="7" y="20.5" width="50" height="5" rx="1"/>
-        <rect class="chest-band" x="28" y="8" width="8" height="42"/>
-        <circle class="chest-bolt" cx="12" cy="11.5" r="1.6"/>
-        <circle class="chest-bolt" cx="52" cy="11.5" r="1.6"/>
-        <circle class="chest-bolt" cx="12" cy="46.5" r="1.6"/>
-        <circle class="chest-bolt" cx="52" cy="46.5" r="1.6"/>
-        <rect class="chest-lock-plate" x="24" y="26" width="16" height="13" rx="2"/>
-        <path class="chest-shackle" d="M28 26 v-5 a4 4 0 0 1 8 0 v5"/>
-        <circle class="chest-keyhole" cx="32" cy="32" r="1.8"/>
-        <path class="chest-stripe" d="M42 47 L48 41"/>
-        <path class="chest-stripe" d="M36 47 L45 38"/>
-      </svg>
-    `;
-  }
-
-  return `
-    <svg class="verun-chest-svg verun-chest-svg-open" viewBox="0 0 64 58" width="52" height="48" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect class="chest-side" x="9" y="23" width="46" height="27" rx="1.5"/>
-      <rect class="chest-body" x="9" y="23" width="46" height="27" rx="1.5"/>
-      <line class="chest-seam" x1="9" y1="35" x2="55" y2="35"/>
-      <line class="chest-seam" x1="9" y1="43" x2="55" y2="43"/>
-      <rect class="chest-band" x="7" y="20.5" width="50" height="5" rx="1"/>
-      <rect class="chest-band" x="28" y="23" width="8" height="27"/>
-      <circle class="chest-bolt" cx="12" cy="46.5" r="1.6"/>
-      <circle class="chest-bolt" cx="52" cy="46.5" r="1.6"/>
-      <rect class="chest-lock-plate" x="24" y="26" width="16" height="13" rx="2" transform="rotate(-18 32 32)"/>
-      <path class="chest-shackle" d="M28 26 v-5 a4 4 0 0 1 8 0 v5" transform="rotate(-18 32 32)"/>
-      <path class="chest-stripe" d="M42 47 L48 41"/>
-      <path class="chest-stripe" d="M36 47 L45 38"/>
-      <g transform="translate(9,22) rotate(-38)">
-        <rect class="chest-lid-open" x="0" y="-15" width="46" height="15" rx="1.5"/>
-        <line class="chest-seam" x1="0" y1="-7.5" x2="46" y2="-7.5"/>
-        <circle class="chest-bolt" cx="4" cy="-11" r="1.6"/>
-        <circle class="chest-bolt" cx="42" cy="-11" r="1.6"/>
-      </g>
-    </svg>
-  `;
-
-}
-
-function getVerunBoxGraphic(rarity) {
-
-  const glow = rarity ? getRarityGlow(rarity) : MYSTERY_RARITY_GLOW.common;
-
-  return `
-    <div class="verun-chest-wrap" style="--rarity-glow:${glow};">
-      ${getChestSvgMarkup(false)}
-    </div>
-  `;
-
-}
-
-function getVerunOpenedGraphic(rarity) {
-
-  const glow = getRarityGlow(rarity);
-
-  return `
-    <div class="verun-chest-wrap" style="--rarity-glow:${glow};">
-      ${getChestSvgMarkup(true)}
-    </div>
-  `;
-
-}
-
-// Radial spark particles used in the box-opening reveal
-function buildSparkMarkup() {
-
-  const count = 10;
-  const sparks = [];
-
-  for (let i = 0; i < count; i++) {
-
-    const angle = (360 / count) * i;
-    const rad = (angle * Math.PI) / 180;
-    const distance = 55 + (i % 3) * 10;
-    const sx = (Math.cos(rad) * distance).toFixed(1);
-    const sy = (Math.sin(rad) * distance).toFixed(1);
-    const delay = ((i % 4) * 0.05).toFixed(2);
-
-    sparks.push(
-      `<span class="verun-spark" style="--sx:${sx}px;--sy:${sy}px;animation-delay:${delay}s;"></span>`
-    );
-
-  }
-
-  return sparks.join("");
-
-}
-
-
-// ============================================================
-// LOAD BOXES
-// ============================================================
-
-async function loadMysteryBoxes() {
-
-  if (!mysteryBoxesContainer) return;
-
-
-  const {
-    data: { session }
-  } = await supabaseClient.auth.getSession();
-
-
-  if (!session) {
-
-    if (mysteryBoxCount) {
-      mysteryBoxCount.textContent = "0 Boxes";
-    }
-
-    mysteryBoxesContainer.innerHTML = `
-
-      <div style="
-        padding:20px;
-        background:var(--panel);
-        border:1px solid var(--border);
-        border-radius:14px;
-        color:var(--muted);
-        font-size:11px;
-        text-align:center;
-      ">
-        Connect X to see your Mystery Boxes.
-      </div>
-
-    `;
-
-    return;
-  }
-
-
-  const { data: boxes, error } =
-    await supabaseClient
-      .from("mystery_boxes")
-      .select("*")
-      .eq("user_id", session.user.id)
-      .order("box_number", {
-        ascending:true
-      });
-
-
-  if (error) {
-
-    console.error(
-      "Mystery Boxes loading error:",
-      error
-    );
-
-    return;
-  }
-
-
-  const total =
-    boxes?.length || 0;
-
-
-  if (mysteryBoxCount) {
-
-    mysteryBoxCount.textContent =
-      `${total} ${
-        total === 1
-          ? "Box"
-          : "Boxes"
-      }`;
-
-  }
-
-
-  if (!boxes || boxes.length === 0) {
-
-    mysteryBoxesContainer.innerHTML = `
-
-      <div style="
-        padding:22px;
-        background:var(--panel);
-        border:1px solid var(--border);
-        border-radius:14px;
-        color:var(--muted);
-        font-size:11px;
-        text-align:center;
-      ">
-
-        <div style="
-          margin-bottom:8px;
-        ">
-          ${getVerunBoxGraphic()}
-        </div>
-
-        No Mystery Boxes yet.
-
-      </div>
-
-    `;
-
-    return;
-  }
-
-
-  mysteryBoxesContainer.innerHTML = "";
-
-
-  boxes.forEach(box => {
-
-    const element =
-      document.createElement("div");
-
-
-    const rarity =
-      box.rarity ||
-      (
-        box.reward_type ===
-        "sale_eligibility"
-          ? "special"
-          :
-        box.reward_type ===
-        "verun"
-          ?
-          (
-            Number(box.reward_verun) >= 5000
-              ? "rare"
-              : "uncommon"
-          )
-          : "common"
-      );
-
-
-    const rarityInfo =
-      MYSTERY_RARITY[rarity] ||
-      MYSTERY_RARITY.common;
-
-
-    const opened =
-      box.status === "opened";
-
-
-    element.style.cssText = `
-
-      min-width:0;
-
-      padding:18px;
-
-      background:
-        radial-gradient(
-          circle at 90% 10%,
-          rgba(141,255,183,.06),
-          transparent 35%
-        ),
-        var(--panel);
-
-      border:1px solid
-        ${opened
-          ? "var(--border)"
-          : "var(--green-border)"};
-
-      border-radius:14px;
-
-    `;
-
-
-    if (!opened) {
-
-      element.innerHTML = `
-
-        <div style="
-          display:flex;
-          align-items:center;
-          gap:15px;
-        ">
-
-          ${getVerunBoxGraphic()}
-
-          <div style="
-            flex:1;
-            min-width:0;
-          ">
-
-            <div style="
-              font-size:14px;
-              font-weight:850;
-            ">
-              Mystery Box #${box.box_number}
-            </div>
-
-            <div style="
-              color:var(--muted);
-              font-size:10px;
-              margin-top:3px;
-            ">
-              A sealed VERUN reward is waiting.
-            </div>
-
-            <div class="verun-rarity-badge"
-              style="
-                color:var(--muted);
-                background:rgba(255,255,255,.035);
-                border:1px solid var(--border);
-              "
-            >
-              SEALED
-            </div>
-
-          </div>
-
-        </div>
-
-
-        <div style="
-          display:flex;
-          gap:8px;
-          margin-top:15px;
-        ">
-
-          <button
-            type="button"
-            class="task-button"
-            style="
-              flex:1;
-              color:var(--green);
-              border-color:var(--green-border);
-            "
-            onclick="openMysteryBox(${box.id})"
-          >
-            Open Box
-          </button>
-
-
-          <button
-            type="button"
-            class="task-button"
-            style="flex:1;"
-            onclick="saveMysteryBoxForLater(this, ${box.id})"
-          >
-            Save for Later
-          </button>
-
-        </div>
-
-      `;
-
-    } else {
-
-      let rewardText =
-        "Reward received";
-
-
-      if (
-        box.reward_type ===
-        "sale_eligibility"
-      ) {
-
-        rewardText =
-          "Selected for VERUN Private Token Sale";
-
-      }
-
-
-      if (
-        box.reward_type === "xp"
-      ) {
-
-        rewardText =
-          `+${Number(
-            box.reward_xp || 0
-          ).toLocaleString()} XP`;
-
-      }
-
-
-      if (
-        box.reward_type === "verun"
-      ) {
-
-        rewardText =
-          `+${Number(
-            box.reward_verun || 0
-          ).toLocaleString()} VERUN`;
-
-      }
-
-
-      element.innerHTML = `
-
-        <div style="
-          display:flex;
-          align-items:center;
-          gap:15px;
-        ">
-
-          ${getVerunOpenedGraphic(rarity)}
-
-          <div style="
-            flex:1;
-            min-width:0;
-          ">
-
-            <div style="
-              font-size:14px;
-              font-weight:850;
-            ">
-              Mystery Box #${box.box_number}
-            </div>
-
-            <div style="
-              color:var(--green);
-              font-size:9px;
-              font-weight:900;
-              letter-spacing:1px;
-              margin-top:5px;
-            ">
-              OPENED ✓
-            </div>
-
-            <div
-              class="verun-rarity-badge"
-              style="
-                color:var(--green);
-                background:var(--green-soft);
-                border:1px solid var(--green-border);
-              "
-            >
-              ${rarityInfo.symbol}
-              ${rarityInfo.label}
-            </div>
-
-          </div>
-
-        </div>
-
-
-        <div style="
-          margin-top:14px;
-          padding:14px;
-
-          background:
-            rgba(255,255,255,.025);
-
-          border:1px solid
-            var(--border);
-
-          border-radius:10px;
-
-          font-size:12px;
-          font-weight:800;
-        ">
-
-          ${rewardText}
-
-        </div>
-
-      `;
-
-    }
-
-
-    mysteryBoxesContainer.appendChild(
-      element
-    );
-
-  });
-
-}
-
-
-// ============================================================
-// SAVE FOR LATER
-// ============================================================
-
-function saveMysteryBoxForLater(
-  button,
-  boxId
-) {
-
-  localStorage.setItem(
-    "verun_saved_box_" + boxId,
-    "true"
-  );
-
-  button.textContent =
-    "Saved";
-
-  button.disabled =
-    true;
-
-  button.style.opacity =
-    ".55";
-
-}
-
-
-// ============================================================
-// OPEN BOX
-// ============================================================
-
-async function openMysteryBox(boxId) {
-
-  if (!mysteryBoxModal) return;
-
-
-  mysteryBoxModal.style.display =
-    "flex";
-
-
-  // Reset classes/styles from any previous open so animations replay
-  mysteryBoxReward.className = "";
-  mysteryBoxReward.style.borderColor = "";
-  mysteryBoxReward.style.boxShadow = "";
-  mysteryBoxReward.style.background = "";
-
-
-  mysteryBoxGraphic.innerHTML = `
-
-    <div class="verun-reveal-core">
-
-      <div class="verun-chest-wrap verun-chest-shake" style="--rarity-glow:#8dffb7;">
-        ${getChestSvgMarkup(false)}
-      </div>
-
-    </div>
-
-  `;
-
-
-  mysteryBoxModalTitle.textContent =
-    "Opening Mystery Box";
-
-
-  mysteryBoxModalSubtitle.textContent =
-    "Hold tight — unsealing your reward...";
-
-
-  mysteryBoxReward.style.display =
-    "none";
-
-
-  mysteryBoxCloseButton.style.display =
-    "none";
-
-
-  const {
-    data,
-    error
-  } = await supabaseClient.rpc(
-    "open_mystery_box",
-    {
-      p_box_id:boxId
-    }
-  );
-
-
-  if (error || !data?.success) {
-
-    console.error(
-      "Mystery Box error:",
-      error || data
-    );
-
-
-    mysteryBoxModalTitle.textContent =
-      "Unable to Open";
-
-
-    mysteryBoxModalSubtitle.textContent =
-      data?.message ||
-      error?.message ||
-      "Please try again.";
-
-
-    mysteryBoxCloseButton.textContent =
-      "Close";
-
-
-    mysteryBoxCloseButton.style.display =
-      "block";
-
-
-    return;
-  }
-
-
-  insertSelfNotification(
-    data.reward_type === "sale_eligibility" ? "sale_eligibility" : "box",
-    data.reward_type === "sale_eligibility" ? "Private Sale Eligibility!" : "Mystery Box opened!",
-    data.message || "Reward received."
-  );
-
-
-  // Let the chest shake for a beat before it bursts open
-  setTimeout(() => {
-
-    const rarity =
-      data.rarity ||
-      (
-        data.reward_type ===
-        "sale_eligibility"
-          ? "special"
-          : "common"
-      );
-
-
-    const rarityInfo =
-      MYSTERY_RARITY[rarity] ||
-      MYSTERY_RARITY.common;
-
-
-    const glow = getRarityGlow(rarity);
-
-
-    mysteryBoxGraphic.innerHTML = `
-
-      <div class="verun-reveal-core" style="--rarity-glow:${glow};">
-
-        <div class="verun-burst-rays"></div>
-
-        <div class="verun-sparks">${buildSparkMarkup()}</div>
-
-        <div class="verun-chest-wrap verun-chest-open-anim" style="--rarity-glow:${glow};">
-          ${getChestSvgMarkup(true)}
-        </div>
-
-      </div>
-
-    `;
-
-
-    mysteryBoxModalTitle.textContent =
-      `${rarityInfo.symbol} ${rarityInfo.label}`;
-
-
-    mysteryBoxModalSubtitle.textContent =
-      "Reward unlocked";
-
-
-    let html = "";
-
-
-    if (
-      data.reward_type ===
-      "sale_eligibility"
-    ) {
-
-      html = `
-
-        <div style="
-          color:${glow};
-          font-size:18px;
-          font-weight:950;
-        ">
-          You're Selected
-        </div>
-
-        <div style="
-          margin-top:8px;
-          color:var(--text);
-          font-size:11px;
-          line-height:1.5;
-        ">
-          You have been selected for the
-          <strong>
-            VERUN Private Token Sale.
-          </strong>
-        </div>
-
-      `;
-
-    }
-
-
-    else if (
-      data.reward_type === "xp"
-    ) {
-
-      html = `
-
-        <div style="
-          color:${glow};
-          font-size:22px;
-          font-weight:950;
-        ">
-          +${Number(
-            data.reward_xp || 0
-          ).toLocaleString()} XP
-        </div>
-
-      `;
-
-    }
-
-
-    else if (
-      data.reward_type === "verun"
-    ) {
-
-      html = `
-
-        <div style="
-          color:${glow};
-          font-size:22px;
-          font-weight:950;
-        ">
-          +${Number(
-            data.reward_verun || 0
-          ).toLocaleString()} VERUN
-        </div>
-
-      `;
-
-    }
-
-
-    mysteryBoxReward.innerHTML =
-      html;
-
-
-    mysteryBoxReward.classList.add(
-      "verun-reward-glorious"
-    );
-
-
-    mysteryBoxReward.style.borderColor =
-      glow;
-
-
-    mysteryBoxReward.style.boxShadow =
-      `0 0 26px ${glow}66, inset 0 0 24px ${glow}22`;
-
-
-    mysteryBoxReward.style.background =
-      `radial-gradient(circle at 50% 0%, ${glow}22, var(--green-soft))`;
-
-
-    mysteryBoxReward.style.display =
-      "block";
-
-
-    mysteryBoxCloseButton.textContent =
-      "Continue";
-
-
-    mysteryBoxCloseButton.style.display =
-      "block";
-
-
-  }, 900);
-
-}
-
-
-// ============================================================
-// CLOSE
-// ============================================================
-
-if (mysteryBoxCloseButton) {
-
-  mysteryBoxCloseButton.addEventListener(
-    "click",
-    async () => {
-
-      mysteryBoxModal.style.display =
-        "none";
-
-      await loadMysteryBoxes();
-
-      await loadUserProfile();
-
-    }
-  );
-
-}
-
-
-if (mysteryBoxModal) {
-
-  mysteryBoxModal.addEventListener(
-    "click",
-    event => {
-
-      if (
-        event.target ===
-        mysteryBoxModal
-      ) {
-
-        mysteryBoxModal.style.display =
-          "none";
-
-      }
-
-    }
-  );
-
-}
-
-
-// Initial load
-
-loadMysteryBoxes();
-
 // ============================================
 // VERUN RANK SYSTEM
 // ============================================
@@ -5775,9 +4512,10 @@ async function loadVerunLeaderboard() {
 
   const pages = {
     tasks: document.getElementById("tasksPage"),
-    boxes: document.getElementById("mystery-boxes"),
+    genesisPass: document.getElementById("genesis-pass"),
     referral: document.getElementById("referral"),
     leaderboard: document.getElementById("leaderboardSection"),
+    mining: document.getElementById("miningSection"),
     airdrop: document.getElementById("airdropSection")
   };
 
@@ -5944,7 +4682,6 @@ showSection(
     const sectionLoaders = [];
     if (typeof loadTasks === "function") sectionLoaders.push(loadTasks());
     if (typeof loadDailyLoginStatus === "function") sectionLoaders.push(loadDailyLoginStatus());
-    if (typeof loadMysteryBoxes === "function") sectionLoaders.push(loadMysteryBoxes());
     if (typeof loadVerunLeaderboard === "function") sectionLoaders.push(loadVerunLeaderboard());
     // Referral was missing from this list entirely — every other
     // section preloads on page load/reload regardless of which tab
@@ -5977,10 +4714,6 @@ showSection(
       const section = link.dataset.section;
       showSection(section);
       closeDrawer();
-
-      if (section === "boxes" && typeof loadMysteryBoxes === "function") {
-        await loadMysteryBoxes();
-      }
 
       if (section === "referral" && typeof loadReferralDashboard === "function") {
         await loadReferralDashboard();
