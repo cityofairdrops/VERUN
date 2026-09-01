@@ -1281,40 +1281,7 @@
 /* ---- Tokenomics ---- */
 
 .token-section .info-shell {
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  align-items: center;
-  gap: 34px;
-}
-
-.token-mark {
-  width: 88px;
-  height: 88px;
-  border: 1px solid var(--green-border);
-  border-radius: 20px;
-  transform: rotate(45deg);
-  background: var(--green-soft);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.token-mark span {
-  width: 26px;
-  height: 26px;
-  background: var(--green);
-  border-radius: 6px;
-  transform: rotate(-45deg);
-  box-shadow: 0 0 30px rgba(141,255,183,0.3);
-}
-
-@media (max-width: 600px) {
-  .token-section .info-shell {
-    grid-template-columns: 1fr;
-    gap: 22px;
-  }
-  .token-mark { width: 60px; height: 60px; border-radius: 15px; }
-  .token-mark span { width: 18px; height: 18px; }
+  display: block;
 }
 
 /* ---- Roadmap ---- */
@@ -1421,11 +1388,21 @@
 }
 
 .faq-row {
+  border-bottom: 1px solid var(--border);
+}
+
+.faq-row-head {
   display: flex;
   align-items: center;
   gap: 18px;
   padding: 20px 0;
-  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  font-family: inherit;
 }
 
 .faq-index {
@@ -1435,17 +1412,12 @@
   flex: none;
 }
 
-.faq-q-skel {
+.faq-question {
   flex: 1;
-  height: 9px;
-  border-radius: 5px;
-  background: rgba(255,255,255,0.06);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
 }
-
-.faq-row:nth-child(1) .faq-q-skel { max-width: 62%; }
-.faq-row:nth-child(2) .faq-q-skel { max-width: 44%; }
-.faq-row:nth-child(3) .faq-q-skel { max-width: 51%; }
-.faq-row:nth-child(4) .faq-q-skel { max-width: 38%; }
 
 .faq-toggle {
   flex: none;
@@ -1458,6 +1430,32 @@
   justify-content: center;
   color: var(--muted);
   font-size: 13px;
+  transition: 0.2s ease;
+}
+
+.faq-row.open .faq-toggle {
+  color: var(--green);
+  border-color: var(--green-border);
+  background: var(--green-soft);
+  transform: rotate(45deg);
+}
+
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+}
+
+.faq-answer p {
+  padding: 0 20px 22px 38px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted);
+  max-width: 620px;
+}
+
+.faq-row.open .faq-answer {
+  max-height: 400px;
 }
 </style>
 </head>
@@ -1489,17 +1487,14 @@
 
 <section class="info-section token-section" id="tokenomics" data-reveal>
   <div class="info-shell">
-    <div class="token-mark"><span></span></div>
     <div class="info-heading">
-      <div class="info-kicker">01 — Token</div>
-      <h2>About $VERUN<br>and Tokenomics</h2>
+      <h2>$VERUN Overview</h2>
     </div>
   </div>
 </section>
 
 <section class="info-section roadmap-section" id="roadmap" data-reveal>
   <div class="info-shell">
-    <div class="info-kicker">02 — Trajectory</div>
     <h2>Roadmap</h2>
     <div class="roadmap-track">
       <div class="roadmap-phase"><span class="roadmap-dot"></span><span class="roadmap-phase-label">Phase 01</span></div>
@@ -1513,7 +1508,6 @@
 <section class="info-section whitepaper-section" id="whitepaper" data-reveal>
   <div class="info-shell whitepaper-shell">
     <div class="info-heading">
-      <div class="info-kicker">03 — Documentation</div>
       <h2>Whitepaper</h2>
     </div>
     <div class="whitepaper-frame">
@@ -1528,13 +1522,56 @@
 
 <section class="info-section faq-section" id="faq" data-reveal>
   <div class="info-shell">
-    <div class="info-kicker">04 — Answers</div>
     <h2>FAQ</h2>
-    <div class="faq-list">
-      <div class="faq-row"><span class="faq-index">01</span><span class="faq-q-skel"></span><span class="faq-toggle">+</span></div>
-      <div class="faq-row"><span class="faq-index">02</span><span class="faq-q-skel"></span><span class="faq-toggle">+</span></div>
-      <div class="faq-row"><span class="faq-index">03</span><span class="faq-q-skel"></span><span class="faq-toggle">+</span></div>
-      <div class="faq-row"><span class="faq-index">04</span><span class="faq-q-skel"></span><span class="faq-toggle">+</span></div>
+    <div class="faq-list" id="faqList">
+      <div class="faq-row">
+        <button class="faq-row-head" type="button">
+          <span class="faq-index">01</span>
+          <span class="faq-question">What is $VERUN used for?</span>
+          <span class="faq-toggle">+</span>
+        </button>
+        <div class="faq-answer"><p>Full details on token utility, total supply, and use cases will be released in our official tokenomics documentation ahead of launch.</p></div>
+      </div>
+      <div class="faq-row">
+        <button class="faq-row-head" type="button">
+          <span class="faq-index">02</span>
+          <span class="faq-question">How and when does $VERUN launch?</span>
+          <span class="faq-toggle">+</span>
+        </button>
+        <div class="faq-answer"><p>$VERUN will launch through a fair launch model, targeted for Q4 2026. There is no private sale or presale round — all participants access the token under the same public terms.</p></div>
+      </div>
+      <div class="faq-row">
+        <button class="faq-row-head" type="button">
+          <span class="faq-index">03</span>
+          <span class="faq-question">Who is eligible for the airdrop?</span>
+          <span class="faq-toggle">+</span>
+        </button>
+        <div class="faq-answer"><p>Eligibility is verified through measures designed to prevent duplicate or fraudulent accounts. Participants recognized as genuine, unique users will qualify for the airdrop.</p></div>
+      </div>
+      <div class="faq-row">
+        <button class="faq-row-head" type="button">
+          <span class="faq-index">04</span>
+          <span class="faq-question">Is there a snapshot for the airdrop?</span>
+          <span class="faq-toggle">+</span>
+        </button>
+        <div class="faq-answer"><p>Yes. Eligibility will be determined by a snapshot taken ahead of the token generation event. The exact date will be announced closer to launch.</p></div>
+      </div>
+      <div class="faq-row">
+        <button class="faq-row-head" type="button">
+          <span class="faq-index">05</span>
+          <span class="faq-question">How do I claim my airdrop?</span>
+          <span class="faq-toggle">+</span>
+        </button>
+        <div class="faq-answer"><p>Once claims open, connect your wallet within the app and claim directly from your dashboard — no external forms or manual steps required.</p></div>
+      </div>
+      <div class="faq-row">
+        <button class="faq-row-head" type="button">
+          <span class="faq-index">06</span>
+          <span class="faq-question">What are the vesting and distribution terms?</span>
+          <span class="faq-toggle">+</span>
+        </button>
+        <div class="faq-answer"><p>The vesting schedule and full allocation breakdown across community, team, treasury, and liquidity will be published in our official tokenomics documentation.</p></div>
+      </div>
     </div>
   </div>
 </section>
@@ -1623,9 +1660,27 @@ const spyObserver = new IntersectionObserver(function (entries) {
   });
 }, { rootMargin: "-45% 0px -50% 0px", threshold: 0 });
 navSections.forEach(function (section) { spyObserver.observe(section); });
+
+// ============================================
+// FAQ accordion toggle
+// ============================================
+const faqRows = document.querySelectorAll("#faqList .faq-row");
+faqRows.forEach(function (row) {
+  const head = row.querySelector(".faq-row-head");
+  const toggle = row.querySelector(".faq-toggle");
+  head.addEventListener("click", function () {
+    const isOpen = row.classList.contains("open");
+    faqRows.forEach(function (r) {
+      r.classList.remove("open");
+      r.querySelector(".faq-toggle").textContent = "+";
+    });
+    if (!isOpen) {
+      row.classList.add("open");
+      toggle.textContent = "+";
+    }
+  });
+});
 </script>
 </body>
 </html>
-
-
 
