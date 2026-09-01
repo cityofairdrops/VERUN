@@ -1176,6 +1176,289 @@
   .home-grid { grid-template-columns:1fr; }
   .home-card.wide { grid-column:auto; }
 }
+
+/* ================= PAGE NAV ================= */
+
+.page-nav {
+  position: sticky;
+  top: 68px;
+  z-index: 40;
+  background: rgba(7,9,9,0.86);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--border);
+}
+
+.page-nav-inner {
+  max-width: 1080px;
+  width: calc(100% - 30px);
+  margin: auto;
+
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.page-nav-inner::-webkit-scrollbar { display: none; }
+
+.page-nav-link {
+  flex: none;
+  position: relative;
+  padding: 15px 16px;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.page-nav-link::after {
+  content: "";
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 0;
+  height: 1px;
+  background: var(--green);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.25s ease;
+}
+
+.page-nav-link:hover {
+  color: var(--text);
+}
+
+.page-nav-link.active {
+  color: var(--green);
+}
+
+.page-nav-link.active::after {
+  transform: scaleX(1);
+}
+
+/* ================= INFO SECTIONS (shared) ================= */
+
+.info-section {
+  scroll-margin-top: 128px;
+  padding: 90px 0;
+  border-bottom: 1px solid var(--border);
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.info-section.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.info-section:last-of-type {
+  border-bottom: none;
+}
+
+.info-shell {
+  max-width: 1080px;
+  width: calc(100% - 30px);
+  margin: auto;
+}
+
+.info-kicker {
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.info-heading h2,
+.info-shell > h2 {
+  font-size: clamp(34px, 6vw, 58px);
+  line-height: 1.02;
+  letter-spacing: -2px;
+}
+
+/* ---- Tokenomics ---- */
+
+.token-section .info-shell {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  gap: 34px;
+}
+
+.token-mark {
+  width: 88px;
+  height: 88px;
+  border: 1px solid var(--green-border);
+  border-radius: 20px;
+  transform: rotate(45deg);
+  background: var(--green-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.token-mark span {
+  width: 26px;
+  height: 26px;
+  background: var(--green);
+  border-radius: 6px;
+  transform: rotate(-45deg);
+  box-shadow: 0 0 30px rgba(141,255,183,0.3);
+}
+
+@media (max-width: 600px) {
+  .token-section .info-shell {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+  .token-mark { width: 60px; height: 60px; border-radius: 15px; }
+  .token-mark span { width: 18px; height: 18px; }
+}
+
+/* ---- Roadmap ---- */
+
+.roadmap-track {
+  margin-top: 46px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+
+.roadmap-phase {
+  position: relative;
+  padding-top: 28px;
+  padding-right: 18px;
+}
+
+.roadmap-phase::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border);
+}
+
+.roadmap-dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--green);
+  transform: translate(0, -6px);
+}
+
+.roadmap-dot::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.roadmap-phase-label {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 700px) {
+  .roadmap-track {
+    grid-template-columns: 1fr;
+    gap: 26px;
+  }
+  .roadmap-phase { padding-right: 0; padding-left: 22px; padding-top: 0; }
+  .roadmap-phase::before { top: 0; bottom: 0; left: 6px; right: auto; width: 1px; height: auto; }
+  .roadmap-dot { top: 0; left: 0; transform: translate(-6px, 0); }
+}
+
+/* ---- Whitepaper ---- */
+
+.whitepaper-shell {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 30px;
+}
+
+.whitepaper-frame {
+  position: relative;
+  padding: 26px 30px;
+  border: 1px dashed var(--border-strong, rgba(255,255,255,0.18));
+  border-radius: 12px;
+}
+
+.whitepaper-corner {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--green);
+  opacity: 0.7;
+}
+
+.whitepaper-corner.tl { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+.whitepaper-corner.tr { top: -1px; right: -1px; border-width: 1px 1px 0 0; }
+.whitepaper-corner.bl { bottom: -1px; left: -1px; border-width: 0 0 1px 1px; }
+.whitepaper-corner.br { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+
+@media (max-width: 640px) {
+  .whitepaper-shell { grid-template-columns: 1fr; align-items: start; }
+  .whitepaper-frame { justify-self: start; }
+}
+
+/* ---- FAQ ---- */
+
+.faq-list {
+  margin-top: 40px;
+  border-top: 1px solid var(--border);
+}
+
+.faq-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.faq-index {
+  font-size: 10px;
+  color: var(--muted2);
+  width: 20px;
+  flex: none;
+}
+
+.faq-q-skel {
+  flex: 1;
+  height: 9px;
+  border-radius: 5px;
+  background: rgba(255,255,255,0.06);
+}
+
+.faq-row:nth-child(1) .faq-q-skel { max-width: 62%; }
+.faq-row:nth-child(2) .faq-q-skel { max-width: 44%; }
+.faq-row:nth-child(3) .faq-q-skel { max-width: 51%; }
+.faq-row:nth-child(4) .faq-q-skel { max-width: 38%; }
+
+.faq-toggle {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 13px;
+}
 </style>
 </head>
 <body class="home-page">
@@ -1183,68 +1466,78 @@
 <header class="topbar">
   <div class="topbar-inner">
     <a href="../home/" class="brand"><span class="brand-mark"></span>VERUN</a>
-    <a class="home-button secondary" href="../app/">Enter App</a>
+    <a class="home-button primary" href="../app/">Enter App</a>
   </div>
 </header>
 
 <div class="home-shell">
 <section class="home-hero">
   <div>
-    <div class="home-kicker">VERUN PROJECT</div>
-    <h1>Build.<br>Participate.</h1>
-    <p>VERUN is a community participation ecosystem where contribution is tracked through XP, tasks, streaks, referrals and special rewards.</p>
-    <div class="home-actions">
-      <button id="homeConnectX" class="home-button primary" type="button" style="visibility:hidden;">Connect X</button>
-      <a href="../app/" class="home-button secondary">Open Community App</a>
+    <button id="homeConnectX" class="home-button primary" type="button" style="visibility:hidden;">Connect X</button>
+  </div>
+</section>
+</div>
+
+<nav class="page-nav">
+  <div class="page-nav-inner">
+    <a href="#tokenomics" class="page-nav-link" data-nav-link>Tokenomics</a>
+    <a href="#roadmap" class="page-nav-link" data-nav-link>Roadmap</a>
+    <a href="#whitepaper" class="page-nav-link" data-nav-link>Whitepaper</a>
+    <a href="#faq" class="page-nav-link" data-nav-link>FAQ</a>
+  </div>
+</nav>
+
+<section class="info-section token-section" id="tokenomics" data-reveal>
+  <div class="info-shell">
+    <div class="token-mark"><span></span></div>
+    <div class="info-heading">
+      <div class="info-kicker">01 — Token</div>
+      <h2>About $VERUN<br>and Tokenomics</h2>
     </div>
   </div>
 </section>
 
-<section class="home-grid">
-  <article class="home-card wide">
-    <div class="home-label">About VERUN</div>
-    <h2>A contribution-first community layer.</h2>
-    <p>The public project page contains the information hub. The separate community app is where connected X users participate and build their contribution history.</p>
-  </article>
-
-  <article class="home-card">
-    <div class="home-label">XP System</div>
-    <h2>Earn through participation.</h2>
-    <p>Community XP is used as a participation tracking mechanism and is tied to activities inside the VERUN app.</p>
-    <div class="home-points">
-      <div class="home-point">X-based community tasks</div>
-      <div class="home-point">Daily login and streak rewards</div>
-      <div class="home-point">Referral XP tracked separately</div>
+<section class="info-section roadmap-section" id="roadmap" data-reveal>
+  <div class="info-shell">
+    <div class="info-kicker">02 — Trajectory</div>
+    <h2>Roadmap</h2>
+    <div class="roadmap-track">
+      <div class="roadmap-phase"><span class="roadmap-dot"></span><span class="roadmap-phase-label">Phase 01</span></div>
+      <div class="roadmap-phase"><span class="roadmap-dot"></span><span class="roadmap-phase-label">Phase 02</span></div>
+      <div class="roadmap-phase"><span class="roadmap-dot"></span><span class="roadmap-phase-label">Phase 03</span></div>
+      <div class="roadmap-phase"><span class="roadmap-dot"></span><span class="roadmap-phase-label">Phase 04</span></div>
     </div>
-  </article>
-
-  <article class="home-card">
-    <div class="home-label">Mystery Boxes</div>
-    <h2>Special rewards.</h2>
-    <p>Mystery Boxes can be earned through participation and may contain XP, VERUN rewards or private token-sale eligibility according to the existing app logic.</p>
-    <div class="home-token-note">Rewards and eligibility remain subject to official VERUN announcements and the rules implemented by the project.</div>
-  </article>
-
-  <article class="home-card">
-    <div class="home-label">Referrals</div>
-    <h2>Grow the network.</h2>
-    <p>Referral activity is tracked independently in the app as <strong>Referral Bonus</strong> XP, reflecting the dedicated referral reward allocation.</p>
-  </article>
-
-  <article class="home-card">
-    <div class="home-label">Leaderboard</div>
-    <h2>Contribution rankings.</h2>
-    <p>The community leaderboard ranks participants by XP, streak and referrals, with referral-based VERUN ranks including Networker, Ambassador and Legend.</p>
-  </article>
-
-  <article class="home-card wide">
-    <div class="home-label">Token & Airdrop</div>
-    <h2>VERUN token information</h2>
-    <p>The existing app identifies VERUN rewards and a private token-sale eligibility reward. Final token distribution, eligibility conditions and airdrop details remain subject to official project announcements.</p>
-    <div class="home-token-note">Airdrop status: Coming Soon.</div>
-  </article>
+  </div>
 </section>
-</div>
+
+<section class="info-section whitepaper-section" id="whitepaper" data-reveal>
+  <div class="info-shell whitepaper-shell">
+    <div class="info-heading">
+      <div class="info-kicker">03 — Documentation</div>
+      <h2>Whitepaper</h2>
+    </div>
+    <div class="whitepaper-frame">
+      <span class="whitepaper-corner tl"></span>
+      <span class="whitepaper-corner tr"></span>
+      <span class="whitepaper-corner bl"></span>
+      <span class="whitepaper-corner br"></span>
+      <a href="#" class="home-button primary">Read Whitepaper</a>
+    </div>
+  </div>
+</section>
+
+<section class="info-section faq-section" id="faq" data-reveal>
+  <div class="info-shell">
+    <div class="info-kicker">04 — Answers</div>
+    <h2>FAQ</h2>
+    <div class="faq-list">
+      <div class="faq-row"><span class="faq-index">01</span><span class="faq-q-skel"></span><span class="faq-toggle">+</span></div>
+      <div class="faq-row"><span class="faq-index">02</span><span class="faq-q-skel"></span><span class="faq-toggle">+</span></div>
+      <div class="faq-row"><span class="faq-index">03</span><span class="faq-q-skel"></span><span class="faq-toggle">+</span></div>
+      <div class="faq-row"><span class="faq-index">04</span><span class="faq-q-skel"></span><span class="faq-toggle">+</span></div>
+    </div>
+  </div>
+</section>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1296,6 +1589,40 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
   if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") return;
   setHomeConnectVisibility(session);
 });
+
+// ============================================
+// Scroll reveal for info sections + scroll-spy
+// on the in-page nav.
+// ============================================
+const revealTargets = document.querySelectorAll("[data-reveal]");
+const revealObserver = new IntersectionObserver(function (entries) {
+  entries.forEach(function (entry) {
+    if (entry.isIntersecting) {
+      entry.target.classList.add("in-view");
+    }
+  });
+}, { threshold: 0.15 });
+revealTargets.forEach(function (el) { revealObserver.observe(el); });
+
+const navLinks = document.querySelectorAll("[data-nav-link]");
+const navSections = Array.from(navLinks).map(function (link) {
+  return document.querySelector(link.getAttribute("href"));
+}).filter(Boolean);
+
+function setActiveNavLink(id) {
+  navLinks.forEach(function (link) {
+    link.classList.toggle("active", link.getAttribute("href") === "#" + id);
+  });
+}
+
+const spyObserver = new IntersectionObserver(function (entries) {
+  entries.forEach(function (entry) {
+    if (entry.isIntersecting) {
+      setActiveNavLink(entry.target.id);
+    }
+  });
+}, { rootMargin: "-45% 0px -50% 0px", threshold: 0 });
+navSections.forEach(function (section) { spyObserver.observe(section); });
 </script>
 </body>
 </html>
