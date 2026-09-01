@@ -1281,7 +1281,40 @@
 /* ---- Tokenomics ---- */
 
 .token-section .info-shell {
-  display: block;
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  gap: 34px;
+}
+
+.token-mark {
+  width: 88px;
+  height: 88px;
+  border: 1px solid var(--green-border);
+  border-radius: 20px;
+  transform: rotate(45deg);
+  background: var(--green-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.token-mark span {
+  width: 26px;
+  height: 26px;
+  background: var(--green);
+  border-radius: 6px;
+  transform: rotate(-45deg);
+  box-shadow: 0 0 30px rgba(141,255,183,0.3);
+}
+
+@media (max-width: 600px) {
+  .token-section .info-shell {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+  .token-mark { width: 60px; height: 60px; border-radius: 15px; }
+  .token-mark span { width: 18px; height: 18px; }
 }
 
 /* ---- Roadmap ---- */
@@ -1380,82 +1413,85 @@
   .whitepaper-frame { justify-self: start; }
 }
 
-/* ---- FAQ ---- */
+/* ---- FAQ (Refined Accordion Styles) ---- */
 
 .faq-list {
   margin-top: 40px;
   border-top: 1px solid var(--border);
 }
 
-.faq-row {
+.faq-item {
   border-bottom: 1px solid var(--border);
+  transition: background 0.2s ease;
 }
 
-.faq-row-head {
+.faq-row {
   display: flex;
   align-items: center;
   gap: 18px;
-  padding: 20px 0;
+  padding: 22px 0;
   cursor: pointer;
-  background: none;
-  border: none;
   width: 100%;
+  background: transparent;
+  border: none;
   text-align: left;
-  color: inherit;
-  font-family: inherit;
+  color: var(--text);
 }
 
 .faq-index {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--muted2);
-  width: 20px;
+  width: 24px;
   flex: none;
+  font-family: 'IBM Plex Mono', monospace;
 }
 
 .faq-question {
   flex: 1;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--text);
+  letter-spacing: -0.3px;
 }
 
 .faq-toggle {
   flex: none;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border: 1px solid var(--border);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--muted);
-  font-size: 13px;
-  transition: 0.2s ease;
+  font-size: 14px;
+  transition: transform 0.25s ease, background 0.25s ease, color 0.25s ease;
 }
 
-.faq-row.open .faq-toggle {
-  color: var(--green);
-  border-color: var(--green-border);
-  background: var(--green-soft);
+.faq-item.active .faq-toggle {
   transform: rotate(45deg);
+  background: var(--green-soft);
+  border-color: var(--green-border);
+  color: var(--green);
 }
 
 .faq-answer {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.25s ease;
-}
-
-.faq-answer p {
-  padding: 0 20px 22px 38px;
-  font-size: 12px;
-  line-height: 1.7;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), padding 0.35s ease;
+  padding-left: 42px;
   color: var(--muted);
-  max-width: 620px;
+  font-size: 12px;
+  line-height: 1.75;
 }
 
-.faq-row.open .faq-answer {
-  max-height: 400px;
+.faq-item.active .faq-answer {
+  max-height: 300px;
+  padding-bottom: 22px;
+}
+
+@media (max-width: 600px) {
+  .faq-answer { padding-left: 0; }
+  .faq-question { font-size: 13px; }
 }
 </style>
 </head>
@@ -1487,14 +1523,17 @@
 
 <section class="info-section token-section" id="tokenomics" data-reveal>
   <div class="info-shell">
+    <div class="token-mark"><span></span></div>
     <div class="info-heading">
-      <h2>$VERUN Overview</h2>
+      <div class="info-kicker">01 — Token</div>
+      <h2>About $VERUN<br>and Tokenomics</h2>
     </div>
   </div>
 </section>
 
 <section class="info-section roadmap-section" id="roadmap" data-reveal>
   <div class="info-shell">
+    <div class="info-kicker">02 — Trajectory</div>
     <h2>Roadmap</h2>
     <div class="roadmap-track">
       <div class="roadmap-phase"><span class="roadmap-dot"></span><span class="roadmap-phase-label">Phase 01</span></div>
@@ -1508,6 +1547,7 @@
 <section class="info-section whitepaper-section" id="whitepaper" data-reveal>
   <div class="info-shell whitepaper-shell">
     <div class="info-heading">
+      <div class="info-kicker">03 — Documentation</div>
       <h2>Whitepaper</h2>
     </div>
     <div class="whitepaper-frame">
@@ -1520,61 +1560,89 @@
   </div>
 </section>
 
+<!-- UPDATED FAQ SECTION WITH GENESIS PASS & MINING DETAILS -->
 <section class="info-section faq-section" id="faq" data-reveal>
   <div class="info-shell">
+    <div class="info-kicker">04 — Answers</div>
     <h2>FAQ</h2>
-    <div class="faq-list" id="faqList">
-      <div class="faq-row">
-        <button class="faq-row-head" type="button">
+    <div class="faq-list">
+      
+      <!-- FAQ 1 -->
+      <div class="faq-item">
+        <button class="faq-row" type="button">
           <span class="faq-index">01</span>
-          <span class="faq-question">What is $VERUN used for?</span>
+          <span class="faq-question">What is the Genesis Pass and what is its total supply?</span>
           <span class="faq-toggle">+</span>
         </button>
-        <div class="faq-answer"><p>Full details on token utility, total supply, and use cases will be released in our official tokenomics documentation ahead of launch.</p></div>
+        <div class="faq-answer">
+          The Genesis Pass is an exclusive, soulbound (non-transferable) digital pass for the VERUN platform with a strictly limited total supply of 11,000 passes[span_1](start_span)[span_1](end_span). Out of these, 1,000 passes are distributed for free (500 via quest platforms and 500 via our website), and 10,000 passes are available for paid minting[span_2](start_span)[span_2](end_span).
+        </div>
       </div>
-      <div class="faq-row">
-        <button class="faq-row-head" type="button">
+
+      <!-- FAQ 2 -->
+      <div class="faq-item">
+        <button class="faq-row" type="button">
           <span class="faq-index">02</span>
-          <span class="faq-question">How and when does $VERUN launch?</span>
+          <span class="faq-question">How does the Custom Discount Code system work for minting?</span>
           <span class="faq-toggle">+</span>
         </button>
-        <div class="faq-answer"><p>$VERUN will launch through a fair launch model, targeted for Q4 2026. There is no private sale or presale round — all participants access the token under the same public terms.</p></div>
+        <div class="faq-answer">
+          The standard mint price without a code is 0.005 BNB[span_3](start_span)[span_3](end_span). However, when you mint a Genesis Pass, you create your own unique, permanent lowercase custom handle which automatically serves as your personal discount code[span_4](start_span)[span_4](end_span). When anyone uses your code, they get a 50% discount and pay only 0.0025 BNB[span_5](start_span)[span_5](end_span). Out of this, 0.002 BNB goes to the project wallet and 0.0005 BNB goes directly to your dashboard as an instant referral commission[span_6](start_span)[span_6](end_span)!
+        </div>
       </div>
-      <div class="faq-row">
-        <button class="faq-row-head" type="button">
+
+      <!-- FAQ 3 -->
+      <div class="faq-item">
+        <button class="faq-row" type="button">
           <span class="faq-index">03</span>
-          <span class="faq-question">Who is eligible for the airdrop?</span>
+          <span class="faq-question">What are the exclusive benefits of holding a Genesis Pass?</span>
           <span class="faq-toggle">+</span>
         </button>
-        <div class="faq-answer"><p>Eligibility is verified through measures designed to prevent duplicate or fraudulent accounts. Participants recognized as genuine, unique users will qualify for the airdrop.</p></div>
+        <div class="faq-answer">
+          Genesis Pass holders unlock major perks: (1) A 2x XP Multiplier on all platform tasks, streaks, and engagement points; (2) Full Mining Access, as the mining feature is strictly locked for non-holders; and (3) A 2x Airdrop Unlock multiplier during the Token Generation Event (TGE) compared to regular users[span_7](start_span)[span_7](end_span).
+        </div>
       </div>
-      <div class="faq-row">
-        <button class="faq-row-head" type="button">
+
+      <!-- FAQ 4 -->
+      <div class="faq-item">
+        <button class="faq-row" type="button">
           <span class="faq-index">04</span>
-          <span class="faq-question">Is there a snapshot for the airdrop?</span>
+          <span class="faq-question">How can I withdraw my referral commissions?</span>
           <span class="faq-toggle">+</span>
         </button>
-        <div class="faq-answer"><p>Yes. Eligibility will be determined by a snapshot taken ahead of the token generation event. The exact date will be announced closer to launch.</p></div>
+        <div class="faq-answer">
+          All commissions earned from sharing your custom Genesis code are tracked live in your dashboard[span_8](start_span)[span_8](end_span). Once your balance reaches the minimum threshold of 0.001 BNB, you can instantly request a withdrawal straight to your personal Web3 wallet, with standard network gas fees applied[span_9](start_span)[span_9](end_span).
+        </div>
       </div>
-      <div class="faq-row">
-        <button class="faq-row-head" type="button">
+
+      <!-- FAQ 5 -->
+      <div class="faq-item">
+        <button class="faq-row" type="button">
           <span class="faq-index">05</span>
-          <span class="faq-question">How do I claim my airdrop?</span>
+          <span class="faq-question">How does the VERUN Mining feature work?</span>
           <span class="faq-toggle">+</span>
         </button>
-        <div class="faq-answer"><p>Once claims open, connect your wallet within the app and claim directly from your dashboard — no external forms or manual steps required.</p></div>
+        <div class="faq-answer">
+          Mining operates on a fixed global bucket of VERUN tokens[span_10](start_span)[span_10](end_span). Users run manual 24-hour mining sessions by tapping to start and claim. There are three hashrate tiers: Basic (Free with pass, yielding 0.5 VERUN/day), Pro (0.010 BNB for 30 days, yielding 3.0 VERUN/day), and Ultra (0.025 BNB for 30 days, yielding 5.0 VERUN/day)[span_11](start_span)[span_11](end_span).
+        </div>
       </div>
-      <div class="faq-row">
-        <button class="faq-row-head" type="button">
+
+      <!-- FAQ 6 -->
+      <div class="faq-item">
+        <button class="faq-row" type="button">
           <span class="faq-index">06</span>
-          <span class="faq-question">What are the vesting and distribution terms?</span>
+          <span class="faq-question">What happens when a Pro or Ultra mining subscription expires?</span>
           <span class="faq-toggle">+</span>
         </button>
-        <div class="faq-answer"><p>The vesting schedule and full allocation breakdown across community, team, treasury, and liquidity will be published in our official tokenomics documentation.</p></div>
+        <div class="faq-answer">
+          If a Pro or Ultra 30-day cycle ends without renewal, the system applies an auto-fallback mechanism, automatically shifting your account back to the Basic tier (0.5 VERUN/day)[span_12](start_span)[span_12](end_span). You can upgrade or renew your tier at any time to instantly restore your higher hashrate speed[span_13](start_span)[span_13](end_span). Additionally, maintaining consecutive 24-hour claims unlocks streak rewards (+5% for 7 days, +10% for 15 days, and +15% for 30 days)[span_14](start_span)[span_14](end_span).
+        </div>
       </div>
+
     </div>
   </div>
 </section>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1604,12 +1672,6 @@ document.getElementById("homeConnectX").addEventListener("click", async function
   }
 });
 
-// ============================================
-// Only show "Connect X" on Home when the user
-// is NOT already connected. If they're connected,
-// they can reach the app via "Enter App"/"Open
-// Community App", or disconnect from inside the app.
-// ============================================
 const homeConnectXButton = document.getElementById("homeConnectX");
 
 function setHomeConnectVisibility(session) {
@@ -1622,9 +1684,26 @@ supabaseClient.auth.getSession().then(function (result) {
 });
 
 supabaseClient.auth.onAuthStateChange(function (event, session) {
-  // Ignore background/no-op events; only react to real sign-in/out.
   if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") return;
   setHomeConnectVisibility(session);
+});
+
+// ============================================
+// Accordion Toggle Logic for FAQ Section
+// ============================================
+document.querySelectorAll('.faq-row').forEach(function(row) {
+  row.addEventListener('click', function() {
+    const item = this.parentElement;
+    const isActive = item.classList.contains('active');
+    
+    document.querySelectorAll('.faq-item').forEach(function(el) {
+      el.classList.remove('active');
+    });
+    
+    if (!isActive) {
+      item.classList.add('active');
+    }
+  });
 });
 
 // ============================================
@@ -1660,27 +1739,8 @@ const spyObserver = new IntersectionObserver(function (entries) {
   });
 }, { rootMargin: "-45% 0px -50% 0px", threshold: 0 });
 navSections.forEach(function (section) { spyObserver.observe(section); });
-
-// ============================================
-// FAQ accordion toggle
-// ============================================
-const faqRows = document.querySelectorAll("#faqList .faq-row");
-faqRows.forEach(function (row) {
-  const head = row.querySelector(".faq-row-head");
-  const toggle = row.querySelector(".faq-toggle");
-  head.addEventListener("click", function () {
-    const isOpen = row.classList.contains("open");
-    faqRows.forEach(function (r) {
-      r.classList.remove("open");
-      r.querySelector(".faq-toggle").textContent = "+";
-    });
-    if (!isOpen) {
-      row.classList.add("open");
-      toggle.textContent = "+";
-    }
-  });
-});
 </script>
 </body>
 </html>
+
 
