@@ -1271,7 +1271,519 @@
         grid-template-columns: 1fr;
       }
     }
-  
+
+    /* ================= MINING ================= */
+
+    .mining-pool-card {
+      position: relative;
+      overflow: hidden;
+
+      background:
+        radial-gradient(
+          circle at 88% 10%,
+          rgba(141,255,183,0.10),
+          transparent 40%
+        ),
+        var(--panel);
+
+      border: 1px solid var(--border);
+      border-radius: 16px;
+
+      padding: 22px 25px;
+      margin-bottom: 15px;
+    }
+
+    .mining-pool-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+
+      margin-bottom: 12px;
+    }
+
+    .mining-pool-label {
+      color: var(--muted2);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+    }
+
+    .mining-pool-amount {
+      font-size: 13px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .mining-pool-amount strong {
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .mining-pool-bar {
+      width: 100%;
+      height: 12px;
+
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .mining-pool-fill {
+      height: 100%;
+      width: 0%;
+      max-width: 100%;
+
+      background: linear-gradient(90deg, #4fdc85, var(--green));
+      border-radius: 999px;
+      box-shadow: 0 0 12px rgba(141,255,183,0.45);
+      transition: width .5s ease;
+    }
+
+    .mining-pool-caption {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+
+      color: var(--muted2);
+      font-size: 9px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      margin-top: 7px;
+    }
+
+    .mining-locked {
+      text-align: center;
+      padding: 46px 25px;
+
+      background: var(--panel);
+      border: 1px dashed var(--border);
+      border-radius: 16px;
+      margin-bottom: 15px;
+    }
+
+    .mining-locked-icon {
+      width: 52px;
+      height: 52px;
+      margin: 0 auto 14px;
+
+      border: 1px solid var(--green-border);
+      background: var(--green-soft);
+      border-radius: 50%;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .mining-locked-title {
+      font-size: 15px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .mining-locked-text {
+      color: var(--muted);
+      font-size: 11px;
+      max-width: 340px;
+      margin: 0 auto 18px;
+    }
+
+    .mining-locked-button {
+      display: inline-block;
+      border: 1px solid var(--green);
+      background: var(--green);
+      color: #071009;
+
+      border-radius: 8px;
+      padding: 11px 22px;
+
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+
+      cursor: pointer;
+      transition: opacity .15s ease;
+    }
+
+    .mining-locked-button:hover {
+      opacity: 0.85;
+    }
+
+    .mining-dashboard {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+
+      padding: 30px 25px;
+      margin-bottom: 15px;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .mining-hashrate-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 7px 14px;
+
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 26px;
+    }
+
+    .mining-hashrate-badge.is-pro,
+    .mining-hashrate-badge.is-ultra {
+      border-color: var(--green-border);
+      background: var(--green-soft);
+      color: var(--text);
+    }
+
+    .mining-hashrate-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      flex-shrink: 0;
+    }
+
+    #miningActiveTierLabel {
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .mining-hashrate-speed {
+      color: var(--muted2);
+    }
+
+    .mining-hashrate-speed::before {
+      content: "·";
+      margin-right: 8px;
+      color: var(--muted2);
+    }
+
+    .mining-button-wrap {
+      position: relative;
+      width: 230px;
+      height: 230px;
+      margin-bottom: 26px;
+    }
+
+    .mining-button {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mining-button:disabled {
+      cursor: default;
+    }
+
+    .mining-ring {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .mining-ring-track {
+      fill: #0b0f0d;
+      stroke: var(--border);
+      stroke-width: 3;
+    }
+
+    .mining-ring-progress {
+      fill: none;
+      stroke: var(--green);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 578.05;
+      stroke-dashoffset: 578.05;
+      filter: drop-shadow(0 0 6px rgba(141,255,183,0.55));
+      transition: stroke-dashoffset 1s linear;
+    }
+
+    .mining-button-inner {
+      position: absolute;
+      inset: 10px;
+      border-radius: 50%;
+
+      background:
+        radial-gradient(circle at 50% 20%, rgba(141,255,183,0.08), transparent 60%),
+        var(--panel2);
+      border: 1px solid var(--border);
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+
+      transition: border-color .2s ease, background .2s ease, transform .12s ease;
+    }
+
+    .mining-button:not(:disabled):hover .mining-button-inner {
+      border-color: var(--green-border);
+    }
+
+    .mining-button:not(:disabled):active .mining-button-inner {
+      transform: scale(0.97);
+    }
+
+    .mining-button.is-running .mining-button-inner {
+      border-color: var(--green-border);
+      background:
+        radial-gradient(circle at 50% 20%, rgba(141,255,183,0.14), transparent 65%),
+        var(--panel2);
+    }
+
+    .mining-button-text {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: var(--green);
+    }
+
+    .mining-button.is-running .mining-button-text {
+      font-size: 9px;
+      letter-spacing: 1.2px;
+      color: var(--muted2);
+    }
+
+    .mining-button-timer {
+      font-size: 0;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .mining-button.is-running .mining-button-timer {
+      font-size: 24px;
+    }
+
+    .mining-balance-block {
+      width: 100%;
+    }
+
+    .mining-balance-label {
+      color: var(--muted2);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+    }
+
+    .mining-balance-value {
+      font-size: clamp(30px, 6vw, 42px);
+      font-weight: 900;
+      letter-spacing: -1.5px;
+      margin: 8px 0 6px;
+      transition: color .2s ease;
+    }
+
+    .mining-balance-value.is-pulsing {
+      color: var(--green);
+      animation: miningPulse .6s ease;
+    }
+
+    @keyframes miningPulse {
+      0% { transform: scale(1); }
+      35% { transform: scale(1.06); }
+      100% { transform: scale(1); }
+    }
+
+    .mining-balance-unit {
+      font-size: 13px;
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .mining-balance-hint {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .mining-tiers-heading {
+      color: var(--muted2);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .mining-tiers-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .mining-tier {
+      position: relative;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .mining-tier.is-active {
+      border-color: var(--green-border);
+      background:
+        radial-gradient(circle at 85% 0%, rgba(141,255,183,0.08), transparent 55%),
+        var(--panel);
+    }
+
+    .mining-tier-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .mining-tier-name {
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .mining-tier-tag {
+      flex-shrink: 0;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+
+      color: var(--text);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 3px 9px;
+    }
+
+    .mining-tier-tag--free {
+      color: var(--green);
+      background: var(--green-soft);
+      border-color: var(--green-border);
+    }
+
+    .mining-tier-speed {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+
+    .mining-tier-speed small {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted2);
+      letter-spacing: 0;
+      margin-left: 2px;
+    }
+
+    .mining-tier-desc {
+      color: var(--muted);
+      font-size: 10.5px;
+      margin-bottom: 14px;
+      flex-grow: 1;
+    }
+
+    .mining-tier-button {
+      width: 100%;
+      border: 1px solid var(--green);
+      background: transparent;
+      color: var(--green);
+
+      border-radius: 8px;
+      padding: 9px 10px;
+
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+
+      cursor: pointer;
+      transition: background .15s ease, color .15s ease, opacity .15s ease;
+    }
+
+    .mining-tier-button:hover {
+      background: var(--green);
+      color: #071009;
+    }
+
+    .mining-tier-button:disabled {
+      opacity: 0.5;
+      cursor: default;
+      background: transparent;
+      color: var(--muted);
+      border-color: var(--border);
+    }
+
+    .mining-tier-status {
+      margin-top: 10px;
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--green);
+      min-height: 12px;
+    }
+
+    @media (max-width: 700px) {
+      .mining-tiers-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .mining-pool-card {
+        padding: 18px;
+      }
+
+      .mining-dashboard {
+        padding: 26px 16px;
+      }
+
+      .mining-button-wrap {
+        width: 200px;
+        height: 200px;
+      }
+
+      .mining-button.is-running .mining-button-timer {
+        font-size: 20px;
+      }
+    }
+
 /* ============================================================
    VERUN TWO-URL / SINGLE-APP-VIEW NAVIGATION
    ============================================================ */
@@ -2402,24 +2914,125 @@
       </h2>
 
       <p class="section-description">
-        Coming soon.
+        Run a 24-hour hashrate session and mine $VERUN from the fixed pool.
       </p>
     </div>
 
   </div>
 
-  <div
-    style="
-      padding:20px;
-      background:var(--panel);
-      border:1px solid var(--border);
-      border-radius:14px;
-      color:var(--muted);
-      font-size:11px;
-      text-align:center;
-    "
-  >
-    Mining details will be available soon.
+  <!-- Pool progress -->
+  <div class="mining-pool-card">
+
+    <div class="mining-pool-top">
+      <span class="mining-pool-label">Total Mining Pool</span>
+      <span class="mining-pool-amount">
+        <strong id="miningPoolMined">0</strong> / <span id="miningPoolTotal">200,000</span> $VERUN
+      </span>
+    </div>
+
+    <div class="mining-pool-bar">
+      <div class="mining-pool-fill" id="miningPoolFill" style="width:0%;"></div>
+    </div>
+
+    <div class="mining-pool-caption">
+      <span id="miningPoolPercent">0% mined</span>
+      <span>200,000 $VERUN pool</span>
+    </div>
+
+  </div>
+
+  <!-- Locked state: shown without a Genesis Pass -->
+  <div class="mining-locked" id="miningLocked" style="display:none;">
+    <div class="mining-locked-icon">⛏</div>
+    <div class="mining-locked-title">Genesis Pass Required</div>
+    <p class="mining-locked-text">
+      Purchase a Genesis Pass to unlock Basic Hashrate and start mining $VERUN.
+    </p>
+    <button
+      type="button"
+      class="mining-locked-button"
+      id="miningGoToGenesisButton"
+    >
+      Get Genesis Pass
+    </button>
+  </div>
+
+  <!-- Mining dashboard: shown once mining is unlocked -->
+  <div class="mining-dashboard" id="miningDashboard">
+
+    <div class="mining-hashrate-badge" id="miningHashrateBadge">
+      <span class="mining-hashrate-dot"></span>
+      <span id="miningActiveTierLabel">Basic Hashrate</span>
+      <span class="mining-hashrate-speed" id="miningActiveTierSpeed">0.5 $VERUN / 24h</span>
+    </div>
+
+    <div class="mining-button-wrap">
+      <button type="button" class="mining-button" id="miningButton">
+        <svg class="mining-ring" viewBox="0 0 200 200">
+          <circle class="mining-ring-track" cx="100" cy="100" r="92"></circle>
+          <circle class="mining-ring-progress" id="miningRingProgress" cx="100" cy="100" r="92"></circle>
+        </svg>
+        <span class="mining-button-inner">
+          <span class="mining-button-text" id="miningButtonText">Tap to Start</span>
+          <span class="mining-button-timer" id="miningButtonTimer">24:00:00</span>
+        </span>
+      </button>
+    </div>
+
+    <div class="mining-balance-block">
+      <span class="mining-balance-label">Mined Balance</span>
+      <div class="mining-balance-value">
+        <span id="miningBalanceValue">0.000000</span>
+        <span class="mining-balance-unit">$VERUN</span>
+      </div>
+      <p class="mining-balance-hint" id="miningStatusHint">
+        Start a session to begin mining.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- Hashrate tiers -->
+  <div class="mining-tiers">
+
+    <h4 class="mining-tiers-heading">Hashrate Tiers</h4>
+
+    <div class="mining-tiers-grid" id="miningTiersGrid">
+
+      <div class="mining-tier" data-tier="basic">
+        <div class="mining-tier-top">
+          <span class="mining-tier-name">Basic</span>
+          <span class="mining-tier-tag mining-tier-tag--free">Included</span>
+        </div>
+        <div class="mining-tier-speed">0.5<small>$VERUN / 24h</small></div>
+        <p class="mining-tier-desc">Free the moment you hold a Genesis Pass. Never expires.</p>
+        <div class="mining-tier-status" data-status-for="basic"></div>
+      </div>
+
+      <div class="mining-tier" data-tier="pro">
+        <div class="mining-tier-top">
+          <span class="mining-tier-name">Pro</span>
+          <span class="mining-tier-tag">0.01 BNB</span>
+        </div>
+        <div class="mining-tier-speed">3<small>$VERUN / 24h</small></div>
+        <p class="mining-tier-desc">6x the mining speed of Basic. Active for 30 days, then falls back to Basic.</p>
+        <button class="mining-tier-button" type="button" data-tier-buy="pro">Upgrade</button>
+        <div class="mining-tier-status" data-status-for="pro"></div>
+      </div>
+
+      <div class="mining-tier" data-tier="ultra">
+        <div class="mining-tier-top">
+          <span class="mining-tier-name">Ultra</span>
+          <span class="mining-tier-tag">0.025 BNB</span>
+        </div>
+        <div class="mining-tier-speed">5<small>$VERUN / 24h</small></div>
+        <p class="mining-tier-desc">10x the mining speed of Basic. Active for 30 days, then falls back to Basic.</p>
+        <button class="mining-tier-button" type="button" data-tier-buy="ultra">Upgrade</button>
+        <div class="mining-tier-status" data-status-for="ultra"></div>
+      </div>
+
+    </div>
+
   </div>
 
 </section>
@@ -4485,6 +5098,354 @@ async function loadVerunLeaderboard() {
     // check at all) was one of the sources of the "loads multiple
     // times" flicker on reload, so it's been removed.
     
+
+// ============================================================
+// VERUN MINING
+// ============================================================
+// No mining backend exists yet (no Supabase table, no BNB wallet
+// wiring), so this whole module runs client-side against
+// localStorage, namespaced per logged-in user id. The public shape
+// (state object, TIERS map, awardSession/buyTier functions) is
+// written so it's a drop-in swap later: replace the readState/
+// writeState/pool helpers with real Supabase reads/writes and RPC
+// calls once the mining + genesis pass tables and wallet flow exist.
+(function () {
+
+  const SESSION_MS = 24 * 60 * 60 * 1000; // one mining session = 24h
+  const POOL_TOTAL = 200000; // fixed $VERUN pool
+  const RING_CIRCUMFERENCE = 578.05; // 2 * PI * r(92), matches the SVG ring
+
+  const TIERS = {
+    basic: { label: "Basic Hashrate", speed: 0.5, priceBnb: 0, days: null },
+    pro: { label: "Pro Hashrate", speed: 3, priceBnb: 0.01, days: 30 },
+    ultra: { label: "Ultra Hashrate", speed: 5, priceBnb: 0.025, days: 30 }
+  };
+
+  // TODO(genesis-pass): wire this to the real Genesis Pass ownership
+  // check once that section is built. Defaulting to true for now so
+  // the mining UI is fully testable while that piece is in progress.
+  function hasGenesisPass() {
+    return true;
+  }
+
+  let currentUserId = null;
+  let tickInterval = null;
+  let els = null;
+
+  function cacheEls() {
+    if (els) return els;
+    els = {
+      poolMined: document.getElementById("miningPoolMined"),
+      poolFill: document.getElementById("miningPoolFill"),
+      poolPercent: document.getElementById("miningPoolPercent"),
+      locked: document.getElementById("miningLocked"),
+      dashboard: document.getElementById("miningDashboard"),
+      goToGenesis: document.getElementById("miningGoToGenesisButton"),
+      badge: document.getElementById("miningHashrateBadge"),
+      tierLabel: document.getElementById("miningActiveTierLabel"),
+      tierSpeed: document.getElementById("miningActiveTierSpeed"),
+      button: document.getElementById("miningButton"),
+      buttonText: document.getElementById("miningButtonText"),
+      buttonTimer: document.getElementById("miningButtonTimer"),
+      ring: document.getElementById("miningRingProgress"),
+      balanceValue: document.getElementById("miningBalanceValue"),
+      statusHint: document.getElementById("miningStatusHint"),
+      tiersGrid: document.getElementById("miningTiersGrid")
+    };
+    return els;
+  }
+
+  function storageKey(userId) {
+    return "verunMining_" + userId;
+  }
+
+  function defaultState() {
+    return {
+      activeTier: "basic",
+      tierExpiresAt: null, // ms epoch, only set for pro/ultra
+      sessionStartAt: null, // ms epoch, null = idle
+      minedBalance: 0
+    };
+  }
+
+  function readState(userId) {
+    try {
+      const raw = localStorage.getItem(storageKey(userId));
+      if (!raw) return defaultState();
+      const parsed = JSON.parse(raw);
+      return Object.assign(defaultState(), parsed);
+    } catch (err) {
+      return defaultState();
+    }
+  }
+
+  function writeState(userId, state) {
+    try {
+      localStorage.setItem(storageKey(userId), JSON.stringify(state));
+    } catch (err) {
+      // localStorage unavailable (private mode / quota) — mining still
+      // works for the rest of this session, it just won't persist.
+    }
+  }
+
+  // Shared pool counter. Simulated locally in the absence of a
+  // backend aggregate — every completed session across every local
+  // user on this device adds to it. Swap for a real aggregate query
+  // (e.g. sum of a mining_sessions table) once one exists.
+  function readPoolMined() {
+    const raw = localStorage.getItem("verunMiningPoolMined");
+    const value = raw ? parseFloat(raw) : 0;
+    return isNaN(value) ? 0 : value;
+  }
+
+  function writePoolMined(value) {
+    localStorage.setItem("verunMiningPoolMined", String(Math.min(value, POOL_TOTAL)));
+  }
+
+  function activeTierInfo(state) {
+    // A pro/ultra tier that has passed its expiry falls back to basic.
+    if (state.activeTier !== "basic" && state.tierExpiresAt && Date.now() >= state.tierExpiresAt) {
+      state.activeTier = "basic";
+      state.tierExpiresAt = null;
+    }
+    return TIERS[state.activeTier] || TIERS.basic;
+  }
+
+  function formatVerun(amount) {
+    return amount.toFixed(6);
+  }
+
+  function formatCountdown(msRemaining) {
+    const totalSeconds = Math.max(0, Math.ceil(msRemaining / 1000));
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    const pad = n => String(n).padStart(2, "0");
+    return pad(h) + ":" + pad(m) + ":" + pad(s);
+  }
+
+  function formatDaysLeft(expiresAt) {
+    const msLeft = expiresAt - Date.now();
+    const days = Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
+    return days + (days === 1 ? " day left" : " days left");
+  }
+
+  function renderPool() {
+    const e = cacheEls();
+    const mined = readPoolMined();
+    const pct = Math.min(100, (mined / POOL_TOTAL) * 100);
+    if (e.poolMined) e.poolMined.textContent = Math.floor(mined).toLocaleString();
+    if (e.poolFill) e.poolFill.style.width = pct.toFixed(2) + "%";
+    if (e.poolPercent) e.poolPercent.textContent = pct.toFixed(2) + "% mined";
+  }
+
+  function renderTierCards(state) {
+    const e = cacheEls();
+    if (!e.tiersGrid) return;
+
+    e.tiersGrid.querySelectorAll(".mining-tier").forEach(card => {
+      const tierKey = card.getAttribute("data-tier");
+      const isActive = state.activeTier === tierKey;
+      card.classList.toggle("is-active", isActive);
+
+      const statusEl = card.querySelector('[data-status-for="' + tierKey + '"]');
+      const buyButton = card.querySelector("[data-tier-buy]");
+
+      if (statusEl) {
+        if (isActive && tierKey === "basic") {
+          statusEl.textContent = "Active";
+        } else if (isActive && state.tierExpiresAt) {
+          statusEl.textContent = "Active · " + formatDaysLeft(state.tierExpiresAt);
+        } else {
+          statusEl.textContent = "";
+        }
+      }
+
+      if (buyButton) {
+        if (isActive) {
+          // Only pro/ultra ever render a buy button while active
+          // (basic has none in the markup), so this is always a
+          // renewable timed tier here.
+          buyButton.disabled = false;
+          buyButton.textContent = "Renew";
+        } else {
+          buyButton.disabled = false;
+          buyButton.textContent = "Upgrade";
+        }
+      }
+    });
+  }
+
+  function renderBadge(state, tier) {
+    const e = cacheEls();
+    if (e.tierLabel) e.tierLabel.textContent = tier.label;
+    if (e.tierSpeed) e.tierSpeed.textContent = tier.speed + " $VERUN / 24h";
+    if (e.badge) {
+      e.badge.classList.toggle("is-pro", state.activeTier === "pro");
+      e.badge.classList.toggle("is-ultra", state.activeTier === "ultra");
+    }
+  }
+
+  function renderIdleButton() {
+    const e = cacheEls();
+    if (!e.button) return;
+    e.button.classList.remove("is-running");
+    e.button.disabled = false;
+    if (e.buttonText) e.buttonText.textContent = "Tap to Start";
+    if (e.buttonTimer) e.buttonTimer.textContent = "24:00:00";
+    if (e.ring) e.ring.style.strokeDashoffset = String(RING_CIRCUMFERENCE);
+  }
+
+  function renderRunningButton(elapsedMs) {
+    const e = cacheEls();
+    if (!e.button) return;
+    e.button.classList.add("is-running");
+    e.button.disabled = true;
+    const remaining = SESSION_MS - elapsedMs;
+    if (e.buttonText) e.buttonText.textContent = "Mining";
+    if (e.buttonTimer) e.buttonTimer.textContent = formatCountdown(remaining);
+    if (e.ring) {
+      const fraction = Math.min(1, Math.max(0, elapsedMs / SESSION_MS));
+      e.ring.style.strokeDashoffset = String(RING_CIRCUMFERENCE * (1 - fraction));
+    }
+  }
+
+  function pulseBalance() {
+    const e = cacheEls();
+    if (!e.balanceValue) return;
+    e.balanceValue.classList.remove("is-pulsing");
+    // Force reflow so the animation can retrigger on back-to-back completions.
+    void e.balanceValue.offsetWidth;
+    e.balanceValue.classList.add("is-pulsing");
+  }
+
+  // Completes any session that finished (even while the tab was
+  // closed), crediting the full tier reward and advancing the pool.
+  function settleIfComplete(state) {
+    if (!state.sessionStartAt) return false;
+    const elapsed = Date.now() - state.sessionStartAt;
+    if (elapsed < SESSION_MS) return false;
+
+    const tier = activeTierInfo(state);
+    state.minedBalance += tier.speed;
+    state.sessionStartAt = null;
+    writePoolMined(readPoolMined() + tier.speed);
+    return true;
+  }
+
+  function render() {
+    if (!currentUserId) return;
+    const e = cacheEls();
+    const state = readState(currentUserId);
+    const tier = activeTierInfo(state);
+    const justCompleted = settleIfComplete(state);
+    if (justCompleted) {
+      writeState(currentUserId, state);
+    }
+
+    renderPool();
+    renderBadge(state, tier);
+    renderTierCards(state);
+
+    if (state.sessionStartAt) {
+      const elapsed = Date.now() - state.sessionStartAt;
+      renderRunningButton(elapsed);
+      const liveBalance = state.minedBalance + tier.speed * Math.min(1, elapsed / SESSION_MS);
+      if (e.balanceValue) e.balanceValue.textContent = formatVerun(liveBalance);
+      if (e.statusHint) e.statusHint.textContent = "Mining in progress — check back when the session ends.";
+    } else {
+      renderIdleButton();
+      if (e.balanceValue) e.balanceValue.textContent = formatVerun(state.minedBalance);
+      if (e.statusHint) {
+        e.statusHint.textContent = justCompleted
+          ? "Session complete! Start a new one to keep mining."
+          : "Start a session to begin mining.";
+      }
+      if (justCompleted) pulseBalance();
+    }
+  }
+
+  function startSession() {
+    if (!currentUserId) return;
+    const state = readState(currentUserId);
+    if (state.sessionStartAt) return; // already running
+    state.sessionStartAt = Date.now();
+    writeState(currentUserId, state);
+    render();
+  }
+
+  function buyTier(tierKey) {
+    if (!currentUserId) return;
+    const tier = TIERS[tierKey];
+    if (!tier) return;
+
+    // TODO(genesis-pass + wallet): this is a local simulation until
+    // real BNB payment + wallet connection ships. Replace this
+    // confirm() with the actual transaction flow, and only call
+    // writeState() after the chain confirms payment.
+    const confirmed = window.confirm(
+      "Purchase " + tier.label + " for " + tier.priceBnb + " BNB?\n" +
+      "(Wallet payment isn't wired up yet — this simulates the purchase for now.)"
+    );
+    if (!confirmed) return;
+
+    const state = readState(currentUserId);
+    state.activeTier = tierKey;
+    state.tierExpiresAt = Date.now() + tier.days * 24 * 60 * 60 * 1000;
+    writeState(currentUserId, state);
+    render();
+  }
+
+  function updateAccessGate() {
+    const e = cacheEls();
+    const unlocked = hasGenesisPass();
+    if (e.locked) e.locked.style.display = unlocked ? "none" : "";
+    if (e.dashboard) e.dashboard.style.display = unlocked ? "" : "none";
+  }
+
+  function bindEventsOnce() {
+    const e = cacheEls();
+    if (e.button && !e.button.dataset.miningBound) {
+      e.button.dataset.miningBound = "1";
+      e.button.addEventListener("click", startSession);
+    }
+    if (e.tiersGrid && !e.tiersGrid.dataset.miningBound) {
+      e.tiersGrid.dataset.miningBound = "1";
+      e.tiersGrid.addEventListener("click", event => {
+        const buyButton = event.target.closest("[data-tier-buy]");
+        if (!buyButton || buyButton.disabled) return;
+        buyTier(buyButton.getAttribute("data-tier-buy"));
+      });
+    }
+    if (e.goToGenesis && !e.goToGenesis.dataset.miningBound) {
+      e.goToGenesis.dataset.miningBound = "1";
+      e.goToGenesis.addEventListener("click", () => {
+        if (typeof window.showVerunSection === "function") {
+          window.showVerunSection("genesisPass");
+        }
+      });
+    }
+  }
+
+  async function loadMiningSection() {
+    cacheEls();
+    bindEventsOnce();
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    currentUserId = session ? session.user.id : null;
+    if (!currentUserId) return;
+
+    updateAccessGate();
+    render();
+
+    if (!tickInterval) {
+      tickInterval = setInterval(render, 1000);
+    }
+  }
+
+  window.loadMiningSection = loadMiningSection;
+})();
+
   // ============================================================
 // VERUN TWO-URL APP NAVIGATION + DRAWER
 // ============================================================
@@ -4691,6 +5652,7 @@ showSection(
     // fetched real data yet.
     if (typeof loadReferralDashboard === "function") sectionLoaders.push(loadReferralDashboard());
     if (typeof loadNotifications === "function") sectionLoaders.push(loadNotifications());
+    if (typeof loadMiningSection === "function") sectionLoaders.push(loadMiningSection());
     await Promise.all(sectionLoaders);
   }
 
@@ -4721,6 +5683,10 @@ showSection(
 
       if (section === "leaderboard" && typeof loadVerunLeaderboard === "function") {
         await loadVerunLeaderboard();
+      }
+
+      if (section === "mining" && typeof loadMiningSection === "function") {
+        await loadMiningSection();
       }
 
       // Re-assert scroll-to-top now that the section's content has
