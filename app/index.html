@@ -6657,7 +6657,7 @@ async function loadVerunLeaderboard() {
   // pasted in here, the WalletConnect option in the picker (and any
   // "Popular" wallet that falls back to it) shows a short notice
   // instead of connecting, rather than failing silently.
-  const WALLETCONNECT_PROJECT_ID = "ad97eac1a3dd4ed30daa99ad5932e2d8";
+  const WALLETCONNECT_PROJECT_ID = "bdfe57e6734e47a35568ca1356abf29d";
 
   let currentUserId = null;
   const boundProviders = new WeakSet();
@@ -6742,7 +6742,12 @@ async function loadVerunLeaderboard() {
   async function getWalletConnectProvider() {
     if (wcProviderPromise) return wcProviderPromise;
 
+    // WalletConnect Ethereum Provider v2 UMD exposes its module under
+    // window["@walletconnect/ethereum-provider"].EthereumProvider.
+    // Keep legacy fallbacks for compatibility with older bundles.
+    const WCModule = window["@walletconnect/ethereum-provider"];
     const Ctor =
+      (WCModule && WCModule.EthereumProvider) ||
       window.EthereumProvider ||
       window.WalletConnectEthereumProvider ||
       (window.WalletConnectProvider && window.WalletConnectProvider.EthereumProvider);
