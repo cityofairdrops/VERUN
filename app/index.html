@@ -2195,6 +2195,147 @@
       margin: -10px 0 18px;
     }
 
+    /* ================= WALLET CONNECT (Genesis Pass + Mining) ================= */
+    .genesis-wallet-card,
+    .mining-wallet-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+
+      margin-bottom: 18px;
+      padding: 14px 16px;
+
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .genesis-wallet-info,
+    .mining-wallet-info {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .genesis-wallet-chain-badge,
+    .mining-wallet-chain-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      width: fit-content;
+
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      color: var(--muted);
+    }
+
+    .genesis-wallet-chain-badge.is-connected,
+    .mining-wallet-chain-badge.is-connected {
+      color: var(--green);
+      border-color: var(--green-border);
+      background: var(--green-soft);
+    }
+
+    .genesis-wallet-chain-dot,
+    .mining-wallet-chain-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--muted2);
+      flex-shrink: 0;
+    }
+
+    .genesis-wallet-chain-badge.is-connected .genesis-wallet-chain-dot,
+    .mining-wallet-chain-badge.is-connected .mining-wallet-chain-dot {
+      background: var(--green);
+      box-shadow: 0 0 8px rgba(141,255,183,0.55);
+    }
+
+    .genesis-wallet-copy,
+    .mining-wallet-copy {
+      color: var(--muted2);
+      font-size: 10px;
+      line-height: 1.5;
+      max-width: 320px;
+    }
+
+    .genesis-wallet-btn,
+    .mining-wallet-btn {
+      flex-shrink: 0;
+      padding: 9px 16px;
+      border-radius: 4px;
+
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: .15s ease;
+    }
+
+    .genesis-wallet-connect-btn,
+    .mining-wallet-connect-btn {
+      border: 1px solid var(--green);
+      background: transparent;
+      color: var(--green);
+    }
+    .genesis-wallet-connect-btn::before,
+    .mining-wallet-connect-btn::before {
+      content: "> ";
+      opacity: 0.6;
+    }
+    .genesis-wallet-connect-btn:hover,
+    .mining-wallet-connect-btn:hover {
+      background: var(--green);
+      color: #071009;
+    }
+    .genesis-wallet-connect-btn:disabled,
+    .mining-wallet-connect-btn:disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+    .genesis-wallet-connect-btn:disabled:hover,
+    .mining-wallet-connect-btn:disabled:hover {
+      background: transparent;
+      color: var(--green);
+    }
+
+    .genesis-wallet-disconnect-btn,
+    .mining-wallet-disconnect-btn {
+      border: 1px dashed var(--border-strong);
+      background: transparent;
+      color: var(--muted);
+    }
+    .genesis-wallet-disconnect-btn:hover,
+    .mining-wallet-disconnect-btn:hover {
+      color: var(--text);
+      border-color: var(--muted);
+    }
+
+    @media (max-width: 520px) {
+      .genesis-wallet-card,
+      .mining-wallet-card {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .genesis-wallet-btn,
+      .mining-wallet-btn {
+        width: 100%;
+        text-align: center;
+      }
+    }
+
     .genesis-name-setup-label,
     .genesis-name-display-label {
       font-size: 11px;
@@ -3492,6 +3633,39 @@
 
   </div>
 
+  <!-- Wallet connection: EVM / BNB Chain — required before minting -->
+  <div class="genesis-wallet-card" id="genesisWalletCard">
+
+    <div class="genesis-wallet-not-connected" id="genesisWalletNotConnected">
+      <div class="genesis-wallet-info">
+        <span class="genesis-wallet-chain-badge">
+          <span class="genesis-wallet-chain-dot"></span>
+          BNB Chain · EVM wallet
+        </span>
+        <p class="genesis-wallet-copy">
+          Connect your wallet and sign a message to verify ownership before minting.
+        </p>
+      </div>
+      <button type="button" class="genesis-wallet-btn genesis-wallet-connect-btn" id="genesisWalletConnectButton">
+        Connect Wallet
+      </button>
+    </div>
+
+    <div class="genesis-wallet-connected" id="genesisWalletConnected" style="display:none;">
+      <div class="genesis-wallet-info">
+        <span class="genesis-wallet-chain-badge is-connected">
+          <span class="genesis-wallet-chain-dot"></span>
+          <span id="genesisWalletAddressValue"></span>
+        </span>
+        <p class="genesis-wallet-copy">Ownership verified on BNB Chain.</p>
+      </div>
+      <button type="button" class="genesis-wallet-btn genesis-wallet-disconnect-btn" id="genesisWalletDisconnectButton">
+        Disconnect
+      </button>
+    </div>
+
+  </div>
+
   <!-- Mint state: shown until the user owns a pass -->
   <div class="genesis-mint-card" id="genesisMintCard">
 
@@ -3591,7 +3765,7 @@
         </svg>
       </div>
       <p class="genesis-mint-locked-text">
-        Minting opens once wallet payment is live. Check back soon.
+        Minting opens once on-chain payment is live. Connect your wallet above now so you're ready.
       </p>
     </div>
 
@@ -4027,6 +4201,39 @@
 
   </div>
 
+  <!-- Wallet connection: EVM / BNB Chain — mirrors the Genesis Pass wallet state -->
+  <div class="mining-wallet-card" id="miningWalletCard">
+
+    <div class="mining-wallet-not-connected" id="miningWalletNotConnected">
+      <div class="mining-wallet-info">
+        <span class="mining-wallet-chain-badge">
+          <span class="mining-wallet-chain-dot"></span>
+          BNB Chain · EVM wallet
+        </span>
+        <p class="mining-wallet-copy">
+          Connect your wallet to link it with your mining activity.
+        </p>
+      </div>
+      <button type="button" class="mining-wallet-btn mining-wallet-connect-btn" id="miningWalletConnectButton">
+        Connect Wallet
+      </button>
+    </div>
+
+    <div class="mining-wallet-connected" id="miningWalletConnected" style="display:none;">
+      <div class="mining-wallet-info">
+        <span class="mining-wallet-chain-badge is-connected">
+          <span class="mining-wallet-chain-dot"></span>
+          <span id="miningWalletAddressValue"></span>
+        </span>
+        <p class="mining-wallet-copy">Ownership verified on BNB Chain.</p>
+      </div>
+      <button type="button" class="mining-wallet-btn mining-wallet-disconnect-btn" id="miningWalletDisconnectButton">
+        Disconnect
+      </button>
+    </div>
+
+  </div>
+
   <!-- Locked state: shown without a Genesis Pass -->
   <div class="mining-locked" id="miningLocked" style="display:none;">
     <div class="mining-locked-icon">
@@ -4174,6 +4381,9 @@
 
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Used only to verify wallet-signature ownership proofs client-side (EIP-191).
+     Never used to hold, request, or transmit private keys/seed phrases. -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
 <script>
 
   // ============================================
@@ -6201,6 +6411,343 @@ async function loadVerunLeaderboard() {
     
 
 // ============================================================
+// VERUN WALLET (EVM · BNB Chain)
+// ============================================================
+// Real, non-simulated wallet connection using the browser's injected
+// EIP-1193 provider (MetaMask, Trust Wallet, Coinbase Wallet, or any
+// other BNB Chain compatible extension). This module never requests,
+// touches, or stores a private key or seed phrase — the wallet
+// extension does all signing on its own side. All this module ever
+// holds is a public address plus a signature that address produced.
+//
+// Being "connected" alone is never trusted as ownership: every
+// connection also asks the wallet to sign a one-time, randomly
+// generated message (EIP-191 personal_sign) proving control of that
+// address's private key. The signature is verified locally (via
+// ethers.js) before the wallet is ever marked "verified" — a
+// rejected or unverifiable signature unlocks nothing.
+(function () {
+
+  const BNB_CHAIN_ID_HEX = "0x38"; // BNB Smart Chain Mainnet (56)
+  const BNB_CHAIN_PARAMS = {
+    chainId: BNB_CHAIN_ID_HEX,
+    chainName: "BNB Smart Chain",
+    nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
+    rpcUrls: ["https://bsc-dataseed.binance.org/"],
+    blockExplorerUrls: ["https://bscscan.com"]
+  };
+
+  let currentUserId = null;
+  let eventsBound = false;
+  let state = { address: null, verified: false, connecting: false };
+
+  function storageKey(userId) {
+    return "verunWalletAddress_" + userId;
+  }
+
+  function persistAddress(userId, address) {
+    if (!userId) return;
+    if (address) localStorage.setItem(storageKey(userId), address);
+    else localStorage.removeItem(storageKey(userId));
+  }
+
+  function short(address) {
+    return address ? address.slice(0, 6) + "…" + address.slice(-4) : "";
+  }
+
+  // Supports both a single injected provider and the multi-wallet
+  // "window.ethereum.providers" array some browsers expose when more
+  // than one extension is installed — prefers MetaMask if present,
+  // otherwise the first available EVM provider.
+  function getProvider() {
+    if (typeof window.ethereum === "undefined") return null;
+    if (Array.isArray(window.ethereum.providers) && window.ethereum.providers.length) {
+      return window.ethereum.providers.find(p => p.isMetaMask) || window.ethereum.providers[0];
+    }
+    return window.ethereum;
+  }
+
+  async function ensureBnbChain(provider) {
+    const chainId = await provider.request({ method: "eth_chainId" });
+    if (chainId === BNB_CHAIN_ID_HEX) return;
+    try {
+      await provider.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: BNB_CHAIN_ID_HEX }]
+      });
+    } catch (switchErr) {
+      // 4902: wallet doesn't have BNB Chain configured yet — add it.
+      if (switchErr && switchErr.code === 4902) {
+        await provider.request({
+          method: "wallet_addEthereumChain",
+          params: [BNB_CHAIN_PARAMS]
+        });
+      } else {
+        throw switchErr;
+      }
+    }
+  }
+
+  function randomNonce() {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  function buildSignInMessage(address, nonce, issuedAt, userId) {
+    return [
+      "VERUN wants you to sign in with your BNB Chain wallet to verify ownership.",
+      "",
+      "This request will not trigger a blockchain transaction and will not cost any gas.",
+      "",
+      "URI: " + window.location.origin,
+      "Version: 1",
+      "Chain ID: 56",
+      "Address: " + address,
+      "VERUN Account: " + userId,
+      "Nonce: " + nonce,
+      "Issued At: " + issuedAt
+    ].join("\n");
+  }
+
+  // Verifies the signature really was produced by the claimed
+  // address's private key (EIP-191 recovery) before this module ever
+  // treats the wallet as owned/verified. Fails closed: if ethers.js
+  // hasn't loaded for any reason, verification can't happen, so the
+  // wallet is never marked verified rather than trusting it blindly.
+  function verifySignature(message, signature, address) {
+    if (typeof window.ethers === "undefined") {
+      console.error("VERUN wallet: ethers.js unavailable, cannot verify signature.");
+      return false;
+    }
+    try {
+      const recovered = window.ethers.verifyMessage(message, signature);
+      return recovered.toLowerCase() === address.toLowerCase();
+    } catch (e) {
+      console.error("VERUN wallet: signature verification failed.", e);
+      return false;
+    }
+  }
+
+  function bindProviderEventsOnce(provider) {
+    if (eventsBound || !provider || typeof provider.on !== "function") return;
+    eventsBound = true;
+
+    provider.on("accountsChanged", accounts => {
+      if (!accounts || !accounts.length) {
+        disconnect();
+        return;
+      }
+      // The signature only proves ownership of the previous address —
+      // a switched account has to be re-verified from scratch rather
+      // than silently inheriting "verified" status.
+      state.address = null;
+      state.verified = false;
+      persistAddress(currentUserId, null);
+      render();
+    });
+
+    provider.on("chainChanged", () => {
+      render();
+    });
+  }
+
+  async function connect() {
+    if (state.connecting) return;
+    const provider = getProvider();
+
+    if (!provider) {
+      const wantsInstall = window.confirm(
+        "No EVM wallet was found in this browser.\n\n" +
+        "Install MetaMask (or another BNB Chain compatible wallet) to connect?"
+      );
+      if (wantsInstall) window.open("https://metamask.io/download/", "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    state.connecting = true;
+    render();
+
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) throw new Error("Please sign in first.");
+      currentUserId = session.user.id;
+
+      const accounts = await provider.request({ method: "eth_requestAccounts" });
+      if (!accounts || !accounts.length) throw new Error("No account was returned by the wallet.");
+
+      const address = window.ethers ? window.ethers.getAddress(accounts[0]) : accounts[0];
+
+      await ensureBnbChain(provider);
+
+      const nonce = randomNonce();
+      const issuedAt = new Date().toISOString();
+      const message = buildSignInMessage(address, nonce, issuedAt, currentUserId);
+
+      const signature = await provider.request({
+        method: "personal_sign",
+        params: [message, address]
+      });
+
+      if (!verifySignature(message, signature, address)) {
+        throw new Error("Signature verification failed. Please try again.");
+      }
+
+      state.address = address;
+      state.verified = true;
+      state.connecting = false;
+      persistAddress(currentUserId, address);
+      bindProviderEventsOnce(provider);
+      render();
+    } catch (err) {
+      state.connecting = false;
+      state.address = null;
+      state.verified = false;
+      render();
+
+      if (err && err.code === 4001) {
+        console.log("VERUN wallet: request rejected by user.");
+      } else {
+        console.error("VERUN wallet connect error:", err);
+        alert("Wallet connection failed: " + (err && err.message ? err.message : "please try again."));
+      }
+    }
+  }
+
+  function disconnect() {
+    const provider = getProvider();
+    // Most injected wallets don't give a dApp the power to force a
+    // full disconnect from their side — that permission lives in the
+    // wallet's own UI. Where the newer wallet_revokePermissions
+    // method exists, this calls it as a best-effort; either way the
+    // app immediately forgets the wallet locally so it's no longer
+    // trusted here, regardless of what the extension itself does.
+    if (provider && typeof provider.request === "function") {
+      provider.request({
+        method: "wallet_revokePermissions",
+        params: [{ eth_accounts: {} }]
+      }).catch(() => {});
+    }
+    state.address = null;
+    state.verified = false;
+    persistAddress(currentUserId, null);
+    render();
+  }
+
+  // On load, silently checks (no popup) whether the injected wallet
+  // still authorizes an account matching the last verified address
+  // for this user. Only restores "connected" on an exact match —
+  // anything else (a different account, no provider, no prior
+  // record) starts from disconnected rather than assuming trust.
+  async function silentRestore() {
+    const provider = getProvider();
+    if (!provider || !currentUserId) return;
+    const saved = localStorage.getItem(storageKey(currentUserId));
+    if (!saved) return;
+
+    try {
+      const accounts = await provider.request({ method: "eth_accounts" });
+      if (accounts && accounts.length && accounts[0].toLowerCase() === saved.toLowerCase()) {
+        state.address = accounts[0];
+        state.verified = true;
+        bindProviderEventsOnce(provider);
+        render();
+      } else {
+        persistAddress(currentUserId, null);
+      }
+    } catch (e) {
+      // Ignore — stays disconnected.
+    }
+  }
+
+  function els() {
+    return {
+      genesisNotConnected: document.getElementById("genesisWalletNotConnected"),
+      genesisConnected: document.getElementById("genesisWalletConnected"),
+      genesisConnectBtn: document.getElementById("genesisWalletConnectButton"),
+      genesisDisconnectBtn: document.getElementById("genesisWalletDisconnectButton"),
+      genesisAddress: document.getElementById("genesisWalletAddressValue"),
+
+      miningNotConnected: document.getElementById("miningWalletNotConnected"),
+      miningConnected: document.getElementById("miningWalletConnected"),
+      miningConnectBtn: document.getElementById("miningWalletConnectButton"),
+      miningDisconnectBtn: document.getElementById("miningWalletDisconnectButton"),
+      miningAddress: document.getElementById("miningWalletAddressValue")
+    };
+  }
+
+  function render() {
+    const e = els();
+    const connected = !!(state.address && state.verified);
+
+    if (e.genesisNotConnected) e.genesisNotConnected.style.display = connected ? "none" : "";
+    if (e.genesisConnected) e.genesisConnected.style.display = connected ? "" : "none";
+    if (e.genesisAddress) e.genesisAddress.textContent = short(state.address);
+    if (e.genesisConnectBtn) {
+      e.genesisConnectBtn.disabled = state.connecting;
+      e.genesisConnectBtn.textContent = state.connecting ? "Connecting…" : "Connect Wallet";
+    }
+
+    if (e.miningNotConnected) e.miningNotConnected.style.display = connected ? "none" : "";
+    if (e.miningConnected) e.miningConnected.style.display = connected ? "" : "none";
+    if (e.miningAddress) e.miningAddress.textContent = short(state.address);
+    if (e.miningConnectBtn) {
+      e.miningConnectBtn.disabled = state.connecting;
+      e.miningConnectBtn.textContent = state.connecting ? "Connecting…" : "Connect Wallet";
+    }
+
+    // Let the Genesis Pass module re-check mint eligibility now that
+    // wallet state changed (it reads window.verunWallet directly).
+    if (typeof window.verunRenderGenesisPass === "function") {
+      try { window.verunRenderGenesisPass(); } catch (e) {}
+    }
+  }
+
+  function bindEventsOnce() {
+    const e = els();
+    [e.genesisConnectBtn, e.miningConnectBtn].forEach(btn => {
+      if (btn && !btn.dataset.walletBound) {
+        btn.dataset.walletBound = "1";
+        btn.addEventListener("click", connect);
+      }
+    });
+    [e.genesisDisconnectBtn, e.miningDisconnectBtn].forEach(btn => {
+      if (btn && !btn.dataset.walletBound) {
+        btn.dataset.walletBound = "1";
+        btn.addEventListener("click", disconnect);
+      }
+    });
+  }
+
+  async function loadWalletModule() {
+    bindEventsOnce();
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const userId = session ? session.user.id : null;
+
+    if (userId !== currentUserId) {
+      // Switched (or first-time) user — start from a clean slate
+      // rather than carrying over another account's wallet state.
+      state = { address: null, verified: false, connecting: false };
+    }
+    currentUserId = userId;
+    if (!currentUserId) { render(); return; }
+
+    await silentRestore();
+    render();
+  }
+
+  window.verunWallet = {
+    getState: () => ({
+      address: state.address,
+      verified: state.verified,
+      connecting: state.connecting
+    })
+  };
+  window.loadWalletModule = loadWalletModule;
+})();
+
+// ============================================================
 // VERUN MINING
 // ============================================================
 // No mining backend exists yet (no Supabase table, no BNB wallet
@@ -6997,20 +7544,35 @@ async function loadVerunLeaderboard() {
       if (e.mintLiveArea) e.mintLiveArea.style.display = MINTING_ENABLED ? "" : "none";
       if (e.mintLocked) e.mintLocked.style.display = MINTING_ENABLED ? "none" : "";
 
+      // Minting requires a verified wallet connection (see the Wallet
+      // module above) in addition to MINTING_ENABLED — a pass can't
+      // be tied to on-chain ownership without one.
+      const walletVerified = !!(window.verunWallet && window.verunWallet.getState().verified);
+
       if (e.mintButton) {
-        e.mintButton.disabled = soldOut;
-        e.mintButton.textContent = soldOut ? "Sold Out" : "Mint Genesis Pass";
+        e.mintButton.disabled = soldOut || !walletVerified;
+        e.mintButton.textContent = soldOut
+          ? "Sold Out"
+          : (walletVerified ? "Mint Genesis Pass" : "Connect Wallet to Mint");
       }
       if (e.mintNote) {
         e.mintNote.textContent = soldOut
           ? "All 11,000 Genesis Passes have been minted."
-          : "Minting simulates payment for now — wallet connection is coming soon.";
+          : (walletVerified
+              ? "Minting simulates payment for now — on-chain payment is coming soon."
+              : "Connect and verify your BNB Chain wallet above to enable minting.");
       }
     }
   }
 
   function mintPass() {
     if (!MINTING_ENABLED || !currentUserId) return;
+    // Defense in depth: the mint button is already disabled without a
+    // verified wallet, but never trust client UI state alone as the
+    // only gate on an action that will move real funds once payment
+    // is wired up.
+    const walletVerified = !!(window.verunWallet && window.verunWallet.getState().verified);
+    if (!walletVerified) return;
     const state = readState(currentUserId);
     if (state.owned) return;
 
@@ -7193,6 +7755,12 @@ async function loadVerunLeaderboard() {
   window.verunHasGenesisPass = function (userId) {
     if (!userId) return false;
     return !!readState(userId).owned;
+  };
+
+  // Lets the Wallet module refresh mint-button eligibility the moment
+  // wallet state changes, without re-running the whole section load.
+  window.verunRenderGenesisPass = function () {
+    if (currentUserId) render();
   };
 
   window.loadGenesisPassSection = loadGenesisPassSection;
@@ -7404,6 +7972,7 @@ showSection(
     // fetched real data yet.
     if (typeof loadReferralDashboard === "function") sectionLoaders.push(loadReferralDashboard());
     if (typeof loadNotifications === "function") sectionLoaders.push(loadNotifications());
+    if (typeof loadWalletModule === "function") sectionLoaders.push(loadWalletModule());
     if (typeof loadMiningSection === "function") sectionLoaders.push(loadMiningSection());
     if (typeof loadGenesisPassSection === "function") sectionLoaders.push(loadGenesisPassSection());
     await Promise.all(sectionLoaders);
