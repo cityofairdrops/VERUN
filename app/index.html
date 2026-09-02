@@ -6657,7 +6657,7 @@ async function loadVerunLeaderboard() {
   // pasted in here, the WalletConnect option in the picker (and any
   // "Popular" wallet that falls back to it) shows a short notice
   // instead of connecting, rather than failing silently.
-  const WALLETCONNECT_PROJECT_ID = "YOUR_WALLETCONNECT_PROJECT_ID";
+  const WALLETCONNECT_PROJECT_ID = "bdfe57e6734e47a35568ca1356abf29d";
 
   let currentUserId = null;
   const boundProviders = new WeakSet();
@@ -6773,39 +6773,93 @@ async function loadVerunLeaderboard() {
   // redirects straight into that wallet app, which then shows its own
   // native connect confirmation once eth_requestAccounts runs there.
   // Everything else routes through WalletConnect instead.
+  // Each icon is a small self-contained SVG turned into a data: URI —
+  // no network request, so it can never 404 / fail CORS the way a
+  // hotlinked logo from some third-party CDN could. That's also why
+  // these render correctly for every wallet here, unlike before when
+  // this list had no icon at all and silently fell back to a plain
+  // colored letter badge for anything that wasn't already installed.
+  function svgIcon(inner, bg) {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">' +
+      '<rect width="32" height="32" rx="9" fill="' + bg + '"/>' + inner + '</svg>';
+    return "data:image/svg+xml," + encodeURIComponent(svg);
+  }
+
   const POPULAR_WALLETS = [
     {
       key: "metamask", name: "MetaMask", color: "#f6851b",
+      icon: svgIcon(
+        '<path d="M9 10 L14 15 L18 15 L23 10 L20 20 L16 24 L12 20 Z" fill="#fff"/>' +
+        '<circle cx="13" cy="17" r="1.3" fill="#f6851b"/><circle cx="19" cy="17" r="1.3" fill="#f6851b"/>',
+        "#f6851b"
+      ),
       mobileDeepLink: () => "https://metamask.app.link/dapp/" + window.location.host + window.location.pathname + window.location.search,
       installUrl: "https://metamask.io/download/"
     },
     {
       key: "trust", name: "Trust Wallet", color: "#3375bb",
+      icon: svgIcon(
+        '<path d="M16 6 L23 9 V16 C23 21 20 24.5 16 26 C12 24.5 9 21 9 16 V9 Z" fill="#fff"/>' +
+        '<path d="M16 6 L23 9 V16 C23 21 20 24.5 16 26 Z" fill="#bfe0ff"/>',
+        "#3375bb"
+      ),
       mobileDeepLink: () => "https://link.trustwallet.com/open_url?coin_id=60&url=" + encodeURIComponent(window.location.href),
       installUrl: "https://trustwallet.com/download"
     },
     {
       key: "coinbase", name: "Coinbase Wallet", color: "#0052ff",
+      icon: svgIcon(
+        '<circle cx="16" cy="16" r="9" fill="#fff"/><rect x="12.5" y="12.5" width="7" height="7" rx="2" fill="#0052ff"/>',
+        "#0052ff"
+      ),
       mobileDeepLink: () => "https://go.cb-w.com/dapp?cb_url=" + encodeURIComponent(window.location.href),
       installUrl: "https://www.coinbase.com/wallet/downloads"
     },
     {
       key: "okx", name: "OKX Wallet", color: "#2a2a2f",
+      icon: svgIcon(
+        '<rect x="7" y="7" width="6" height="6" fill="#fff"/><rect x="19" y="7" width="6" height="6" fill="#fff"/>' +
+        '<rect x="13" y="13" width="6" height="6" fill="#fff"/>' +
+        '<rect x="7" y="19" width="6" height="6" fill="#fff"/><rect x="19" y="19" width="6" height="6" fill="#fff"/>',
+        "#000000"
+      ),
       mobileDeepLink: () => "okx://wallet/dapp/url?dappUrl=" + encodeURIComponent(window.location.href),
       installUrl: "https://www.okx.com/web3"
     },
     {
       key: "rainbow", name: "Rainbow", color: "#001e59",
+      icon: svgIcon(
+        '<path d="M4 24a12 12 0 0 1 24 0" fill="none" stroke="#ffd23f" stroke-width="3"/>' +
+        '<path d="M8 24a8 8 0 0 1 16 0" fill="none" stroke="#ff6b6b" stroke-width="3"/>' +
+        '<path d="M12 24a4 4 0 0 1 8 0" fill="none" stroke="#4ecdc4" stroke-width="3"/>' +
+        '<circle cx="16" cy="24" r="1.6" fill="#fff"/>',
+        "#001e59"
+      ),
       useWalletConnect: true,
       installUrl: "https://rainbow.me/"
     },
     {
       key: "binance", name: "Binance Wallet", color: "#F0B90B",
+      icon: svgIcon(
+        '<g fill="#F0B90B">' +
+        '<rect x="13.5" y="4.5" width="5" height="5" transform="rotate(45 16 7)"/>' +
+        '<rect x="13.5" y="24.5" width="5" height="5" transform="rotate(45 16 27)"/>' +
+        '<rect x="4.5" y="13.5" width="5" height="5" transform="rotate(45 7 16)"/>' +
+        '<rect x="24.5" y="13.5" width="5" height="5" transform="rotate(45 27 16)"/>' +
+        '<rect x="13.5" y="13.5" width="5" height="5" transform="rotate(45 16 16)"/>' +
+        '</g>',
+        "#101010"
+      ),
       useWalletConnect: true,
       installUrl: "https://www.binance.com/en/web3wallet"
     },
     {
       key: "walletconnect", name: "WalletConnect", color: "#3b99fc",
+      icon: svgIcon(
+        '<path d="M10 15c3.5-4 8.5-4 12 0" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>' +
+        '<circle cx="12" cy="19" r="2" fill="#fff"/><circle cx="20" cy="19" r="2" fill="#fff"/>',
+        "#3b99fc"
+      ),
       isWalletConnectEntry: true
     }
   ];
@@ -7194,7 +7248,10 @@ async function loadVerunLeaderboard() {
       if (popularList.length) {
         body.appendChild(sectionLabel("Popular"));
         popularList.forEach(w => {
-          body.appendChild(walletOptionRow(genericIcon(w.name, w.color), w.name, "", () => {
+          const icon = w.icon
+            ? (() => { const img = document.createElement("span"); img.className = "verun-wallet-option-icon"; img.innerHTML = '<img src="' + w.icon + '" alt="" />'; return img; })()
+            : genericIcon(w.name, w.color);
+          body.appendChild(walletOptionRow(icon, w.name, "", () => {
             handlePopularWalletClick(w);
           }));
         });
