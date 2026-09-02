@@ -6638,6 +6638,506 @@ async function loadVerunLeaderboard() {
 })();
 
 // ============================================================
+// VERUN WALLET MANAGER
+// ============================================================
+// Connection layer only.
+// No wallet address is saved to Supabase until server-side
+// signature verification is implemented.
+// ============================================================
+(function () {
+  "use strict";
+
+  const BSC_CHAIN_ID = "0x38";
+  const BSC_CHAIN_NAME = "BNB Smart Chain";
+
+  let connectedAddress = null;
+  let connectedChainId = null;
+  let isConnecting = false;
+
+  function shortenAddress(address) {
+    if (!address) return "Not connected";
+    return address.slice(0, 6) + "…" + address.slice(-4);
+  }
+
+  function getProvider() {
+    if (typeof window === "undefined") return null;
+    return window.ethereum || null;
+  }
+
+  function isWalletAvailable() {
+    return !!getProvider();
+  }
+
+  function getWalletAddress() {
+    return connectedAddress;
+  }
+
+  function getChainId() {
+    return connectedChainId;
+  }
+
+  function updateWalletButtons() {
+    document.querySelectorAll("[data-verun-wallet-button]").forEach(button => {
+      if (isConnecting) {
+        button.disabled = true;
+        button.textContent = "Connecting...";
+        return;
+      }
+
+      if (connectedAddress) {
+        button.disabled = false;
+        button.textContent = shortenAddress(connectedAddress);
+        return;
+      }
+
+      button.disabled = false;
+      button.textContent = isWalletAvailable()
+        ? "Connect Wallet"
+        : "Install Wallet";
+    });
+
+    document.querySelectorAll("[data-verun-wallet-address]").forEach(element => {
+      element.textContent = connectedAddress
+        ? shortenAddress(connectedAddress)
+        : "Not connected";
+    });
+
+    document.querySelectorAll("[data-verun-wallet-network]").forEach(element => {
+      if (!connectedAddress) {
+        element.textContent = "";
+      } else if (connectedChainId === BSC_CHAIN_ID) {
+        element.textContent = BSC_CHAIN_NAME;
+      } else {
+        element.textContent = "Wrong network";
+      }
+    });
+  }
+
+  function showWalletMessage(message) {
+    document.querySelectorAll("[data-verun-wallet-message]").forEach(element => {
+      element.textContent = message || "";
+    });
+  }
+
+  async function switchToBSC(provider) {
+    try {
+      await provider.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: BSC_CHAIN_ID }]
+      });
+    } catch (error) {
+      // Error 4902 = chain is not added to the wallet.
+      if (error && error.code === 4902) {
+        await provider.request({
+          method: "wallet_addEthereumChain",
+          params: [{
+            chainId: BSC_CHAIN_ID,
+            chainName: "BNB Smart Chain",
+            nativeCurrency: {
+              name: "BNB",
+              symbol: "BNB",
+              decimals: 18
+            },
+            rpcUrls: [
+              "https://bsc-dataseed.binance.org/"
+            ],
+            blockExplorerUrls: [
+              "https://bscscan.com/"
+            ]
+          }]
+        });
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  async function connectWallet() {
+    const provider = getProvider();
+
+    if (!provider) {
+      showWalletMessage(
+        "No compatible wallet was detected. Please open VERUN in a browser with an EVM wallet installed."
+      );
+      return;
+    }
+
+    if (isConnecting) return;
+
+    isConnecting = true;
+    showWalletMessage("");
+    updateWalletButtons();
+
+    try {
+      const accounts = await provider.request({
+        method: "eth_requestAccounts"
+      });
+
+      if (!accounts || !accounts.length) {
+        throw new Error("No wallet account was returned.");
+      }
+
+      connectedAddress = accounts[0];
+      connectedChainId = await provider.request({
+        method: "eth_chainId"
+      });
+
+      if (connectedChainId !== BSC_CHAIN_ID) {
+        showWalletMessage("Switching to BNB Smart Chain...");
+
+        await switchToBSC(provider);
+
+        connectedChainId = await provider.request({
+          method: "eth_chainId"
+        });
+
+        if (connectedChainId !== BSC_CHAIN_ID) {
+          throw new Error(
+            "Please switch your wallet to BNB Smart Chain."
+          );
+        }
+      }
+
+      showWalletMessage(
+        "Wallet connected: " + shortenAddress(connectedAddress)
+      );
+
+      console.log(
+        "[VERUN] Wallet connected:",
+        connectedAddress
+      );
+
+      console.log(
+        "[VERUN] Network:",
+        connectedChainId
+      );
+
+    } catch (error) {
+      console.error(
+        "[VERUN] Wallet connection error:",
+        error
+      );
+
+      connectedAddress = null;
+
+      const message =
+        error && error.code === 4001
+          ? "Wallet connection was rejected."
+          : (error && error.message
+              ? error.message
+              : "Unable to connect wallet.");
+
+      showWalletMessage(message);
+
+    } finally {
+      isConnecting = false;
+      updateWalletButtons();
+    }
+  }
+
+  async function refreshWalletState() {
+    const provider = getProvider();
+
+    if (!provider) {
+      connectedAddress = null;
+      connectedChainId = null;
+      updateWalletButtons();
+      return;
+    }
+
+    try {
+      const accounts = await provider.request({
+        method: "eth_accounts"
+      });
+
+      connectedAddress =
+        accounts && accounts.length
+          ? accounts[0]
+          : null;
+
+      connectedChainId = await provider.request({
+        method: "eth_chainId"
+      });
+
+    } catch (error) {
+      console.warn(
+        "[VERUN] Could not read wallet state:",
+        error
+      );
+    }
+
+    updateWalletButtons();
+  }
+
+  function bindWalletButtons() {
+    document.querySelectorAll(
+      "[data-verun-wallet-button]"
+    ).forEach(button => {
+
+      if (button.dataset.verunWalletBound === "1") {
+        return;
+      }
+
+      button.dataset.verunWalletBound = "1";
+
+      button.addEventListener("click", connectWallet);
+    });
+
+    updateWalletButtons();
+  }
+
+  function createWalletUI() {
+
+    // -------------------------------
+    // Genesis Pass
+    // -------------------------------
+
+    const genesisLocked =
+      document.getElementById("genesisMintLocked");
+
+    if (
+      genesisLocked &&
+      !document.getElementById("verunGenesisWalletBox")
+    ) {
+      const box = document.createElement("div");
+
+      box.id = "verunGenesisWalletBox";
+
+      box.style.cssText = `
+        margin-top:16px;
+        padding:14px;
+        border:1px solid rgba(141,255,183,0.20);
+        border-radius:10px;
+        background:rgba(141,255,183,0.04);
+      `;
+
+      box.innerHTML = `
+        <div style="
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:12px;
+          flex-wrap:wrap;
+        ">
+          <div>
+            <div style="
+              color:var(--text);
+              font-size:11px;
+              font-weight:700;
+              margin-bottom:4px;
+            ">
+              Wallet
+            </div>
+
+            <div
+              data-verun-wallet-address
+              style="
+                color:var(--muted);
+                font-size:10px;
+              "
+            >
+              Not connected
+            </div>
+
+            <div
+              data-verun-wallet-network
+              style="
+                color:var(--green);
+                font-size:9px;
+                margin-top:3px;
+              "
+            ></div>
+          </div>
+
+          <button
+            type="button"
+            data-verun-wallet-button
+            style="
+              border:1px solid var(--green);
+              background:transparent;
+              color:var(--green);
+              padding:9px 13px;
+              border-radius:5px;
+              font-family:inherit;
+              font-size:10px;
+              font-weight:700;
+              cursor:pointer;
+            "
+          >
+            Connect Wallet
+          </button>
+        </div>
+
+        <p
+          data-verun-wallet-message
+          style="
+            margin-top:9px;
+            color:var(--muted);
+            font-size:9px;
+            line-height:1.5;
+          "
+        ></p>
+      `;
+
+      genesisLocked.appendChild(box);
+    }
+
+    // -------------------------------
+    // Mining
+    // -------------------------------
+
+    const miningLocked =
+      document.getElementById("miningLocked");
+
+    if (
+      miningLocked &&
+      !document.getElementById("verunMiningWalletBox")
+    ) {
+      const box = document.createElement("div");
+
+      box.id = "verunMiningWalletBox";
+
+      box.style.cssText = `
+        margin-top:16px;
+        padding:14px;
+        border:1px solid rgba(141,255,183,0.20);
+        border-radius:10px;
+        background:rgba(141,255,183,0.04);
+      `;
+
+      box.innerHTML = `
+        <div style="
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:12px;
+          flex-wrap:wrap;
+        ">
+          <div>
+            <div style="
+              color:var(--text);
+              font-size:11px;
+              font-weight:700;
+              margin-bottom:4px;
+            ">
+              Wallet
+            </div>
+
+            <div
+              data-verun-wallet-address
+              style="
+                color:var(--muted);
+                font-size:10px;
+              "
+            >
+              Not connected
+            </div>
+
+            <div
+              data-verun-wallet-network
+              style="
+                color:var(--green);
+                font-size:9px;
+                margin-top:3px;
+              "
+            ></div>
+          </div>
+
+          <button
+            type="button"
+            data-verun-wallet-button
+            style="
+              border:1px solid var(--green);
+              background:transparent;
+              color:var(--green);
+              padding:9px 13px;
+              border-radius:5px;
+              font-family:inherit;
+              font-size:10px;
+              font-weight:700;
+              cursor:pointer;
+            "
+          >
+            Connect Wallet
+          </button>
+        </div>
+
+        <p
+          data-verun-wallet-message
+          style="
+            margin-top:9px;
+            color:var(--muted);
+            font-size:9px;
+            line-height:1.5;
+          "
+        ></p>
+      `;
+
+      miningLocked.appendChild(box);
+    }
+
+    bindWalletButtons();
+  }
+
+  // Public API for Genesis Pass / Mining later.
+  window.verunWallet = {
+    connect: connectWallet,
+    refresh: refreshWalletState,
+    getAddress: getWalletAddress,
+    getChainId: getChainId,
+    isConnected: () => !!connectedAddress,
+    isBSC: () => connectedChainId === BSC_CHAIN_ID
+  };
+
+  // Wait until the existing page has finished building.
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      () => {
+        createWalletUI();
+        refreshWalletState();
+      },
+      { once: true }
+    );
+  } else {
+    createWalletUI();
+    refreshWalletState();
+  }
+
+  // Wallet account changed.
+  const provider = getProvider();
+
+  if (provider && provider.on) {
+
+    provider.on("accountsChanged", accounts => {
+      connectedAddress =
+        accounts && accounts.length
+          ? accounts[0]
+          : null;
+
+      updateWalletButtons();
+
+      console.log(
+        "[VERUN] Wallet account changed:",
+        connectedAddress
+      );
+    });
+
+    provider.on("chainChanged", chainId => {
+      connectedChainId = chainId;
+
+      updateWalletButtons();
+
+      console.log(
+        "[VERUN] Network changed:",
+        chainId
+      );
+    });
+  }
+
+})();
+    
+// ============================================================
 // VERUN GENESIS PASS
 // ============================================================
 // No wallet/payment backend exists yet, so — same pattern as the
