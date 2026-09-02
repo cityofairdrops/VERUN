@@ -2336,6 +2336,215 @@
       }
     }
 
+    /* ================= WALLET PICKER MODAL ================= */
+    /* Shared by both the Genesis Pass and Mining "Connect Wallet"
+       buttons — one wallet connection, one modal instance. */
+
+    .verun-wallet-modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+
+      background: rgba(3,5,4,0.72);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease;
+    }
+
+    .verun-wallet-modal-overlay.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    body.verun-wallet-modal-lock {
+      overflow: hidden;
+    }
+
+    .verun-wallet-modal {
+      width: 100%;
+      max-width: 360px;
+      max-height: 82vh;
+      overflow-y: auto;
+
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+
+      transform: translateY(8px) scale(0.98);
+      transition: transform .18s ease;
+    }
+
+    .verun-wallet-modal-overlay.is-open .verun-wallet-modal {
+      transform: translateY(0) scale(1);
+    }
+
+    .verun-wallet-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .verun-wallet-modal-head h3 {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+    }
+
+    .verun-wallet-modal-close {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+
+      border: 1px solid var(--border);
+      background: var(--panel2);
+      color: var(--muted);
+
+      font-size: 15px;
+      line-height: 1;
+      cursor: pointer;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color .15s ease, border-color .15s ease;
+    }
+
+    .verun-wallet-modal-close:hover {
+      color: var(--text);
+      border-color: var(--muted);
+    }
+
+    .verun-wallet-modal-body {
+      padding: 10px;
+      min-height: 110px;
+    }
+
+    .verun-wallet-section-label {
+      padding: 10px 10px 6px;
+      color: var(--muted2);
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    .verun-wallet-option {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      padding: 10px;
+      border: none;
+      background: transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      text-align: left;
+
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      transition: background .12s ease;
+    }
+
+    .verun-wallet-option:hover {
+      background: var(--panel2);
+    }
+
+    .verun-wallet-option-icon,
+    .verun-wallet-generic-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      flex-shrink: 0;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .verun-wallet-option-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .verun-wallet-generic-icon {
+      border: 1px solid;
+      font-size: 12.5px;
+      font-weight: 800;
+    }
+
+    .verun-wallet-option-name {
+      flex-grow: 1;
+      min-width: 0;
+      font-size: 12.5px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .verun-wallet-option-tag {
+      flex-shrink: 0;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: var(--green);
+    }
+
+    .verun-wallet-empty {
+      padding: 26px 10px;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .verun-wallet-modal-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+
+      padding: 13px 18px;
+      border-top: 1px solid var(--border);
+
+      font-size: 10.5px;
+      color: var(--muted);
+    }
+
+    .verun-wallet-modal-foot a {
+      color: var(--green);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .verun-wallet-modal-foot a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 420px) {
+      .verun-wallet-modal {
+        max-width: 100%;
+      }
+    }
+
     .genesis-name-setup-label,
     .genesis-name-display-label {
       font-size: 11px;
@@ -4384,6 +4593,12 @@
 <!-- Used only to verify wallet-signature ownership proofs client-side (EIP-191).
      Never used to hold, request, or transmit private keys/seed phrases. -->
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<!-- WalletConnect v2 — lets the "Connect a Wallet" picker reach mobile
+     wallets that aren't installed as a browser extension (QR code on
+     desktop, deep link to the wallet app on mobile). Requires a free
+     project ID from https://cloud.walletconnect.com — see
+     WALLETCONNECT_PROJECT_ID in the wallet module below. -->
+<script src="https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2/dist/index.umd.js"></script>
 <script>
 
   // ============================================
@@ -6437,12 +6652,24 @@ async function loadVerunLeaderboard() {
     blockExplorerUrls: ["https://bscscan.com"]
   };
 
+  // Get a free project ID at https://cloud.walletconnect.com — every
+  // dapp using WalletConnect registers its own. Until a real ID is
+  // pasted in here, the WalletConnect option in the picker (and any
+  // "Popular" wallet that falls back to it) shows a short notice
+  // instead of connecting, rather than failing silently.
+  const WALLETCONNECT_PROJECT_ID = "YOUR_WALLETCONNECT_PROJECT_ID";
+
   let currentUserId = null;
-  let eventsBound = false;
-  let state = { address: null, verified: false, connecting: false };
+  const boundProviders = new WeakSet();
+  let state = { address: null, verified: false, connecting: false, provider: null };
+  let wcProviderPromise = null;
 
   function storageKey(userId) {
     return "verunWalletAddress_" + userId;
+  }
+
+  function recentRdnsKey(userId) {
+    return "verunWalletRdns_" + userId;
   }
 
   function persistAddress(userId, address) {
@@ -6455,17 +6682,133 @@ async function loadVerunLeaderboard() {
     return address ? address.slice(0, 6) + "…" + address.slice(-4) : "";
   }
 
-  // Supports both a single injected provider and the multi-wallet
-  // "window.ethereum.providers" array some browsers expose when more
-  // than one extension is installed — prefers MetaMask if present,
-  // otherwise the first available EVM provider.
-  function getProvider() {
+  function isMobileDevice() {
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+  }
+
+  // ---- EIP-6963 multi-wallet discovery ----
+  // The modern standard for "show every installed wallet, not just
+  // whichever one grabbed window.ethereum first". Each installed
+  // wallet extension announces itself (name, icon, a stable rdns id,
+  // and its own isolated provider instance) in response to this
+  // event — see https://eips.ethereum.org/EIPS/eip-6963.
+  const eip6963Providers = new Map(); // rdns -> {info, provider}
+
+  window.addEventListener("eip6963:announceProvider", event => {
+    const detail = event.detail;
+    if (detail && detail.info && detail.info.rdns) {
+      eip6963Providers.set(detail.info.rdns, { info: detail.info, provider: detail.provider });
+    }
+  });
+
+  function requestEip6963Providers() {
+    eip6963Providers.clear();
+    window.dispatchEvent(new Event("eip6963:requestProvider"));
+  }
+
+  // Legacy fallback for wallets that predate EIP-6963 and only ever
+  // set window.ethereum (optionally with a window.ethereum.providers
+  // array when more than one such legacy wallet is installed).
+  function getLegacyProvider() {
     if (typeof window.ethereum === "undefined") return null;
     if (Array.isArray(window.ethereum.providers) && window.ethereum.providers.length) {
       return window.ethereum.providers.find(p => p.isMetaMask) || window.ethereum.providers[0];
     }
     return window.ethereum;
   }
+
+  function detectLegacyWalletName(provider) {
+    if (provider.isMetaMask) return "MetaMask";
+    if (provider.isTrust || provider.isTrustWallet) return "Trust Wallet";
+    if (provider.isCoinbaseWallet) return "Coinbase Wallet";
+    if (provider.isRabby) return "Rabby Wallet";
+    if (provider.isOkxWallet || provider.isOKExWallet) return "OKX Wallet";
+    if (provider.isBraveWallet) return "Brave Wallet";
+    if (provider.isRainbow) return "Rainbow";
+    return "Injected Wallet";
+  }
+
+  // Used only when nothing more specific is available (getProvider(),
+  // used by connect()/disconnect()/silentRestore() when no explicit
+  // provider was chosen from the picker) — prefers a real EIP-6963
+  // announcement over the legacy single-provider guess.
+  function getProvider() {
+    const first = eip6963Providers.values().next();
+    if (!first.done) return first.value.provider;
+    return getLegacyProvider();
+  }
+
+  // ---- WalletConnect v2 (for wallets not installed in this browser) ----
+  async function getWalletConnectProvider() {
+    if (wcProviderPromise) return wcProviderPromise;
+
+    const Ctor =
+      window.EthereumProvider ||
+      window.WalletConnectEthereumProvider ||
+      (window.WalletConnectProvider && window.WalletConnectProvider.EthereumProvider);
+
+    if (!Ctor || !WALLETCONNECT_PROJECT_ID || WALLETCONNECT_PROJECT_ID === "YOUR_WALLETCONNECT_PROJECT_ID") {
+      if (!Ctor) console.warn("VERUN wallet: WalletConnect script hasn't loaded — check the CDN script tag.");
+      else console.warn("VERUN wallet: WALLETCONNECT_PROJECT_ID isn't configured yet — get one at https://cloud.walletconnect.com");
+      return null;
+    }
+
+    wcProviderPromise = Ctor.init({
+      projectId: WALLETCONNECT_PROJECT_ID,
+      chains: [56],
+      showQrModal: true,
+      metadata: {
+        name: "VERUN",
+        description: "VERUN — $VERUN mining and Genesis Pass",
+        url: window.location.origin,
+        icons: [window.location.origin + "/favicon.ico"]
+      }
+    });
+    return wcProviderPromise;
+  }
+
+  // ---- Popular wallet shortcuts (shown when not already "Installed") ----
+  // For wallets that expose a documented "open this URL inside the
+  // wallet's in-app browser" deep link, tapping the entry on mobile
+  // redirects straight into that wallet app, which then shows its own
+  // native connect confirmation once eth_requestAccounts runs there.
+  // Everything else routes through WalletConnect instead.
+  const POPULAR_WALLETS = [
+    {
+      key: "metamask", name: "MetaMask", color: "#f6851b",
+      mobileDeepLink: () => "https://metamask.app.link/dapp/" + window.location.host + window.location.pathname + window.location.search,
+      installUrl: "https://metamask.io/download/"
+    },
+    {
+      key: "trust", name: "Trust Wallet", color: "#3375bb",
+      mobileDeepLink: () => "https://link.trustwallet.com/open_url?coin_id=60&url=" + encodeURIComponent(window.location.href),
+      installUrl: "https://trustwallet.com/download"
+    },
+    {
+      key: "coinbase", name: "Coinbase Wallet", color: "#0052ff",
+      mobileDeepLink: () => "https://go.cb-w.com/dapp?cb_url=" + encodeURIComponent(window.location.href),
+      installUrl: "https://www.coinbase.com/wallet/downloads"
+    },
+    {
+      key: "okx", name: "OKX Wallet", color: "#2a2a2f",
+      mobileDeepLink: () => "okx://wallet/dapp/url?dappUrl=" + encodeURIComponent(window.location.href),
+      installUrl: "https://www.okx.com/web3"
+    },
+    {
+      key: "rainbow", name: "Rainbow", color: "#001e59",
+      useWalletConnect: true,
+      installUrl: "https://rainbow.me/"
+    },
+    {
+      key: "binance", name: "Binance Wallet", color: "#F0B90B",
+      useWalletConnect: true,
+      installUrl: "https://www.binance.com/en/web3wallet"
+    },
+    {
+      key: "walletconnect", name: "WalletConnect", color: "#3b99fc",
+      isWalletConnectEntry: true
+    }
+  ];
 
   async function ensureBnbChain(provider) {
     const chainId = await provider.request({ method: "eth_chainId" });
@@ -6530,8 +6873,8 @@ async function loadVerunLeaderboard() {
   }
 
   function bindProviderEventsOnce(provider) {
-    if (eventsBound || !provider || typeof provider.on !== "function") return;
-    eventsBound = true;
+    if (!provider || typeof provider.on !== "function" || boundProviders.has(provider)) return;
+    boundProviders.add(provider);
 
     provider.on("accountsChanged", accounts => {
       if (!accounts || !accounts.length) {
@@ -6550,18 +6893,27 @@ async function loadVerunLeaderboard() {
     provider.on("chainChanged", () => {
       render();
     });
+
+    // WalletConnect sessions can end from the wallet's own side (user
+    // disconnects in the wallet app) — fold that into our disconnect.
+    provider.on("disconnect", () => {
+      disconnect();
+    });
   }
 
-  async function connect() {
+  // Connects using a specific provider (an EIP-6963 entry the person
+  // picked, a legacy window.ethereum, or a WalletConnect session).
+  // rdns (when known) is remembered so that wallet is tagged "Recent"
+  // next time the picker opens. opts.isWalletConnect skips straight to
+  // provider.connect() so WalletConnect's own QR/deep-link flow shows
+  // before eth_requestAccounts is called.
+  async function connect(explicitProvider, rdns, opts) {
+    opts = opts || {};
     if (state.connecting) return;
-    const provider = getProvider();
+    const provider = explicitProvider || getProvider();
 
     if (!provider) {
-      const wantsInstall = window.confirm(
-        "No EVM wallet was found in this browser.\n\n" +
-        "Install MetaMask (or another BNB Chain compatible wallet) to connect?"
-      );
-      if (wantsInstall) window.open("https://metamask.io/download/", "_blank", "noopener,noreferrer");
+      openModal();
       return;
     }
 
@@ -6572,6 +6924,10 @@ async function loadVerunLeaderboard() {
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session) throw new Error("Please sign in first.");
       currentUserId = session.user.id;
+
+      if (opts.isWalletConnect && typeof provider.connect === "function") {
+        await provider.connect();
+      }
 
       const accounts = await provider.request({ method: "eth_requestAccounts" });
       if (!accounts || !accounts.length) throw new Error("No account was returned by the wallet.");
@@ -6596,7 +6952,9 @@ async function loadVerunLeaderboard() {
       state.address = address;
       state.verified = true;
       state.connecting = false;
+      state.provider = provider;
       persistAddress(currentUserId, address);
+      if (rdns) localStorage.setItem(recentRdnsKey(currentUserId), rdns);
       bindProviderEventsOnce(provider);
       render();
     } catch (err) {
@@ -6615,31 +6973,45 @@ async function loadVerunLeaderboard() {
   }
 
   function disconnect() {
-    const provider = getProvider();
-    // Most injected wallets don't give a dApp the power to force a
-    // full disconnect from their side — that permission lives in the
-    // wallet's own UI. Where the newer wallet_revokePermissions
-    // method exists, this calls it as a best-effort; either way the
-    // app immediately forgets the wallet locally so it's no longer
-    // trusted here, regardless of what the extension itself does.
-    if (provider && typeof provider.request === "function") {
-      provider.request({
-        method: "wallet_revokePermissions",
-        params: [{ eth_accounts: {} }]
-      }).catch(() => {});
+    const provider = state.provider || getProvider();
+    if (provider) {
+      if (typeof provider.disconnect === "function") {
+        // WalletConnect sessions need an explicit disconnect call to
+        // actually tear down the pairing, not just a local forget.
+        provider.disconnect().catch(() => {});
+      } else if (typeof provider.request === "function") {
+        // Most injected wallets don't give a dApp the power to force a
+        // full disconnect from their side — that lives in the wallet's
+        // own UI. Where wallet_revokePermissions exists, this calls it
+        // as a best-effort; either way the app immediately forgets the
+        // wallet locally so it's no longer trusted here.
+        provider.request({
+          method: "wallet_revokePermissions",
+          params: [{ eth_accounts: {} }]
+        }).catch(() => {});
+      }
     }
     state.address = null;
     state.verified = false;
+    state.provider = null;
     persistAddress(currentUserId, null);
     render();
   }
 
-  // On load, silently checks (no popup) whether the injected wallet
-  // still authorizes an account matching the last verified address
-  // for this user. Only restores "connected" on an exact match —
-  // anything else (a different account, no provider, no prior
+  // On load, silently checks (no popup) whether an already-installed
+  // wallet still authorizes an account matching the last verified
+  // address for this user. Only restores "connected" on an exact
+  // match — anything else (a different account, no provider, no prior
   // record) starts from disconnected rather than assuming trust.
+  // WalletConnect sessions aren't restored here (that needs its own
+  // session check on init) — reconnecting through the picker after a
+  // reload is the current behavior for those.
   async function silentRestore() {
+    requestEip6963Providers();
+    // Give wallet extensions a tick to answer eip6963:requestProvider
+    // before falling back to whichever provider is available.
+    await new Promise(resolve => setTimeout(resolve, 80));
+
     const provider = getProvider();
     if (!provider || !currentUserId) return;
     const saved = localStorage.getItem(storageKey(currentUserId));
@@ -6650,6 +7022,7 @@ async function loadVerunLeaderboard() {
       if (accounts && accounts.length && accounts[0].toLowerCase() === saved.toLowerCase()) {
         state.address = accounts[0];
         state.verified = true;
+        state.provider = provider;
         bindProviderEventsOnce(provider);
         render();
       } else {
@@ -6703,12 +7076,189 @@ async function loadVerunLeaderboard() {
     }
   }
 
+  // ---- "Connect a Wallet" picker modal ----
+
+  let modalEls = null;
+
+  function buildModal() {
+    if (modalEls) return modalEls;
+
+    const overlay = document.createElement("div");
+    overlay.className = "verun-wallet-modal-overlay";
+    overlay.innerHTML =
+      '<div class="verun-wallet-modal" role="dialog" aria-modal="true" aria-label="Connect a wallet">' +
+        '<div class="verun-wallet-modal-head">' +
+          '<h3>Connect a Wallet</h3>' +
+          '<button type="button" class="verun-wallet-modal-close" aria-label="Close">&times;</button>' +
+        '</div>' +
+        '<div class="verun-wallet-modal-body"></div>' +
+        '<div class="verun-wallet-modal-foot">' +
+          '<span>New to EVM wallets?</span>' +
+          '<a href="https://ethereum.org/en/wallets/find-wallet/" target="_blank" rel="noopener noreferrer">Learn More</a>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener("click", event => {
+      if (event.target === overlay) closeModal();
+    });
+    overlay.querySelector(".verun-wallet-modal-close").addEventListener("click", closeModal);
+
+    modalEls = { overlay, body: overlay.querySelector(".verun-wallet-modal-body") };
+    return modalEls;
+  }
+
+  function genericIcon(letter, color) {
+    const span = document.createElement("span");
+    span.className = "verun-wallet-generic-icon";
+    span.style.background = color + "22";
+    span.style.color = color;
+    span.style.borderColor = color + "55";
+    span.textContent = (letter || "?").toUpperCase();
+    return span;
+  }
+
+  function walletOptionRow(iconEl, name, tag, onClick) {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "verun-wallet-option";
+
+    const nameEl = document.createElement("span");
+    nameEl.className = "verun-wallet-option-name";
+    nameEl.textContent = name;
+
+    row.appendChild(iconEl);
+    row.appendChild(nameEl);
+
+    if (tag) {
+      const tagEl = document.createElement("span");
+      tagEl.className = "verun-wallet-option-tag";
+      tagEl.textContent = tag;
+      row.appendChild(tagEl);
+    }
+
+    row.addEventListener("click", onClick);
+    return row;
+  }
+
+  function sectionLabel(text) {
+    const label = document.createElement("div");
+    label.className = "verun-wallet-section-label";
+    label.textContent = text;
+    return label;
+  }
+
+  function renderModal() {
+    const { body } = buildModal();
+    body.innerHTML = "";
+
+    requestEip6963Providers();
+
+    // Wallet extensions answer eip6963:requestProvider synchronously
+    // in every case we've seen, but this small delay gives a slower
+    // one room to reply before the list is drawn.
+    setTimeout(() => {
+      const installedEntries = Array.from(eip6963Providers.values());
+      const legacyProvider = (!installedEntries.length) ? getLegacyProvider() : null;
+
+      body.innerHTML = "";
+
+      if (installedEntries.length || legacyProvider) {
+        body.appendChild(sectionLabel("Installed"));
+        const recentRdns = currentUserId ? localStorage.getItem(recentRdnsKey(currentUserId)) : null;
+
+        installedEntries.forEach(({ info, provider }) => {
+          const icon = info.icon
+            ? (() => { const img = document.createElement("span"); img.className = "verun-wallet-option-icon"; img.innerHTML = '<img src="' + info.icon + '" alt="" />'; return img; })()
+            : genericIcon(info.name, "#8dffb7");
+          const tag = recentRdns && info.rdns === recentRdns ? "Recent" : "";
+          body.appendChild(walletOptionRow(icon, info.name || "Injected Wallet", tag, () => {
+            closeModal();
+            connect(provider, info.rdns);
+          }));
+        });
+
+        if (legacyProvider) {
+          const name = detectLegacyWalletName(legacyProvider);
+          body.appendChild(walletOptionRow(genericIcon(name, "#8dffb7"), name, "", () => {
+            closeModal();
+            connect(legacyProvider, null);
+          }));
+        }
+      }
+
+      const installedNames = new Set(installedEntries.map(e => (e.info.name || "").toLowerCase()));
+      if (legacyProvider) installedNames.add(detectLegacyWalletName(legacyProvider).toLowerCase());
+      const popularList = POPULAR_WALLETS.filter(w => !installedNames.has(w.name.toLowerCase()));
+
+      if (popularList.length) {
+        body.appendChild(sectionLabel("Popular"));
+        popularList.forEach(w => {
+          body.appendChild(walletOptionRow(genericIcon(w.name, w.color), w.name, "", () => {
+            handlePopularWalletClick(w);
+          }));
+        });
+      }
+
+      if (!installedEntries.length && !legacyProvider && !popularList.length) {
+        const empty = document.createElement("p");
+        empty.className = "verun-wallet-empty";
+        empty.textContent = "No wallets found.";
+        body.appendChild(empty);
+      }
+    }, 60);
+  }
+
+  async function handlePopularWalletClick(wallet) {
+    if (wallet.isWalletConnectEntry || wallet.useWalletConnect) {
+      closeModal();
+      await connectViaWalletConnect(wallet.name);
+      return;
+    }
+
+    if (isMobileDevice() && wallet.mobileDeepLink) {
+      closeModal();
+      window.location.href = wallet.mobileDeepLink();
+      return;
+    }
+
+    // Desktop with this wallet not detected as installed — send the
+    // person to install it, same as any other dapp's wallet picker.
+    window.open(wallet.installUrl, "_blank", "noopener,noreferrer");
+  }
+
+  async function connectViaWalletConnect(walletLabel) {
+    const provider = await getWalletConnectProvider();
+    if (!provider) {
+      alert(
+        "WalletConnect isn't configured yet for this site.\n\n" +
+        "A WalletConnect Cloud project ID needs to be added before " +
+        (walletLabel || "WalletConnect") + " can be used to connect."
+      );
+      return;
+    }
+    await connect(provider, null, { isWalletConnect: true });
+  }
+
+  function openModal() {
+    buildModal();
+    modalEls.overlay.classList.add("is-open");
+    document.body.classList.add("verun-wallet-modal-lock");
+    renderModal();
+  }
+
+  function closeModal() {
+    if (!modalEls) return;
+    modalEls.overlay.classList.remove("is-open");
+    document.body.classList.remove("verun-wallet-modal-lock");
+  }
+
   function bindEventsOnce() {
     const e = els();
     [e.genesisConnectBtn, e.miningConnectBtn].forEach(btn => {
       if (btn && !btn.dataset.walletBound) {
         btn.dataset.walletBound = "1";
-        btn.addEventListener("click", connect);
+        btn.addEventListener("click", openModal);
       }
     });
     [e.genesisDisconnectBtn, e.miningDisconnectBtn].forEach(btn => {
@@ -6728,7 +7278,7 @@ async function loadVerunLeaderboard() {
     if (userId !== currentUserId) {
       // Switched (or first-time) user — start from a clean slate
       // rather than carrying over another account's wallet state.
-      state = { address: null, verified: false, connecting: false };
+      state = { address: null, verified: false, connecting: false, provider: null };
     }
     currentUserId = userId;
     if (!currentUserId) { render(); return; }
