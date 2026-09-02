@@ -1916,10 +1916,35 @@
       border: 1px solid var(--border);
       border-radius: 16px;
 
-      padding: 34px 25px;
       margin-bottom: 15px;
 
       text-align: center;
+    }
+
+    .genesis-mint-card {
+      padding: 34px 25px;
+    }
+
+    /* Owned card is split into full-width divided sections instead
+       of one continuous padded block — mirrors the header / pass
+       name / stats / action layout. */
+    .genesis-owned-card {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .genesis-owned-block {
+      padding: 24px 25px;
+      border-top: 1px solid var(--border);
+    }
+
+    .genesis-owned-block--header {
+      padding: 30px 25px 24px;
+      border-top: none;
+    }
+
+    .genesis-owned-block--action {
+      padding: 20px 25px;
     }
 
     /* Animated "golden ticket" pass icon — a soft ambient glow
@@ -2009,22 +2034,44 @@
       margin-bottom: 10px;
     }
 
-    .genesis-owned-id {
-      font-family: 'IBM Plex Mono', monospace;
-      color: var(--green);
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 1px;
-      margin-bottom: 14px;
-    }
-
-    .genesis-owned-wallet {
+    .genesis-owned-meta {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 7px;
 
       margin-bottom: 16px;
+      font-size: 11px;
+    }
+
+    .genesis-owned-id {
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .genesis-owned-meta-dot {
+      color: var(--muted2);
+    }
+
+    .genesis-owned-date {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .genesis-owned-wallet-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+
+      padding: 7px 14px;
+
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+
       font-size: 10.5px;
     }
 
@@ -2093,9 +2140,12 @@
 
     .genesis-name-setup,
     .genesis-name-display {
-      margin: 4px 0 22px;
-      padding-top: 18px;
-      border-top: 1px solid var(--border);
+      margin: 0;
+    }
+
+    .genesis-name-setup:last-child,
+    .genesis-name-display:last-child {
+      margin-bottom: 0;
     }
 
     .genesis-name-row {
@@ -2119,33 +2169,45 @@
       white-space: nowrap;
     }
 
-    .genesis-referral-panel {
-      margin: -6px 0 22px;
-      padding-top: 18px;
-      border-top: 1px solid var(--border);
-      text-align: left;
-    }
-
-    .genesis-referral-row {
+    /* Mints / Earnings side-by-side stat row */
+    .genesis-stats-row {
       display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 10px;
+      align-items: stretch;
+      justify-content: center;
+      gap: 18px;
+      margin-bottom: 16px;
     }
 
-    .genesis-referral-label {
+    .genesis-stat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .genesis-stat-divider {
+      width: 1px;
+      background: var(--border);
+    }
+
+    .genesis-stat-label {
       color: var(--muted2);
-      font-size: 10px;
+      font-size: 9.5px;
       font-weight: 800;
       letter-spacing: 0.6px;
       text-transform: uppercase;
     }
 
-    .genesis-referral-row strong {
+    .genesis-stat-value {
       color: var(--text);
-      font-size: 14px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 16px;
       font-weight: 800;
+    }
+
+    #genesisEarningsAmount.genesis-stat-value {
+      color: var(--green);
     }
 
     .genesis-referral-list {
@@ -2153,6 +2215,7 @@
       flex-direction: column;
       gap: 6px;
       margin-bottom: 16px;
+      text-align: left;
     }
 
     .genesis-referral-item {
@@ -2165,29 +2228,6 @@
     .genesis-referral-empty {
       color: var(--muted2);
       font-size: 10px;
-    }
-
-    .genesis-earnings-row {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .genesis-earnings-label {
-      color: var(--muted2);
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.6px;
-      text-transform: uppercase;
-    }
-
-    .genesis-earnings-amount {
-      font-family: 'IBM Plex Mono', monospace;
-      color: var(--green);
-      font-size: 15px;
-      font-weight: 800;
     }
 
     .genesis-claim-button {
@@ -2347,12 +2387,6 @@
       font-size: 9.5px;
     }
 
-    .genesis-owned-date {
-      color: var(--muted);
-      font-size: 10.5px;
-      margin: 4px 0 22px;
-    }
-
     .genesis-perks {
       margin-top: 4px;
     }
@@ -2416,9 +2450,20 @@
         padding: 18px;
       }
 
-      .genesis-mint-card,
-      .genesis-owned-card {
+      .genesis-mint-card {
         padding: 28px 18px;
+      }
+
+      .genesis-owned-block {
+        padding: 20px 18px;
+      }
+
+      .genesis-owned-block--header {
+        padding: 26px 18px 20px;
+      }
+
+      .genesis-owned-block--action {
+        padding: 16px 18px;
       }
 
       .genesis-discount-row {
@@ -3450,81 +3495,98 @@
   <!-- Owned state: shown once the user holds a pass -->
   <div class="genesis-owned-card" id="genesisOwnedCard" style="display:none;">
 
-    <div class="genesis-ticket-wrap genesis-ticket-wrap--owned">
-      <div class="genesis-ticket">
-        <svg class="genesis-ticket-icon" viewBox="0 0 240 120" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="genesisGoldGradOwned" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#fff3c4"/>
-              <stop offset="45%" stop-color="#ffd66b"/>
-              <stop offset="100%" stop-color="#c98f2b"/>
-            </linearGradient>
-          </defs>
-          <rect x="8" y="14" width="224" height="92" rx="14" fill="url(#genesisGoldGradOwned)" stroke="#8a611c" stroke-width="1.5"/>
-          <circle cx="190" cy="14" r="10" fill="#0d1110"/>
-          <circle cx="190" cy="106" r="10" fill="#0d1110"/>
-          <line x1="190" y1="26" x2="190" y2="94" stroke="#8a611c" stroke-width="1.6" stroke-dasharray="4 4" opacity="0.6"/>
-          <path d="M210 50l2.2 4.4 4.8.7-3.5 3.4.8 4.8-4.3-2.3-4.3 2.3.8-4.8-3.5-3.4 4.8-.7z" fill="#7a4e12" opacity="0.9"/>
-        </svg>
-        <span class="genesis-ticket-name" id="genesisTicketName"></span>
+    <!-- Header: icon, title, id + mint date, wallet status -->
+    <div class="genesis-owned-block genesis-owned-block--header">
+
+      <div class="genesis-ticket-wrap genesis-ticket-wrap--owned">
+        <div class="genesis-ticket">
+          <svg class="genesis-ticket-icon" viewBox="0 0 240 120" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="genesisGoldGradOwned" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#fff3c4"/>
+                <stop offset="45%" stop-color="#ffd66b"/>
+                <stop offset="100%" stop-color="#c98f2b"/>
+              </linearGradient>
+            </defs>
+            <rect x="8" y="14" width="224" height="92" rx="14" fill="url(#genesisGoldGradOwned)" stroke="#8a611c" stroke-width="1.5"/>
+            <circle cx="190" cy="14" r="10" fill="#0d1110"/>
+            <circle cx="190" cy="106" r="10" fill="#0d1110"/>
+            <line x1="190" y1="26" x2="190" y2="94" stroke="#8a611c" stroke-width="1.6" stroke-dasharray="4 4" opacity="0.6"/>
+            <path d="M210 50l2.2 4.4 4.8.7-3.5 3.4.8 4.8-4.3-2.3-4.3 2.3.8-4.8-3.5-3.4 4.8-.7z" fill="#7a4e12" opacity="0.9"/>
+          </svg>
+          <span class="genesis-ticket-name" id="genesisTicketName"></span>
+        </div>
       </div>
+
+      <div class="genesis-owned-title">You own a Genesis Pass</div>
+
+      <div class="genesis-owned-meta">
+        <span class="genesis-owned-id" id="genesisOwnedId">#00001</span>
+        <span class="genesis-owned-meta-dot">•</span>
+        <span class="genesis-owned-date" id="genesisOwnedDate"></span>
+      </div>
+
+      <div class="genesis-owned-wallet-badge">
+        <span class="genesis-owned-wallet-label">Wallet</span>
+        <span class="genesis-owned-wallet-value" id="genesisOwnedWalletValue">Not connected</span>
+      </div>
+
     </div>
 
-    <div class="genesis-owned-title">You own a Genesis Pass</div>
-    <div class="genesis-owned-id" id="genesisOwnedId">#00001</div>
+    <!-- Pass name / genesis code -->
+    <div class="genesis-owned-block">
 
-    <div class="genesis-owned-wallet">
-      <span class="genesis-owned-wallet-label">Wallet</span>
-      <span class="genesis-owned-wallet-value" id="genesisOwnedWalletValue">Not connected yet</span>
-    </div>
-
-    <p class="genesis-owned-date" id="genesisOwnedDate"></p>
-
-    <!-- Shown until the holder sets their permanent pass name -->
-    <div class="genesis-name-setup" id="genesisNameSetup">
-      <p class="genesis-name-setup-label">Set your unique pass name</p>
-      <p class="genesis-name-setup-hint">
-        This becomes the permanent name of your Genesis Pass. Lowercase letters, numbers and hyphens only — it can't be changed once set.
-      </p>
-      <div class="genesis-discount-row">
-        <input
-          type="text"
-          id="genesisNameInput"
-          class="genesis-discount-input"
-          placeholder="e.g. shadowminer"
-          autocomplete="off"
-          maxlength="20"
-        >
-        <button type="button" class="genesis-discount-apply" id="genesisNameConfirm">Set Name</button>
+      <!-- Shown until the holder sets their permanent pass name -->
+      <div class="genesis-name-setup" id="genesisNameSetup">
+        <p class="genesis-name-setup-label">Set your unique pass name</p>
+        <p class="genesis-name-setup-hint">
+          This becomes the permanent name of your Genesis Pass. Lowercase letters, numbers and hyphens only — it can't be changed once set.
+        </p>
+        <div class="genesis-discount-row">
+          <input
+            type="text"
+            id="genesisNameInput"
+            class="genesis-discount-input"
+            placeholder="e.g. shadowminer"
+            autocomplete="off"
+            maxlength="20"
+          >
+          <button type="button" class="genesis-discount-apply" id="genesisNameConfirm">Set Name</button>
+        </div>
+        <p class="genesis-discount-feedback" id="genesisNameFeedback"></p>
       </div>
-      <p class="genesis-discount-feedback" id="genesisNameFeedback"></p>
-    </div>
 
-    <!-- Shown once the pass name is set -->
-    <div class="genesis-name-display" id="genesisNameDisplay" style="display:none;">
-      <p class="genesis-name-display-label">Your Genesis Pass name</p>
-      <div class="genesis-name-row">
-        <span class="genesis-name-value" id="genesisNameValue"></span>
-        <button type="button" class="copy-button" id="genesisNameCopy">Copy</button>
+      <!-- Shown once the pass name is set -->
+      <div class="genesis-name-display" id="genesisNameDisplay" style="display:none;">
+        <p class="genesis-name-display-label">Your Genesis Code</p>
+        <div class="genesis-name-row">
+          <span class="genesis-name-value" id="genesisNameValue"></span>
+          <button type="button" class="copy-button" id="genesisNameCopy">Copy</button>
+        </div>
+        <p class="genesis-name-display-hint">
+          Share it — earn 0.0005 BNB every time someone mints using it.
+        </p>
       </div>
-      <p class="genesis-name-display-hint">
-        Share it — earn 0.0005 BNB every time someone mints a Genesis Pass using it.
-      </p>
+
     </div>
 
     <!-- Referral activity + earnings — only meaningful once a name is set -->
-    <div class="genesis-referral-panel" id="genesisReferralPanel" style="display:none;">
+    <div class="genesis-owned-block genesis-referral-panel" id="genesisReferralPanel" style="display:none;">
 
-      <div class="genesis-referral-row">
-        <span class="genesis-referral-label">Mints using your name</span>
-        <strong id="genesisReferralCount">0</strong>
+      <div class="genesis-stats-row">
+        <div class="genesis-stat">
+          <span class="genesis-stat-label">Mints</span>
+          <strong class="genesis-stat-value" id="genesisReferralCount">0</strong>
+        </div>
+        <div class="genesis-stat-divider"></div>
+        <div class="genesis-stat">
+          <span class="genesis-stat-label">Earnings</span>
+          <strong class="genesis-stat-value" id="genesisEarningsAmount">0 BNB</strong>
+        </div>
       </div>
+
       <div class="genesis-referral-list" id="genesisReferralList"></div>
 
-      <div class="genesis-earnings-row">
-        <span class="genesis-earnings-label">Referral Earnings</span>
-        <span class="genesis-earnings-amount" id="genesisEarningsAmount">0 BNB</span>
-      </div>
       <button type="button" class="genesis-claim-button" id="genesisClaimButton" disabled>
         Claim
       </button>
@@ -3534,9 +3596,12 @@
 
     </div>
 
-    <button type="button" class="genesis-owned-button" id="genesisGoToMiningButton">
-      Go to Mining
-    </button>
+    <!-- Go to mining -->
+    <div class="genesis-owned-block genesis-owned-block--action">
+      <button type="button" class="genesis-owned-button" id="genesisGoToMiningButton">
+        Go to Mining
+      </button>
+    </div>
 
   </div>
 
@@ -6704,12 +6769,12 @@ async function loadVerunLeaderboard() {
       const wallet = readWalletAddress(currentUserId);
       e.ownedWalletValue.textContent = wallet
         ? wallet.slice(0, 6) + "…" + wallet.slice(-4)
-        : "Not connected yet";
+        : "Not connected";
     }
 
     if (e.ownedDate && state.mintedAt) {
       const d = new Date(state.mintedAt);
-      e.ownedDate.textContent = "Minted " + d.toLocaleDateString(undefined, {
+      e.ownedDate.textContent = d.toLocaleDateString(undefined, {
         year: "numeric", month: "short", day: "numeric"
       });
     }
