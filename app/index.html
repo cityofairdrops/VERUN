@@ -1922,9 +1922,13 @@
       text-align: center;
     }
 
-    .genesis-pass-visual {
-      width: 84px;
-      height: 84px;
+    /* Animated "golden ticket" pass icon — float + glow + shine
+       sweep, matching the idle/pulse animation language used for
+       the Referral section's icon so it doesn't feel bolted on. */
+    .genesis-ticket-wrap {
+      position: relative;
+      width: 96px;
+      height: 96px;
       margin: 0 auto 18px;
 
       display: flex;
@@ -1932,32 +1936,63 @@
       justify-content: center;
     }
 
-    .genesis-pass-visual-mark {
-      position: relative;
-      width: 38px;
-      height: 38px;
-
-      border: 2px solid var(--green-border);
-      background: var(--green-soft);
-      border-radius: 7px;
-      transform: rotate(45deg);
-    }
-
-    .genesis-pass-visual-mark::after {
-      content: "";
+    .genesis-ticket-ring {
       position: absolute;
-      top: 12px;
-      left: 12px;
-      width: 14px;
-      height: 14px;
-
-      background: var(--green);
-      border-radius: 3px;
+      width: 70px;
+      height: 44px;
+      border-radius: 10px;
+      border: 1.5px solid rgba(255,214,107,0.55);
+      animation: verunGenesisPulse 2.6s ease-out infinite;
     }
 
-    .genesis-pass-visual--owned .genesis-pass-visual-mark {
-      border-color: var(--green);
-      box-shadow: 0 0 28px rgba(141,255,183,0.4);
+    .genesis-ticket {
+      position: relative;
+      width: 70px;
+      height: 44px;
+      overflow: hidden;
+      border-radius: 8px;
+      animation: verunGenesisIdle 3.6s ease-in-out infinite;
+    }
+
+    .genesis-ticket-icon {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 0 10px rgba(255,214,107,0.5));
+    }
+
+    .genesis-ticket-shine {
+      position: absolute;
+      top: -60%;
+      left: -60%;
+      width: 35%;
+      height: 220%;
+      background: linear-gradient(115deg, transparent, rgba(255,255,255,0.8), transparent);
+      transform: rotate(20deg);
+      animation: verunGenesisShine 3.6s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .genesis-ticket-wrap--owned .genesis-ticket-ring {
+      border-color: rgba(255,214,107,0.85);
+    }
+
+    .genesis-ticket-wrap--owned .genesis-ticket-icon {
+      filter: drop-shadow(0 0 16px rgba(255,214,107,0.75));
+    }
+
+    @keyframes verunGenesisIdle {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-4px) rotate(2deg); }
+    }
+
+    @keyframes verunGenesisPulse {
+      0% { transform: scale(0.9); opacity: 0.7; }
+      100% { transform: scale(1.4); opacity: 0; }
+    }
+
+    @keyframes verunGenesisShine {
+      0% { left: -60%; }
+      55%, 100% { left: 140%; }
     }
 
     .genesis-mint-title,
@@ -1976,32 +2011,84 @@
       margin-bottom: 14px;
     }
 
-    .genesis-mint-tags {
+    .genesis-owned-wallet {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      margin-bottom: 20px;
+
+      margin-bottom: 16px;
+      font-size: 10.5px;
     }
 
-    .genesis-tag {
-      font-size: 9px;
+    .genesis-owned-wallet-label {
+      color: var(--muted2);
       font-weight: 800;
-      letter-spacing: 0.6px;
+      letter-spacing: 0.5px;
       text-transform: uppercase;
-
-      padding: 5px 10px;
-      border-radius: 999px;
-
-      color: var(--muted);
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.02);
+      font-size: 9px;
     }
 
-    .genesis-tag--active {
-      color: var(--green);
-      border-color: var(--green-border);
+    .genesis-owned-wallet-value {
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--muted);
+    }
+
+    .genesis-mint-locked {
+      margin-top: 4px;
+      padding: 16px 14px;
+
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .genesis-mint-locked-icon {
+      width: 34px;
+      height: 34px;
+      margin: 0 auto 10px;
+
+      border: 1px solid var(--green-border);
       background: var(--green-soft);
+      border-radius: 50%;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .genesis-mint-locked-text {
+      color: var(--muted);
+      font-size: 10.5px;
+      text-align: center;
+    }
+
+    .genesis-discount-hint {
+      color: var(--muted2);
+      font-size: 9.5px;
+      margin: -10px 0 18px;
+    }
+
+    .genesis-name-setup-label,
+    .genesis-name-display-label {
+      font-size: 11px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .genesis-name-setup-hint,
+    .genesis-name-display-hint {
+      color: var(--muted);
+      font-size: 10px;
+      max-width: 340px;
+      margin: 0 auto 14px;
+    }
+
+    .genesis-name-setup,
+    .genesis-name-display {
+      margin: 4px 0 22px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
     }
 
     .genesis-price-block {
@@ -3145,60 +3232,138 @@
   <!-- Mint state: shown until the user owns a pass -->
   <div class="genesis-mint-card" id="genesisMintCard">
 
-    <div class="genesis-pass-visual">
-      <span class="genesis-pass-visual-mark"></span>
+    <div class="genesis-ticket-wrap">
+      <div class="genesis-ticket-ring"></div>
+      <div class="genesis-ticket">
+        <svg class="genesis-ticket-icon" viewBox="0 0 64 40" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="genesisGoldGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#fff3c4"/>
+              <stop offset="45%" stop-color="#ffd66b"/>
+              <stop offset="100%" stop-color="#c98f2b"/>
+            </linearGradient>
+          </defs>
+          <path d="M4 8a4 4 0 0 1 4-4h44a4 4 0 0 1 4 4v4a4 4 0 0 0 0 8v4a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-4a4 4 0 0 0 0-8z" fill="url(#genesisGoldGrad)" stroke="#8a611c" stroke-width="1"/>
+          <line x1="32" y1="6" x2="32" y2="34" stroke="#8a611c" stroke-width="1.4" stroke-dasharray="3 3" opacity="0.6"/>
+          <path d="M20 16.5l1.6 3.3 3.6.5-2.6 2.6.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.6 3.6-.5z" fill="#7a4e12" opacity="0.9"/>
+        </svg>
+      </div>
+      <span class="genesis-ticket-shine"></span>
     </div>
 
     <div class="genesis-mint-title">Genesis Pass</div>
-
-    <div class="genesis-mint-tags">
-      <span class="genesis-tag">Soulbound</span>
-      <span class="genesis-tag">Non-transferable</span>
-    </div>
 
     <div class="genesis-price-block">
       <span class="genesis-price-original" id="genesisPriceOriginal" style="display:none;"></span>
       <span class="genesis-price-current" id="genesisPriceCurrent">0.005 BNB</span>
     </div>
 
-    <div class="genesis-discount-row">
-      <input
-        type="text"
-        id="genesisDiscountInput"
-        class="genesis-discount-input"
-        placeholder="Discount code (optional)"
-        autocomplete="off"
-      >
-      <button type="button" class="genesis-discount-apply" id="genesisDiscountApply">Apply</button>
+    <!-- Shown once minting is live -->
+    <div id="genesisMintLiveArea" style="display:none;">
+
+      <div class="genesis-discount-row">
+        <input
+          type="text"
+          id="genesisDiscountInput"
+          class="genesis-discount-input"
+          placeholder="Discount code (optional)"
+          autocomplete="off"
+        >
+        <button type="button" class="genesis-discount-apply" id="genesisDiscountApply">Apply</button>
+      </div>
+      <p class="genesis-discount-feedback" id="genesisDiscountFeedback"></p>
+      <p class="genesis-discount-hint">
+        Have a Genesis Pass holder's code? Apply it for 50% off — 0.0025 BNB instead of 0.005 BNB.
+      </p>
+
+      <button type="button" class="genesis-mint-button" id="genesisMintButton">
+        Mint Genesis Pass
+      </button>
+
+      <p class="genesis-mint-note" id="genesisMintNote">
+        Minting simulates payment for now — wallet connection is coming soon.
+      </p>
+
     </div>
-    <p class="genesis-discount-feedback" id="genesisDiscountFeedback"></p>
 
-    <button type="button" class="genesis-mint-button" id="genesisMintButton">
-      Mint Genesis Pass
-    </button>
-
-    <p class="genesis-mint-note" id="genesisMintNote">
-      Minting simulates payment for now — wallet connection is coming soon.
-    </p>
+    <!-- Shown while minting is locked -->
+    <div class="genesis-mint-locked" id="genesisMintLocked">
+      <div class="genesis-mint-locked-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="11" width="14" height="9" rx="2"/>
+          <path d="M8 11V7.5a4 4 0 0 1 8 0V11"/>
+        </svg>
+      </div>
+      <p class="genesis-mint-locked-text">
+        Minting opens once wallet payment is live. Check back soon.
+      </p>
+    </div>
 
   </div>
 
   <!-- Owned state: shown once the user holds a pass -->
   <div class="genesis-owned-card" id="genesisOwnedCard" style="display:none;">
 
-    <div class="genesis-pass-visual genesis-pass-visual--owned">
-      <span class="genesis-pass-visual-mark"></span>
+    <div class="genesis-ticket-wrap genesis-ticket-wrap--owned">
+      <div class="genesis-ticket-ring"></div>
+      <div class="genesis-ticket">
+        <svg class="genesis-ticket-icon" viewBox="0 0 64 40" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="genesisGoldGradOwned" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#fff3c4"/>
+              <stop offset="45%" stop-color="#ffd66b"/>
+              <stop offset="100%" stop-color="#c98f2b"/>
+            </linearGradient>
+          </defs>
+          <path d="M4 8a4 4 0 0 1 4-4h44a4 4 0 0 1 4 4v4a4 4 0 0 0 0 8v4a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-4a4 4 0 0 0 0-8z" fill="url(#genesisGoldGradOwned)" stroke="#8a611c" stroke-width="1"/>
+          <line x1="32" y1="6" x2="32" y2="34" stroke="#8a611c" stroke-width="1.4" stroke-dasharray="3 3" opacity="0.6"/>
+          <path d="M20 16.5l1.6 3.3 3.6.5-2.6 2.6.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.6 3.6-.5z" fill="#7a4e12" opacity="0.9"/>
+        </svg>
+      </div>
+      <span class="genesis-ticket-shine"></span>
     </div>
 
     <div class="genesis-owned-title">You own a Genesis Pass</div>
     <div class="genesis-owned-id" id="genesisOwnedId">#00001</div>
 
-    <div class="genesis-mint-tags">
-      <span class="genesis-tag genesis-tag--active">Soulbound</span>
-      <span class="genesis-tag genesis-tag--active">Non-transferable</span>
+    <div class="genesis-owned-wallet">
+      <span class="genesis-owned-wallet-label">Wallet</span>
+      <span class="genesis-owned-wallet-value" id="genesisOwnedWalletValue">Not connected yet</span>
     </div>
 
     <p class="genesis-owned-date" id="genesisOwnedDate"></p>
+
+    <!-- Shown until the holder sets their permanent pass name -->
+    <div class="genesis-name-setup" id="genesisNameSetup">
+      <p class="genesis-name-setup-label">Set your unique pass name</p>
+      <p class="genesis-name-setup-hint">
+        This becomes your permanent Genesis code. Lowercase letters, numbers and hyphens only — it can't be changed once set.
+      </p>
+      <div class="genesis-discount-row">
+        <input
+          type="text"
+          id="genesisNameInput"
+          class="genesis-discount-input"
+          placeholder="e.g. shadowminer"
+          autocomplete="off"
+          maxlength="20"
+        >
+        <button type="button" class="genesis-discount-apply" id="genesisNameConfirm">Set Name</button>
+      </div>
+      <p class="genesis-discount-feedback" id="genesisNameFeedback"></p>
+    </div>
+
+    <!-- Shown once the pass name is set -->
+    <div class="genesis-name-display" id="genesisNameDisplay" style="display:none;">
+      <p class="genesis-name-display-label">Your Genesis code</p>
+      <div class="referral-box">
+        <input id="genesisNameValue" class="referral-input" type="text" readonly value="">
+        <button type="button" class="copy-button" id="genesisNameCopy">Copy</button>
+      </div>
+      <p class="genesis-name-display-hint">
+        Earn 0.0005 BNB every time someone mints a Genesis Pass using your code.
+      </p>
+    </div>
 
     <button type="button" class="genesis-owned-button" id="genesisGoToMiningButton">
       Go to Mining
@@ -3223,17 +3388,37 @@
           </svg>
         </div>
         <div class="genesis-perk-name">Mining Access</div>
-        <p class="genesis-perk-desc">Unlocks Basic Hashrate and every mining tier.</p>
+        <p class="genesis-perk-desc">Grants full access to $VERUN mining, with the Basic Hashrate tier included at no additional cost.</p>
       </div>
 
       <div class="genesis-perk">
         <div class="genesis-perk-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 21V10"/><path d="M12 21V4"/><path d="M20 21v-7"/>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 2 3 14h9l-1 8 10-12h-9z"/>
           </svg>
         </div>
-        <div class="genesis-perk-name">Leaderboard XP Boost</div>
-        <p class="genesis-perk-desc">Earn bonus XP on completed tasks and climb faster.</p>
+        <div class="genesis-perk-name">2x XP Multiplier</div>
+        <p class="genesis-perk-desc">Earn XP at double the standard rate on every completed task, accelerating your climb up the leaderboard.</p>
+      </div>
+
+      <div class="genesis-perk">
+        <div class="genesis-perk-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 10C3 10 5 3 12 3C19 3 21 10 21 10"/><path d="M3 10C6 12 9 12.5 12 10"/><path d="M21 10C18 12 15 12.5 12 10"/><line x1="3" y1="10" x2="10" y2="19"/><line x1="21" y1="10" x2="14" y2="19"/><rect x="9.3" y="19" width="5.4" height="3.6" rx="0.8"/>
+          </svg>
+        </div>
+        <div class="genesis-perk-name">2x Airdrop Unlock at TGE</div>
+        <p class="genesis-perk-desc">At TGE, Genesis Pass holders unlock their earned $VERUN airdrop at double the rate of any other participant in the campaign.</p>
+      </div>
+
+      <div class="genesis-perk">
+        <div class="genesis-perk-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+        <div class="genesis-perk-name">Guaranteed Airdrop Eligibility</div>
+        <p class="genesis-perk-desc">Confirms your eligibility for both the Season 1 and Season 2 $VERUN airdrops.</p>
       </div>
 
     </div>
@@ -6095,16 +6280,18 @@ async function loadVerunLeaderboard() {
 
   const TOTAL_SUPPLY = 11000;
   const BASE_PRICE_BNB = 0.005;
+  const DISCOUNTED_PRICE_BNB = 0.0025; // 50% off when a valid code is applied
+  const REFERRER_SHARE_BNB = 0.0005;   // paid to the code owner
+  const PROJECT_SHARE_BNB = 0.002;     // paid to the project (0.0005 + 0.002 = 0.0025)
 
-  // TODO(genesis-pass): placeholder discount codes until a real
-  // coupon/allowlist backend exists. Value is the fraction off the
-  // base price (0.2 = 20% off).
-  const DISCOUNT_CODES = {
-    VERUN11K: 0.2
-  };
+  // TODO(genesis-pass + wallet): minting is intentionally locked
+  // until the payment gateway + wallet connection ship. Flip this to
+  // true once that's live — everything below (naming, discount
+  // codes, referral payouts) is already wired and ready to go.
+  const MINTING_ENABLED = false;
 
   let currentUserId = null;
-  let appliedDiscountPct = 0;
+  let appliedCode = null; // lowercase pass-name currently applied as a discount code
   let els = null;
 
   function cacheEls() {
@@ -6119,6 +6306,8 @@ async function loadVerunLeaderboard() {
       ownedCard: document.getElementById("genesisOwnedCard"),
       priceOriginal: document.getElementById("genesisPriceOriginal"),
       priceCurrent: document.getElementById("genesisPriceCurrent"),
+      mintLiveArea: document.getElementById("genesisMintLiveArea"),
+      mintLocked: document.getElementById("genesisMintLocked"),
       discountInput: document.getElementById("genesisDiscountInput"),
       discountApply: document.getElementById("genesisDiscountApply"),
       discountFeedback: document.getElementById("genesisDiscountFeedback"),
@@ -6126,6 +6315,14 @@ async function loadVerunLeaderboard() {
       mintNote: document.getElementById("genesisMintNote"),
       ownedId: document.getElementById("genesisOwnedId"),
       ownedDate: document.getElementById("genesisOwnedDate"),
+      ownedWalletValue: document.getElementById("genesisOwnedWalletValue"),
+      nameSetup: document.getElementById("genesisNameSetup"),
+      nameInput: document.getElementById("genesisNameInput"),
+      nameConfirm: document.getElementById("genesisNameConfirm"),
+      nameFeedback: document.getElementById("genesisNameFeedback"),
+      nameDisplay: document.getElementById("genesisNameDisplay"),
+      nameValue: document.getElementById("genesisNameValue"),
+      nameCopy: document.getElementById("genesisNameCopy"),
       goToMining: document.getElementById("genesisGoToMiningButton")
     };
     if (els.totalSupply) els.totalSupply.textContent = formatIndian(TOTAL_SUPPLY);
@@ -6140,7 +6337,8 @@ async function loadVerunLeaderboard() {
     return {
       owned: false,
       tokenNumber: null,
-      mintedAt: null
+      mintedAt: null,
+      passName: null
     };
   }
 
@@ -6176,6 +6374,34 @@ async function loadVerunLeaderboard() {
     localStorage.setItem("verunGenesisMintedCount", String(Math.min(value, TOTAL_SUPPLY)));
   }
 
+  // Global pass-name registry (name -> owner) — this is what makes
+  // names unique and lets a discount code be looked up back to its
+  // owner for the referral payout. TODO(genesis-pass): replace with
+  // a real uniqueness check + lookup against the backend once one
+  // exists; this is a same-device simulation only.
+  function readNameRegistry() {
+    try {
+      const raw = localStorage.getItem("verunGenesisNames");
+      return raw ? JSON.parse(raw) : {};
+    } catch (err) {
+      return {};
+    }
+  }
+
+  function writeNameRegistry(registry) {
+    localStorage.setItem("verunGenesisNames", JSON.stringify(registry));
+  }
+
+  // TODO(genesis-pass + wallet): local simulation of referral
+  // payouts. Replace with the real on-chain split (0.0005 BNB to the
+  // code owner, 0.002 BNB to the project treasury) paid out directly
+  // by the mint transaction once wallet payment ships.
+  function creditReferralEarnings(ownerUserId, amount) {
+    const key = "verunGenesisReferralEarnings_" + ownerUserId;
+    const current = parseFloat(localStorage.getItem(key) || "0") || 0;
+    localStorage.setItem(key, String(Math.round((current + amount) * 1e6) / 1e6));
+  }
+
   // Indian digit grouping (11,000 instead of 11000).
   function formatIndian(num) {
     const isNegative = num < 0;
@@ -6188,7 +6414,6 @@ async function loadVerunLeaderboard() {
   }
 
   function formatBnb(amount) {
-    // Trim trailing zeros but keep it readable (0.005, 0.004, etc.)
     return (Math.round(amount * 1e6) / 1e6) + " BNB";
   }
 
@@ -6197,34 +6422,39 @@ async function loadVerunLeaderboard() {
   }
 
   function computePrice() {
-    const price = BASE_PRICE_BNB * (1 - appliedDiscountPct);
-    return Math.round(price * 1e6) / 1e6;
+    return appliedCode ? DISCOUNTED_PRICE_BNB : BASE_PRICE_BNB;
   }
 
   function applyDiscountCode() {
     const e = cacheEls();
     const raw = e.discountInput ? e.discountInput.value : "";
-    const code = raw.trim().toUpperCase();
+    const code = raw.trim().toLowerCase();
 
     if (!e.discountFeedback) return;
 
     if (!code) {
-      appliedDiscountPct = 0;
+      appliedCode = null;
       e.discountFeedback.textContent = "";
       e.discountFeedback.className = "genesis-discount-feedback";
       renderPrice();
       return;
     }
 
-    if (Object.prototype.hasOwnProperty.call(DISCOUNT_CODES, code)) {
-      appliedDiscountPct = DISCOUNT_CODES[code];
-      e.discountFeedback.textContent =
-        Math.round(appliedDiscountPct * 100) + "% discount applied.";
-      e.discountFeedback.className = "genesis-discount-feedback is-success";
-    } else {
-      appliedDiscountPct = 0;
+    const registry = readNameRegistry();
+    const entry = registry[code];
+
+    if (!entry) {
+      appliedCode = null;
       e.discountFeedback.textContent = "Invalid discount code.";
       e.discountFeedback.className = "genesis-discount-feedback is-error";
+    } else if (entry.ownerUserId === currentUserId) {
+      appliedCode = null;
+      e.discountFeedback.textContent = "You can't use your own code.";
+      e.discountFeedback.className = "genesis-discount-feedback is-error";
+    } else {
+      appliedCode = code;
+      e.discountFeedback.textContent = "50% discount applied.";
+      e.discountFeedback.className = "genesis-discount-feedback is-success";
     }
 
     renderPrice();
@@ -6236,7 +6466,7 @@ async function loadVerunLeaderboard() {
 
     if (e.priceCurrent) e.priceCurrent.textContent = formatBnb(price);
     if (e.priceOriginal) {
-      if (appliedDiscountPct > 0) {
+      if (appliedCode) {
         e.priceOriginal.textContent = formatBnb(BASE_PRICE_BNB);
         e.priceOriginal.style.display = "";
       } else {
@@ -6258,6 +6488,42 @@ async function loadVerunLeaderboard() {
     if (e.poolRemainingCaption) e.poolRemainingCaption.textContent = formatIndian(remaining) + " remaining";
   }
 
+  // Reads a wallet address for this user if something (a future
+  // wallet-connect module) has stored one. TODO(wallet): replace
+  // this localStorage read with the real connected-wallet state once
+  // wallet connection ships.
+  function readWalletAddress(userId) {
+    return localStorage.getItem("verunWalletAddress_" + userId) || null;
+  }
+
+  function renderOwnedCard(state) {
+    const e = cacheEls();
+    if (e.ownedId) e.ownedId.textContent = "#" + formatPadded(state.tokenNumber, 5);
+
+    if (e.ownedWalletValue) {
+      const wallet = readWalletAddress(currentUserId);
+      e.ownedWalletValue.textContent = wallet
+        ? wallet.slice(0, 6) + "…" + wallet.slice(-4)
+        : "Not connected yet";
+    }
+
+    if (e.ownedDate && state.mintedAt) {
+      const d = new Date(state.mintedAt);
+      e.ownedDate.textContent = "Minted " + d.toLocaleDateString(undefined, {
+        year: "numeric", month: "short", day: "numeric"
+      });
+    }
+
+    if (state.passName) {
+      if (e.nameSetup) e.nameSetup.style.display = "none";
+      if (e.nameDisplay) e.nameDisplay.style.display = "";
+      if (e.nameValue) e.nameValue.value = state.passName;
+    } else {
+      if (e.nameSetup) e.nameSetup.style.display = "";
+      if (e.nameDisplay) e.nameDisplay.style.display = "none";
+    }
+  }
+
   function render() {
     if (!currentUserId) return;
     const e = cacheEls();
@@ -6271,16 +6537,14 @@ async function loadVerunLeaderboard() {
     if (state.owned) {
       if (e.mintCard) e.mintCard.style.display = "none";
       if (e.ownedCard) e.ownedCard.style.display = "";
-      if (e.ownedId) e.ownedId.textContent = "#" + formatPadded(state.tokenNumber, 5);
-      if (e.ownedDate && state.mintedAt) {
-        const d = new Date(state.mintedAt);
-        e.ownedDate.textContent = "Minted " + d.toLocaleDateString(undefined, {
-          year: "numeric", month: "short", day: "numeric"
-        });
-      }
+      renderOwnedCard(state);
     } else {
       if (e.mintCard) e.mintCard.style.display = "";
       if (e.ownedCard) e.ownedCard.style.display = "none";
+
+      if (e.mintLiveArea) e.mintLiveArea.style.display = MINTING_ENABLED ? "" : "none";
+      if (e.mintLocked) e.mintLocked.style.display = MINTING_ENABLED ? "none" : "";
+
       if (e.mintButton) {
         e.mintButton.disabled = soldOut;
         e.mintButton.textContent = soldOut ? "Sold Out" : "Mint Genesis Pass";
@@ -6294,7 +6558,7 @@ async function loadVerunLeaderboard() {
   }
 
   function mintPass() {
-    if (!currentUserId) return;
+    if (!MINTING_ENABLED || !currentUserId) return;
     const state = readState(currentUserId);
     if (state.owned) return;
 
@@ -6302,13 +6566,16 @@ async function loadVerunLeaderboard() {
     if (minted >= TOTAL_SUPPLY) return; // sold out
 
     const price = computePrice();
+    const codeLine = appliedCode
+      ? "\nCode \"" + appliedCode + "\" applied — 50% off."
+      : "";
 
     // TODO(genesis-pass + wallet): simulated locally until real BNB
     // payment + wallet connection ships. Replace this confirm() with
     // the actual mint transaction, and only write state after the
     // chain confirms payment and the contract confirms the mint.
     const confirmed = window.confirm(
-      "Mint your Genesis Pass for " + price + " BNB?\n" +
+      "Mint your Genesis Pass for " + price + " BNB?" + codeLine + "\n" +
       "This pass is soulbound and cannot be transferred once minted.\n" +
       "(Wallet payment isn't wired up yet — this simulates the mint for now.)"
     );
@@ -6321,7 +6588,76 @@ async function loadVerunLeaderboard() {
 
     writeState(currentUserId, state);
     writeMintedCount(tokenNumber);
+
+    if (appliedCode) {
+      const registry = readNameRegistry();
+      const entry = registry[appliedCode];
+      if (entry) {
+        creditReferralEarnings(entry.ownerUserId, REFERRER_SHARE_BNB);
+      }
+      appliedCode = null;
+    }
+
     render();
+  }
+
+  function setPassName() {
+    const e = cacheEls();
+    if (!e.nameInput || !e.nameFeedback || !currentUserId) return;
+
+    const state = readState(currentUserId);
+    if (state.passName) return; // already set, permanent
+
+    const name = e.nameInput.value.trim().toLowerCase();
+
+    if (!/^[a-z0-9-]{3,20}$/.test(name)) {
+      e.nameFeedback.textContent =
+        "Use 3–20 lowercase letters, numbers or hyphens only.";
+      e.nameFeedback.className = "genesis-discount-feedback is-error";
+      return;
+    }
+
+    const registry = readNameRegistry();
+    if (registry[name]) {
+      e.nameFeedback.textContent = "That name is already taken.";
+      e.nameFeedback.className = "genesis-discount-feedback is-error";
+      return;
+    }
+
+    registry[name] = { ownerUserId: currentUserId, tokenNumber: state.tokenNumber };
+    writeNameRegistry(registry);
+
+    state.passName = name;
+    writeState(currentUserId, state);
+
+    e.nameFeedback.textContent = "";
+    e.nameFeedback.className = "genesis-discount-feedback";
+    render();
+  }
+
+  function copyPassName() {
+    const e = cacheEls();
+    if (!e.nameValue || !e.nameCopy) return;
+    const value = e.nameValue.value;
+    if (!value) return;
+
+    const done = () => {
+      const original = "Copy";
+      e.nameCopy.textContent = "Copied!";
+      setTimeout(() => { e.nameCopy.textContent = original; }, 1500);
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(value).then(done).catch(() => {
+        e.nameValue.select();
+        document.execCommand("copy");
+        done();
+      });
+    } else {
+      e.nameValue.select();
+      document.execCommand("copy");
+      done();
+    }
   }
 
   function bindEventsOnce() {
@@ -6342,6 +6678,26 @@ async function loadVerunLeaderboard() {
           applyDiscountCode();
         }
       });
+    }
+    if (e.nameConfirm && !e.nameConfirm.dataset.genesisBound) {
+      e.nameConfirm.dataset.genesisBound = "1";
+      e.nameConfirm.addEventListener("click", setPassName);
+    }
+    if (e.nameInput && !e.nameInput.dataset.genesisBound) {
+      e.nameInput.dataset.genesisBound = "1";
+      e.nameInput.addEventListener("input", () => {
+        e.nameInput.value = e.nameInput.value.toLowerCase();
+      });
+      e.nameInput.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          setPassName();
+        }
+      });
+    }
+    if (e.nameCopy && !e.nameCopy.dataset.genesisBound) {
+      e.nameCopy.dataset.genesisBound = "1";
+      e.nameCopy.addEventListener("click", copyPassName);
     }
     if (e.goToMining && !e.goToMining.dataset.genesisBound) {
       e.goToMining.dataset.genesisBound = "1";
