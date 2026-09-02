@@ -1826,6 +1826,387 @@
       }
     }
 
+    /* ================= GENESIS PASS ================= */
+
+    .genesis-pool-card {
+      position: relative;
+      overflow: hidden;
+
+      background:
+        radial-gradient(
+          circle at 88% 10%,
+          rgba(141,255,183,0.10),
+          transparent 40%
+        ),
+        var(--panel);
+
+      border: 1px solid var(--border);
+      border-radius: 16px;
+
+      padding: 22px 25px;
+      margin-bottom: 15px;
+    }
+
+    .genesis-pool-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+
+      margin-bottom: 12px;
+    }
+
+    .genesis-pool-label {
+      color: var(--muted2);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+    }
+
+    .genesis-pool-amount {
+      font-size: 13px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .genesis-pool-amount strong {
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .genesis-pool-bar {
+      width: 100%;
+      height: 12px;
+
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .genesis-pool-fill {
+      height: 100%;
+      width: 0%;
+      max-width: 100%;
+
+      background: linear-gradient(90deg, #4fdc85, var(--green));
+      border-radius: 999px;
+      box-shadow: 0 0 12px rgba(141,255,183,0.45);
+      transition: width .5s ease;
+    }
+
+    .genesis-pool-caption {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+
+      color: var(--muted2);
+      font-size: 9px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      margin-top: 7px;
+    }
+
+    .genesis-mint-card,
+    .genesis-owned-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+
+      padding: 34px 25px;
+      margin-bottom: 15px;
+
+      text-align: center;
+    }
+
+    .genesis-pass-visual {
+      width: 84px;
+      height: 84px;
+      margin: 0 auto 18px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .genesis-pass-visual-mark {
+      position: relative;
+      width: 38px;
+      height: 38px;
+
+      border: 2px solid var(--green-border);
+      background: var(--green-soft);
+      border-radius: 7px;
+      transform: rotate(45deg);
+    }
+
+    .genesis-pass-visual-mark::after {
+      content: "";
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      width: 14px;
+      height: 14px;
+
+      background: var(--green);
+      border-radius: 3px;
+    }
+
+    .genesis-pass-visual--owned .genesis-pass-visual-mark {
+      border-color: var(--green);
+      box-shadow: 0 0 28px rgba(141,255,183,0.4);
+    }
+
+    .genesis-mint-title,
+    .genesis-owned-title {
+      font-size: 16px;
+      font-weight: 850;
+      margin-bottom: 10px;
+    }
+
+    .genesis-owned-id {
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+    }
+
+    .genesis-mint-tags {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .genesis-tag {
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+
+      padding: 5px 10px;
+      border-radius: 999px;
+
+      color: var(--muted);
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .genesis-tag--active {
+      color: var(--green);
+      border-color: var(--green-border);
+      background: var(--green-soft);
+    }
+
+    .genesis-price-block {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .genesis-price-original {
+      color: var(--muted2);
+      font-size: 13px;
+      text-decoration: line-through;
+    }
+
+    .genesis-price-current {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--text);
+    }
+
+    .genesis-discount-row {
+      display: flex;
+      gap: 8px;
+      max-width: 320px;
+      margin: 0 auto 8px;
+    }
+
+    .genesis-discount-input {
+      flex: 1;
+      min-width: 0;
+
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+
+      padding: 10px 12px;
+
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      outline: none;
+    }
+
+    .genesis-discount-input::placeholder {
+      color: var(--muted2);
+    }
+
+    .genesis-discount-input:focus {
+      border-color: var(--green-border);
+    }
+
+    .genesis-discount-apply {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      border-radius: 8px;
+
+      padding: 0 16px;
+
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+
+      cursor: pointer;
+      transition: opacity .15s ease;
+    }
+
+    .genesis-discount-apply:hover {
+      opacity: 0.8;
+    }
+
+    .genesis-discount-feedback {
+      min-height: 14px;
+      margin-bottom: 18px;
+      font-size: 10px;
+    }
+
+    .genesis-discount-feedback.is-success {
+      color: var(--green);
+    }
+
+    .genesis-discount-feedback.is-error {
+      color: #ff8a8a;
+    }
+
+    .genesis-mint-button,
+    .genesis-owned-button {
+      display: inline-block;
+      border: 1px solid var(--green);
+      background: var(--green);
+      color: #071009;
+
+      border-radius: 8px;
+      padding: 13px 28px;
+
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+
+      cursor: pointer;
+      transition: opacity .15s ease;
+    }
+
+    .genesis-mint-button:hover,
+    .genesis-owned-button:hover {
+      opacity: 0.85;
+    }
+
+    .genesis-mint-button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .genesis-mint-note {
+      margin-top: 14px;
+      color: var(--muted2);
+      font-size: 9.5px;
+    }
+
+    .genesis-owned-date {
+      color: var(--muted);
+      font-size: 10.5px;
+      margin: 4px 0 22px;
+    }
+
+    .genesis-perks {
+      margin-top: 4px;
+    }
+
+    .genesis-perks-heading {
+      color: var(--muted2);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .genesis-perks-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .genesis-perk {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .genesis-perk-icon {
+      width: 44px;
+      height: 44px;
+      margin: 0 auto 12px;
+
+      border-radius: 12px;
+      background: var(--green-soft);
+      border: 1px solid var(--green-border);
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .genesis-perk-name {
+      font-size: 12.5px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .genesis-perk-desc {
+      color: var(--muted);
+      font-size: 10.5px;
+    }
+
+    @media (max-width: 700px) {
+      .genesis-perks-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .genesis-pool-card {
+        padding: 18px;
+      }
+
+      .genesis-mint-card,
+      .genesis-owned-card {
+        padding: 28px 18px;
+      }
+
+      .genesis-discount-row {
+        max-width: 100%;
+      }
+    }
+
 /* ============================================================
    VERUN TWO-URL / SINGLE-APP-VIEW NAVIGATION
    ============================================================ */
@@ -2723,6 +3104,7 @@
       
 <!-- GENESIS PASS -->
 
+<!-- GENESIS PASS SECTION -->
 <section class="section app-section" id="genesis-pass">
 
   <div class="section-head">
@@ -2733,24 +3115,129 @@
       </h2>
 
       <p class="section-description">
-        Coming soon.
+        A soulbound pass that unlocks $VERUN mining. Fixed supply of 11,000 — non-transferable once minted.
       </p>
     </div>
 
   </div>
 
-  <div
-    style="
-      padding:20px;
-      background:var(--panel);
-      border:1px solid var(--border);
-      border-radius:14px;
-      color:var(--muted);
-      font-size:11px;
-      text-align:center;
-    "
-  >
-    Genesis Pass details will be available soon.
+  <!-- Supply progress -->
+  <div class="genesis-pool-card">
+
+    <div class="genesis-pool-top">
+      <span class="genesis-pool-label">Genesis Passes Minted</span>
+      <span class="genesis-pool-amount">
+        <strong id="genesisMintedCount">0</strong> / <span id="genesisTotalSupply">11,000</span>
+      </span>
+    </div>
+
+    <div class="genesis-pool-bar">
+      <div class="genesis-pool-fill" id="genesisPoolFill" style="width:0%;"></div>
+    </div>
+
+    <div class="genesis-pool-caption">
+      <span id="genesisPoolPercent">0.00% minted</span>
+      <span id="genesisPoolRemainingCaption">11,000 remaining</span>
+    </div>
+
+  </div>
+
+  <!-- Mint state: shown until the user owns a pass -->
+  <div class="genesis-mint-card" id="genesisMintCard">
+
+    <div class="genesis-pass-visual">
+      <span class="genesis-pass-visual-mark"></span>
+    </div>
+
+    <div class="genesis-mint-title">Genesis Pass</div>
+
+    <div class="genesis-mint-tags">
+      <span class="genesis-tag">Soulbound</span>
+      <span class="genesis-tag">Non-transferable</span>
+    </div>
+
+    <div class="genesis-price-block">
+      <span class="genesis-price-original" id="genesisPriceOriginal" style="display:none;"></span>
+      <span class="genesis-price-current" id="genesisPriceCurrent">0.005 BNB</span>
+    </div>
+
+    <div class="genesis-discount-row">
+      <input
+        type="text"
+        id="genesisDiscountInput"
+        class="genesis-discount-input"
+        placeholder="Discount code (optional)"
+        autocomplete="off"
+      >
+      <button type="button" class="genesis-discount-apply" id="genesisDiscountApply">Apply</button>
+    </div>
+    <p class="genesis-discount-feedback" id="genesisDiscountFeedback"></p>
+
+    <button type="button" class="genesis-mint-button" id="genesisMintButton">
+      Mint Genesis Pass
+    </button>
+
+    <p class="genesis-mint-note" id="genesisMintNote">
+      Minting simulates payment for now — wallet connection is coming soon.
+    </p>
+
+  </div>
+
+  <!-- Owned state: shown once the user holds a pass -->
+  <div class="genesis-owned-card" id="genesisOwnedCard" style="display:none;">
+
+    <div class="genesis-pass-visual genesis-pass-visual--owned">
+      <span class="genesis-pass-visual-mark"></span>
+    </div>
+
+    <div class="genesis-owned-title">You own a Genesis Pass</div>
+    <div class="genesis-owned-id" id="genesisOwnedId">#00001</div>
+
+    <div class="genesis-mint-tags">
+      <span class="genesis-tag genesis-tag--active">Soulbound</span>
+      <span class="genesis-tag genesis-tag--active">Non-transferable</span>
+    </div>
+
+    <p class="genesis-owned-date" id="genesisOwnedDate"></p>
+
+    <button type="button" class="genesis-owned-button" id="genesisGoToMiningButton">
+      Go to Mining
+    </button>
+
+  </div>
+
+  <!-- Perks -->
+  <div class="genesis-perks">
+
+    <h4 class="genesis-perks-heading">Pass Perks</h4>
+
+    <div class="genesis-perks-grid">
+
+      <div class="genesis-perk">
+        <div class="genesis-perk-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.531 12.469 6.619 20.38a1 1 0 1 1-3-3l7.912-7.912"/>
+            <path d="M15.686 4.314A12.5 12.5 0 0 0 5.461 2.958 1 1 0 0 0 5.58 4.71a22 22 0 0 1 6.318 3.393"/>
+            <path d="M17.7 3.7a1 1 0 0 0-1.4 0l-4.6 4.6a1 1 0 0 0 0 1.4l2.6 2.6a1 1 0 0 0 1.4 0l4.6-4.6a1 1 0 0 0 0-1.4z"/>
+            <path d="M19.686 8.314a12.5 12.5 0 0 1 1.356 10.225 1 1 0 0 1-1.751-.119 22 22 0 0 0-3.393-6.319"/>
+          </svg>
+        </div>
+        <div class="genesis-perk-name">Mining Access</div>
+        <p class="genesis-perk-desc">Unlocks Basic Hashrate and every mining tier.</p>
+      </div>
+
+      <div class="genesis-perk">
+        <div class="genesis-perk-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 21V10"/><path d="M12 21V4"/><path d="M20 21v-7"/>
+          </svg>
+        </div>
+        <div class="genesis-perk-name">Leaderboard XP Boost</div>
+        <p class="genesis-perk-desc">Earn bonus XP on completed tasks and climb faster.</p>
+      </div>
+
+    </div>
+
   </div>
 
 </section>
@@ -5178,15 +5665,13 @@ async function loadVerunLeaderboard() {
     ultra: { label: "Ultra Hashrate", speed: 5, priceBnb: 0.025, days: 30 }
   };
 
-  // TODO(genesis-pass): wire this to the real Genesis Pass ownership
-  // check once the Genesis Pass + wallet/payment flow ships. Until
-  // then nobody can actually own a verified pass, so this stays
-  // false — that's what keeps mining locked/paused for everyone for
-  // now. Flip this over to a real ownership lookup and the unlocked
-  // dashboard below will work for pass holders exactly as it does
-  // today, no other changes needed.
+  // Reads real Genesis Pass ownership from the Genesis Pass module
+  // (local-simulation state until wallet/payment ships — see that
+  // module for details). Falls back to locked if that module hasn't
+  // loaded for any reason.
   function hasGenesisPass() {
-    return false;
+    if (typeof window.verunHasGenesisPass !== "function") return false;
+    return window.verunHasGenesisPass(currentUserId);
   }
 
   let currentUserId = null;
@@ -5565,9 +6050,12 @@ async function loadVerunLeaderboard() {
     }
     if (e.goToGenesis && !e.goToGenesis.dataset.miningBound) {
       e.goToGenesis.dataset.miningBound = "1";
-      e.goToGenesis.addEventListener("click", () => {
+      e.goToGenesis.addEventListener("click", async () => {
         if (typeof window.showVerunSection === "function") {
           window.showVerunSection("genesisPass");
+        }
+        if (typeof window.loadGenesisPassSection === "function") {
+          await window.loadGenesisPassSection();
         }
       });
     }
@@ -5590,6 +6078,302 @@ async function loadVerunLeaderboard() {
   }
 
   window.loadMiningSection = loadMiningSection;
+})();
+
+// ============================================================
+// VERUN GENESIS PASS
+// ============================================================
+// No wallet/payment backend exists yet, so — same pattern as the
+// mining module — this runs client-side against localStorage,
+// namespaced per logged-in user id. window.verunHasGenesisPass is
+// the public hook the Mining module reads to decide whether to
+// unlock. Swap readState/writeState/mint for real contract reads +
+// a mint transaction once the Genesis Pass contract + wallet flow
+// exist; window.verunHasGenesisPass can then read on-chain
+// ownership instead of localStorage without touching Mining at all.
+(function () {
+
+  const TOTAL_SUPPLY = 11000;
+  const BASE_PRICE_BNB = 0.005;
+
+  // TODO(genesis-pass): placeholder discount codes until a real
+  // coupon/allowlist backend exists. Value is the fraction off the
+  // base price (0.2 = 20% off).
+  const DISCOUNT_CODES = {
+    VERUN11K: 0.2
+  };
+
+  let currentUserId = null;
+  let appliedDiscountPct = 0;
+  let els = null;
+
+  function cacheEls() {
+    if (els) return els;
+    els = {
+      mintedCount: document.getElementById("genesisMintedCount"),
+      totalSupply: document.getElementById("genesisTotalSupply"),
+      poolFill: document.getElementById("genesisPoolFill"),
+      poolPercent: document.getElementById("genesisPoolPercent"),
+      poolRemainingCaption: document.getElementById("genesisPoolRemainingCaption"),
+      mintCard: document.getElementById("genesisMintCard"),
+      ownedCard: document.getElementById("genesisOwnedCard"),
+      priceOriginal: document.getElementById("genesisPriceOriginal"),
+      priceCurrent: document.getElementById("genesisPriceCurrent"),
+      discountInput: document.getElementById("genesisDiscountInput"),
+      discountApply: document.getElementById("genesisDiscountApply"),
+      discountFeedback: document.getElementById("genesisDiscountFeedback"),
+      mintButton: document.getElementById("genesisMintButton"),
+      mintNote: document.getElementById("genesisMintNote"),
+      ownedId: document.getElementById("genesisOwnedId"),
+      ownedDate: document.getElementById("genesisOwnedDate"),
+      goToMining: document.getElementById("genesisGoToMiningButton")
+    };
+    if (els.totalSupply) els.totalSupply.textContent = formatIndian(TOTAL_SUPPLY);
+    return els;
+  }
+
+  function storageKey(userId) {
+    return "verunGenesis_" + userId;
+  }
+
+  function defaultState() {
+    return {
+      owned: false,
+      tokenNumber: null,
+      mintedAt: null
+    };
+  }
+
+  function readState(userId) {
+    try {
+      const raw = localStorage.getItem(storageKey(userId));
+      if (!raw) return defaultState();
+      return Object.assign(defaultState(), JSON.parse(raw));
+    } catch (err) {
+      return defaultState();
+    }
+  }
+
+  function writeState(userId, state) {
+    try {
+      localStorage.setItem(storageKey(userId), JSON.stringify(state));
+    } catch (err) {
+      // localStorage unavailable — mint still works for this
+      // session, it just won't persist across reloads.
+    }
+  }
+
+  // Shared mint counter — simulated locally in the absence of a
+  // real contract/aggregate. Swap for a real total-supply-minted
+  // read once the Genesis Pass contract exists.
+  function readMintedCount() {
+    const raw = localStorage.getItem("verunGenesisMintedCount");
+    const value = raw ? parseInt(raw, 10) : 0;
+    return isNaN(value) ? 0 : value;
+  }
+
+  function writeMintedCount(value) {
+    localStorage.setItem("verunGenesisMintedCount", String(Math.min(value, TOTAL_SUPPLY)));
+  }
+
+  // Indian digit grouping (11,000 instead of 11000).
+  function formatIndian(num) {
+    const isNegative = num < 0;
+    const intPart = String(Math.abs(Math.round(num)));
+    const lastThree = intPart.length > 3 ? intPart.slice(-3) : intPart;
+    const otherNumbers = intPart.length > 3 ? intPart.slice(0, intPart.length - 3) : "";
+    const groupedOther = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",");
+    const grouped = groupedOther ? groupedOther + "," + lastThree : lastThree;
+    return (isNegative ? "-" : "") + grouped;
+  }
+
+  function formatBnb(amount) {
+    // Trim trailing zeros but keep it readable (0.005, 0.004, etc.)
+    return (Math.round(amount * 1e6) / 1e6) + " BNB";
+  }
+
+  function formatPadded(num, width) {
+    return String(num).padStart(width, "0");
+  }
+
+  function computePrice() {
+    const price = BASE_PRICE_BNB * (1 - appliedDiscountPct);
+    return Math.round(price * 1e6) / 1e6;
+  }
+
+  function applyDiscountCode() {
+    const e = cacheEls();
+    const raw = e.discountInput ? e.discountInput.value : "";
+    const code = raw.trim().toUpperCase();
+
+    if (!e.discountFeedback) return;
+
+    if (!code) {
+      appliedDiscountPct = 0;
+      e.discountFeedback.textContent = "";
+      e.discountFeedback.className = "genesis-discount-feedback";
+      renderPrice();
+      return;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(DISCOUNT_CODES, code)) {
+      appliedDiscountPct = DISCOUNT_CODES[code];
+      e.discountFeedback.textContent =
+        Math.round(appliedDiscountPct * 100) + "% discount applied.";
+      e.discountFeedback.className = "genesis-discount-feedback is-success";
+    } else {
+      appliedDiscountPct = 0;
+      e.discountFeedback.textContent = "Invalid discount code.";
+      e.discountFeedback.className = "genesis-discount-feedback is-error";
+    }
+
+    renderPrice();
+  }
+
+  function renderPrice() {
+    const e = cacheEls();
+    const price = computePrice();
+
+    if (e.priceCurrent) e.priceCurrent.textContent = formatBnb(price);
+    if (e.priceOriginal) {
+      if (appliedDiscountPct > 0) {
+        e.priceOriginal.textContent = formatBnb(BASE_PRICE_BNB);
+        e.priceOriginal.style.display = "";
+      } else {
+        e.priceOriginal.style.display = "none";
+      }
+    }
+  }
+
+  function renderPool() {
+    const e = cacheEls();
+    const minted = Math.min(readMintedCount(), TOTAL_SUPPLY);
+    const remaining = TOTAL_SUPPLY - minted;
+    const pct = Math.min(100, (minted / TOTAL_SUPPLY) * 100);
+
+    if (e.mintedCount) e.mintedCount.textContent = formatIndian(minted);
+    if (e.totalSupply) e.totalSupply.textContent = formatIndian(TOTAL_SUPPLY);
+    if (e.poolFill) e.poolFill.style.width = pct.toFixed(2) + "%";
+    if (e.poolPercent) e.poolPercent.textContent = pct.toFixed(2) + "% minted";
+    if (e.poolRemainingCaption) e.poolRemainingCaption.textContent = formatIndian(remaining) + " remaining";
+  }
+
+  function render() {
+    if (!currentUserId) return;
+    const e = cacheEls();
+    const state = readState(currentUserId);
+    const minted = readMintedCount();
+    const soldOut = minted >= TOTAL_SUPPLY;
+
+    renderPool();
+    renderPrice();
+
+    if (state.owned) {
+      if (e.mintCard) e.mintCard.style.display = "none";
+      if (e.ownedCard) e.ownedCard.style.display = "";
+      if (e.ownedId) e.ownedId.textContent = "#" + formatPadded(state.tokenNumber, 5);
+      if (e.ownedDate && state.mintedAt) {
+        const d = new Date(state.mintedAt);
+        e.ownedDate.textContent = "Minted " + d.toLocaleDateString(undefined, {
+          year: "numeric", month: "short", day: "numeric"
+        });
+      }
+    } else {
+      if (e.mintCard) e.mintCard.style.display = "";
+      if (e.ownedCard) e.ownedCard.style.display = "none";
+      if (e.mintButton) {
+        e.mintButton.disabled = soldOut;
+        e.mintButton.textContent = soldOut ? "Sold Out" : "Mint Genesis Pass";
+      }
+      if (e.mintNote) {
+        e.mintNote.textContent = soldOut
+          ? "All 11,000 Genesis Passes have been minted."
+          : "Minting simulates payment for now — wallet connection is coming soon.";
+      }
+    }
+  }
+
+  function mintPass() {
+    if (!currentUserId) return;
+    const state = readState(currentUserId);
+    if (state.owned) return;
+
+    const minted = readMintedCount();
+    if (minted >= TOTAL_SUPPLY) return; // sold out
+
+    const price = computePrice();
+
+    // TODO(genesis-pass + wallet): simulated locally until real BNB
+    // payment + wallet connection ships. Replace this confirm() with
+    // the actual mint transaction, and only write state after the
+    // chain confirms payment and the contract confirms the mint.
+    const confirmed = window.confirm(
+      "Mint your Genesis Pass for " + price + " BNB?\n" +
+      "This pass is soulbound and cannot be transferred once minted.\n" +
+      "(Wallet payment isn't wired up yet — this simulates the mint for now.)"
+    );
+    if (!confirmed) return;
+
+    const tokenNumber = minted + 1;
+    state.owned = true;
+    state.tokenNumber = tokenNumber;
+    state.mintedAt = Date.now();
+
+    writeState(currentUserId, state);
+    writeMintedCount(tokenNumber);
+    render();
+  }
+
+  function bindEventsOnce() {
+    const e = cacheEls();
+    if (e.mintButton && !e.mintButton.dataset.genesisBound) {
+      e.mintButton.dataset.genesisBound = "1";
+      e.mintButton.addEventListener("click", mintPass);
+    }
+    if (e.discountApply && !e.discountApply.dataset.genesisBound) {
+      e.discountApply.dataset.genesisBound = "1";
+      e.discountApply.addEventListener("click", applyDiscountCode);
+    }
+    if (e.discountInput && !e.discountInput.dataset.genesisBound) {
+      e.discountInput.dataset.genesisBound = "1";
+      e.discountInput.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          applyDiscountCode();
+        }
+      });
+    }
+    if (e.goToMining && !e.goToMining.dataset.genesisBound) {
+      e.goToMining.dataset.genesisBound = "1";
+      e.goToMining.addEventListener("click", async () => {
+        if (typeof window.showVerunSection === "function") {
+          window.showVerunSection("mining");
+        }
+        if (typeof window.loadMiningSection === "function") {
+          await window.loadMiningSection();
+        }
+      });
+    }
+  }
+
+  async function loadGenesisPassSection() {
+    cacheEls();
+    bindEventsOnce();
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    currentUserId = session ? session.user.id : null;
+    if (!currentUserId) return;
+
+    render();
+  }
+
+  // Public hook the Mining module reads to decide lock state.
+  window.verunHasGenesisPass = function (userId) {
+    if (!userId) return false;
+    return !!readState(userId).owned;
+  };
+
+  window.loadGenesisPassSection = loadGenesisPassSection;
 })();
 
   // ============================================================
@@ -5799,6 +6583,7 @@ showSection(
     if (typeof loadReferralDashboard === "function") sectionLoaders.push(loadReferralDashboard());
     if (typeof loadNotifications === "function") sectionLoaders.push(loadNotifications());
     if (typeof loadMiningSection === "function") sectionLoaders.push(loadMiningSection());
+    if (typeof loadGenesisPassSection === "function") sectionLoaders.push(loadGenesisPassSection());
     await Promise.all(sectionLoaders);
   }
 
@@ -5833,6 +6618,10 @@ showSection(
 
       if (section === "mining" && typeof loadMiningSection === "function") {
         await loadMiningSection();
+      }
+
+      if (section === "genesisPass" && typeof loadGenesisPassSection === "function") {
+        await loadGenesisPassSection();
       }
 
       // Re-assert scroll-to-top now that the section's content has
