@@ -4041,23 +4041,29 @@
       <span class="genesis-price-current" id="genesisPriceCurrent">0.005 BNB</span>
     </div>
 
+    <!-- Discount code preview: always shown, independent of whether
+         minting itself is live yet. Letting people see and apply a
+         code now (and see the resulting price) doesn't move any
+         funds — applyDiscountCode()/renderPrice() are pure local
+         calculations — so there's no reason to hide it behind the
+         same gate as the actual mint transaction below. -->
+    <div class="genesis-discount-row">
+      <input
+        type="text"
+        id="genesisDiscountInput"
+        class="genesis-discount-input"
+        placeholder="Discount code (optional)"
+        autocomplete="off"
+      >
+      <button type="button" class="genesis-discount-apply" id="genesisDiscountApply">Apply</button>
+    </div>
+    <p class="genesis-discount-feedback" id="genesisDiscountFeedback"></p>
+    <p class="genesis-discount-hint">
+      Have a Genesis Pass holder's code? Apply it for 50% off — 0.0025 BNB instead of 0.005 BNB. Your discount is saved and will be ready the moment minting opens.
+    </p>
+
     <!-- Shown once minting is live -->
     <div id="genesisMintLiveArea" style="display:none;">
-
-      <div class="genesis-discount-row">
-        <input
-          type="text"
-          id="genesisDiscountInput"
-          class="genesis-discount-input"
-          placeholder="Discount code (optional)"
-          autocomplete="off"
-        >
-        <button type="button" class="genesis-discount-apply" id="genesisDiscountApply">Apply</button>
-      </div>
-      <p class="genesis-discount-feedback" id="genesisDiscountFeedback"></p>
-      <p class="genesis-discount-hint">
-        Have a Genesis Pass holder's code? Apply it for 50% off — 0.0025 BNB instead of 0.005 BNB.
-      </p>
 
       <button type="button" class="genesis-mint-button" id="genesisMintButton">
         Mint Genesis Pass
@@ -7411,6 +7417,10 @@ async function loadVerunLeaderboard() {
     return appliedCode ? DISCOUNTED_PRICE_BNB : BASE_PRICE_BNB;
   }
 
+  function discountCodeStorageKey(userId) {
+    return "verunGenesisDiscountCode_" + userId;
+  }
+
   function applyDiscountCode() {
     const e = cacheEls();
     const raw = e.discountInput ? e.discountInput.value : "";
@@ -7420,6 +7430,7 @@ async function loadVerunLeaderboard() {
 
     if (!code) {
       appliedCode = null;
+      if (currentUserId) localStorage.removeItem(discountCodeStorageKey(currentUserId));
       e.discountFeedback.textContent = "";
       e.discountFeedback.className = "genesis-discount-feedback";
       renderPrice();
@@ -7431,15 +7442,18 @@ async function loadVerunLeaderboard() {
 
     if (!entry) {
       appliedCode = null;
+      if (currentUserId) localStorage.removeItem(discountCodeStorageKey(currentUserId));
       e.discountFeedback.textContent = "Invalid discount code.";
       e.discountFeedback.className = "genesis-discount-feedback is-error";
     } else if (entry.ownerUserId === currentUserId) {
       appliedCode = null;
+      if (currentUserId) localStorage.removeItem(discountCodeStorageKey(currentUserId));
       e.discountFeedback.textContent = "You can't use your own code.";
       e.discountFeedback.className = "genesis-discount-feedback is-error";
     } else {
       appliedCode = code;
-      e.discountFeedback.textContent = "50% discount applied.";
+      if (currentUserId) localStorage.setItem(discountCodeStorageKey(currentUserId), code);
+      e.discountFeedback.textContent = "50% discount applied — this is saved and will carry over when minting opens.";
       e.discountFeedback.className = "genesis-discount-feedback is-success";
     }
 
@@ -7781,8 +7795,32 @@ async function loadVerunLeaderboard() {
     bindEventsOnce();
 
     const { data: { session } } = await supabaseClient.auth.getSession();
-    currentUserId = session ? session.user.id : null;
+    const userId = session ? session.user.id : null;
+    if (userId !== currentUserId) {
+      // Switched (or first-time) user — re-check that user's own saved
+      // code rather than carrying over whatever the previous user had
+      // typed/applied in this same page session.
+      appliedCode = null;
+      const e = cacheEls();
+      if (e.discountInput) e.discountInput.value = "";
+      if (e.discountFeedback) {
+        e.discountFeedback.textContent = "";
+        e.discountFeedback.className = "genesis-discount-feedback";
+      }
+    }
+    currentUserId = userId;
     if (!currentUserId) return;
+
+    const saved = localStorage.getItem(discountCodeStorageKey(currentUserId));
+    if (saved && !appliedCode) {
+      const e = cacheEls();
+      if (e.discountInput) e.discountInput.value = saved;
+      appliedCode = saved;
+      if (e.discountFeedback) {
+        e.discountFeedback.textContent = "50% discount applied — this is saved and will carry over when minting opens.";
+        e.discountFeedback.className = "genesis-discount-feedback is-success";
+      }
+    }
 
     render();
   }
