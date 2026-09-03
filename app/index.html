@@ -7159,6 +7159,14 @@ async function loadVerunLeaderboard() {
   // next time the picker opens. opts.isWalletConnect skips straight to
   // provider.connect() so WalletConnect's own QR/deep-link flow shows
   // before eth_requestAccounts is called.
+  function withTimeout(promise, ms, message) {
+    let timer;
+    const timeout = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(message)), ms);
+    });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+  }
+
   async function connect(explicitProvider, rdns, opts) {
     opts = opts || {};
     if (state.connecting) return;
@@ -7173,12 +7181,24 @@ async function loadVerunLeaderboard() {
     render();
 
     try {
+      // X sign-in is required before any wallet interaction at all —
+      // that's the site's core gate, not something this fix touches.
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session) throw new Error("Please sign in first.");
       currentUserId = session.user.id;
 
       if (opts.isWalletConnect && typeof provider.connect === "function") {
-        await provider.connect();
+        // Generous timeout here — this promise only resolves once the
+        // person actually approves inside their wallet app, which can
+        // reasonably take a couple of minutes. The FAST failure case
+        // (relay unreachable / bad project id, so no pairing URI is
+        // ever produced at all) is detected separately and immediately
+        // in connectViaWalletConnect, not here.
+        await withTimeout(
+          provider.connect(),
+          120000,
+          "WalletConnect didn't complete — either the request wasn't approved in time, or the connection to the wallet was lost."
+        );
       }
 
       const accounts = await provider.request({ method: "eth_requestAccounts" });
@@ -7502,7 +7522,9 @@ async function loadVerunLeaderboard() {
       return;
     }
 
+    let sawDisplayUri = false;
     const onDisplayUri = uri => {
+      sawDisplayUri = true;
       const specificWallet = wallet && !wallet.isWalletConnectEntry ? wallet : null;
       if (isMobileDevice() && specificWallet && specificWallet.wcDeepLink) {
         // Straight to that one wallet's approve screen — no dapp
@@ -7518,9 +7540,27 @@ async function loadVerunLeaderboard() {
     };
 
     provider.on("display_uri", onDisplayUri);
+
+    // Fast diagnostic, separate from the (much longer) wait for actual
+    // wallet approval: a pairing URI should show up within a few
+    // seconds if the relay is reachable and the project ID/domain are
+    // valid. If it never does, the person otherwise just sees the
+    // picker close with nothing else happening — say so plainly
+    // instead of leaving that silent.
+    const uriWatchdog = setTimeout(() => {
+      if (sawDisplayUri) return;
+      console.warn("VERUN wallet: no WalletConnect pairing URI appeared within 15s for", walletLabel, "— relay unreachable, or this domain/project ID pairing is misconfigured.");
+      alert(
+        walletLabel + " didn't open.\n\n" +
+        "WalletConnect never produced a connection link. This usually means either the relay (wss://relay.walletconnect.com) couldn't be reached from this browser, or " +
+        window.location.origin + " isn't on the project's Allowed Domains list in WalletConnect Cloud."
+      );
+    }, 15000);
+
     try {
       await connect(provider, null, { isWalletConnect: true });
     } finally {
+      clearTimeout(uriWatchdog);
       if (typeof provider.off === "function") provider.off("display_uri", onDisplayUri);
       else if (typeof provider.removeListener === "function") provider.removeListener("display_uri", onDisplayUri);
       hideWalletConnectQr();
