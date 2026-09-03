@@ -7573,16 +7573,23 @@ async function loadVerunLeaderboard() {
     // wallet approval: a pairing URI should show up within a few
     // seconds if the relay is reachable and the project ID/domain are
     // valid. If it never does, the person otherwise just sees the
-    // picker close with nothing else happening — say so plainly
-    // instead of leaving that silent.
-    const uriWatchdog = setTimeout(() => {
+    // picker close with nothing else happening — say so plainly, and
+    // include a raw WebSocket probe straight to the relay (bypassing
+    // the SDK entirely) so the message says definitively whether the
+    // connection never opens at all (network/firewall blocking it) or
+    // opens and then gets closed (the relay itself rejecting it —
+    // almost always project ID / Allowed Domains).
+    const uriWatchdog = setTimeout(async () => {
       if (sawDisplayUri) return;
-      console.warn("VERUN wallet: no WalletConnect pairing URI appeared within 15s for", walletLabel, "— relay unreachable, or this domain/project ID pairing is misconfigured.");
-      alert(
-        walletLabel + " didn't open.\n\n" +
-        "WalletConnect never produced a connection link. This usually means either the relay (wss://relay.walletconnect.com) couldn't be reached from this browser, or " +
-        window.location.origin + " isn't on the project's Allowed Domains list in WalletConnect Cloud."
-      );
+      const probe = await probeRelay(WALLETCONNECT_PROJECT_ID, 6000);
+      console.warn("VERUN wallet: no WalletConnect pairing URI appeared within 15s for", walletLabel, "— raw relay probe:", probe);
+      let cause;
+      if (!probe.everConnected) {
+        cause = "The connection to the relay (wss://relay.walletconnect.com) never opened at all — " + probe.detail + ". This points to a network/firewall block on WebSocket connections, not a project ID or domain problem.";
+      } else {
+        cause = "The relay connection opened, then closed — " + probe.detail + ". This points to the project ID or " + window.location.origin + " not being authorized in WalletConnect Cloud, not a network problem.";
+      }
+      alert(walletLabel + " didn't open.\n\nWalletConnect never produced a connection link.\n\n" + cause);
     }, 15000);
 
     try {
@@ -7593,6 +7600,40 @@ async function loadVerunLeaderboard() {
       else if (typeof provider.removeListener === "function") provider.removeListener("display_uri", onDisplayUri);
       hideWalletConnectQr();
     }
+  }
+
+  // Raw WebSocket probe straight to WalletConnect's relay, bypassing
+  // the SDK entirely. Not a substitute for a real (authenticated)
+  // relay session — this connects without the signed auth token the
+  // real client would send — but it cleanly distinguishes two very
+  // different failure modes: the socket never opening at all (network
+  // layer — blocked before it ever reaches WalletConnect's servers)
+  // versus opening and then being closed (server layer — the relay
+  // itself responded and rejected it, which given a valid project ID
+  // format almost always means the domain/project pairing).
+  function probeRelay(projectId, ms) {
+    return new Promise(resolve => {
+      let settled = false;
+      let ws;
+      try {
+        ws = new WebSocket("wss://relay.walletconnect.com/?projectId=" + encodeURIComponent(projectId || ""));
+      } catch (e) {
+        resolve({ everConnected: false, detail: "couldn't even start a connection attempt (" + e.message + ")" });
+        return;
+      }
+      let opened = false;
+      const finish = (detail) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        try { ws.close(); } catch (e) {}
+        resolve({ everConnected: opened, detail });
+      };
+      const timer = setTimeout(() => finish("no response after " + ms + "ms"), ms);
+      ws.onopen = () => { opened = true; finish("connection opened"); };
+      ws.onerror = () => finish("a connection error was reported by the browser");
+      ws.onclose = ev => finish("closed with code " + ev.code + (ev.reason ? (" — " + ev.reason) : ""));
+    });
   }
 
   // ---- Lightweight "scan to connect" fallback ----
