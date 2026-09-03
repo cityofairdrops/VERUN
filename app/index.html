@@ -6767,6 +6767,7 @@ async function loadVerunLeaderboard() {
   const boundProviders = new WeakSet();
   let state = { address: null, verified: false, connecting: false, provider: null };
   let wcProviderPromise = null;
+  let wcConnectInFlight = false; // guards against overlapping connectViaWalletConnect() calls from rapid repeat taps
   let wcQrEls = null; // lazily-built "scan to connect" overlay, separate from the wallet picker modal
   let wcQrLibPromise = null;
 
@@ -6915,8 +6916,55 @@ async function loadVerunLeaderboard() {
     return scanWindowForCtor();
   }
 
-  async function getWalletConnectProvider() {
+  // ---- Stale-session cleanup ----
+  // WalletConnect v2 persists its own pairing/session data (namespaced
+  // "wc@2:..." keys in localStorage, plus an IndexedDB database it
+  // manages itself) independently of anything this app writes. If a
+  // previous attempt was abandoned mid-flow (tab closed before
+  // approving, a reload, an expired pairing, etc.) that leftover data
+  // survives across page loads. On the next attempt EthereumProvider's
+  // internal client tries to resume/verify that stale pairing/session
+  // BEFORE issuing a new one — which is why "display_uri" can simply
+  // never fire again: the SDK isn't stuck on the network, it's stuck
+  // trying to revive a dead session. Wiping this before every fresh
+  // connect attempt (whenever we're not already verified) guarantees
+  // provider.connect() always negotiates a brand-new pairing URI.
+  function clearStaleWcStorage() {
+    try {
+      Object.keys(localStorage)
+        .filter(k => k.indexOf("wc@2:") === 0 || k.indexOf("walletconnect") === 0)
+        .forEach(k => localStorage.removeItem(k));
+    } catch (e) { /* localStorage unavailable — nothing to clear */ }
+    try {
+      if (window.indexedDB && indexedDB.databases) {
+        indexedDB.databases().then(dbs => {
+          (dbs || []).forEach(db => {
+            if (db && db.name && db.name.indexOf("WALLET_CONNECT") !== -1) {
+              try { indexedDB.deleteDatabase(db.name); } catch (e) {}
+            }
+          });
+        }).catch(() => {});
+      }
+    } catch (e) { /* best-effort only */ }
+  }
+
+  // Forces the NEXT getWalletConnectProvider() call to build a
+  // completely fresh EthereumProvider instance instead of reusing one
+  // that may be wedged from a prior failed/abandoned attempt. Without
+  // this, a single bad first attempt silently breaks every subsequent
+  // click for the rest of the page's life, because wcProviderPromise
+  // was cached forever.
+  function resetWalletConnectProvider() {
+    wcProviderPromise = null;
+  }
+
+  async function getWalletConnectProvider(forceFresh) {
+    if (forceFresh) resetWalletConnectProvider();
     if (wcProviderPromise) return wcProviderPromise;
+
+    // Never resume a stale pairing/session while the user isn't
+    // already verified — always start clean.
+    if (!state.verified) clearStaleWcStorage();
 
     const Ctor = await loadWalletConnectCtor();
 
@@ -6954,7 +7002,7 @@ async function loadVerunLeaderboard() {
           icons: [window.location.origin + "/favicon.ico"]
         }
       }),
-      15000,
+      10000,
       "WalletConnect's init() call never finished — the relay (wss://relay.walletconnect.com) may be unreachable from this browser."
     ).catch(err => {
       wcProviderPromise = null; // allow a retry on the next click instead of caching a broken init
@@ -7291,6 +7339,11 @@ async function loadVerunLeaderboard() {
         }).catch(() => {});
       }
     }
+    // A WalletConnect provider that's just been torn down must not be
+    // reused — the cached promise from getWalletConnectProvider() would
+    // otherwise hand back a dead instance on the next connect attempt.
+    resetWalletConnectProvider();
+    clearStaleWcStorage();
     state.address = null;
     state.verified = false;
     state.provider = null;
@@ -7526,11 +7579,57 @@ async function loadVerunLeaderboard() {
   }
 
   async function connectViaWalletConnect(wallet) {
+    if (wcConnectInFlight) return; // a rapid second tap while the first attempt is still setting up
+    wcConnectInFlight = true;
+
     const walletLabel = (wallet && wallet.name) || "WalletConnect";
+
+    // Start the "is this actually going anywhere" watchdog for the
+    // WHOLE flow (library load + init + pairing), not just the part
+    // after init() already resolved. Previously init() had its own
+    // 15s timeout and THEN a separate 15s wait for display_uri could
+    // start after that — up to 30s of silence before the person saw
+    // anything. init()'s own timeout (10s) always fires and is handled
+    // first if that's where the failure is, so this 20s ceiling only
+    // ever fires for the "init succeeded but no pairing URI showed up"
+    // case, with no risk of double alerts racing each other.
+    let sawDisplayUri = false;
+    let settled = false;
+    const uriWatchdog = setTimeout(async () => {
+      if (sawDisplayUri || settled) return;
+      const probe = await probeRelay(WALLETCONNECT_PROJECT_ID, 6000);
+      console.warn("VERUN wallet: no WalletConnect pairing URI appeared within 20s for", walletLabel, "— raw relay probe:", probe);
+      // This raw probe is a best-effort diagnostic only — it opens an
+      // unauthenticated socket that isn't a perfect stand-in for the
+      // SDK's own (authenticated) relay connection, so its result is a
+      // hint, not a verdict. Report what was observed without
+      // asserting a specific cause we can't actually confirm.
+      let hint;
+      if (!probe.everConnected) {
+        hint = "A direct connection attempt to the relay (wss://relay.walletconnect.com) also failed (" + probe.detail + "). That's consistent with something on this network or browser blocking WebSocket traffic to it — a VPN, private DNS/DNS filtering, an ad/security blocker, or a firewall — but isn't certain.";
+      } else {
+        hint = "A direct connection attempt to the relay did open, so this network can reach it. The stall is more likely the WalletConnect project itself (an invalid or deactivated project ID, or this domain not actually saved/published in that project's Allowed Domains list — the change can take a minute to propagate after saving).";
+      }
+      alert(
+        walletLabel + " isn't producing a connection link.\n\n" +
+        hint + "\n\n" +
+        "Things worth checking:\n" +
+        "• Try a different network (e.g. mobile data vs Wi-Fi) or briefly disable any VPN/private DNS.\n" +
+        "• Confirm the WalletConnect Cloud project is still Active and the domain change was saved (not just entered).\n" +
+        "• Check the browser console for the exact error."
+      );
+    }, 20000);
+
     let provider;
     try {
-      provider = await getWalletConnectProvider();
+      // Always request a fresh instance here: reusing a provider left
+      // over from an earlier failed/abandoned attempt is exactly what
+      // used to make every click after the first one silently do
+      // nothing.
+      provider = await getWalletConnectProvider(true);
     } catch (err) {
+      settled = true;
+      clearTimeout(uriWatchdog);
       // Surface the REAL reason instead of a generic message — the
       // exact wording tells you whether the script failed to load,
       // the project ID/domain isn't authorized, or the relay itself
@@ -7547,10 +7646,10 @@ async function loadVerunLeaderboard() {
       }
       console.error("VERUN wallet: WalletConnect unavailable —", reason, err);
       alert(walletLabel + " can't connect right now.\n\n" + reason);
+      wcConnectInFlight = false;
       return;
     }
 
-    let sawDisplayUri = false;
     const onDisplayUri = uri => {
       sawDisplayUri = true;
       const specificWallet = wallet && !wallet.isWalletConnectEntry ? wallet : null;
@@ -7569,36 +7668,19 @@ async function loadVerunLeaderboard() {
 
     provider.on("display_uri", onDisplayUri);
 
-    // Fast diagnostic, separate from the (much longer) wait for actual
-    // wallet approval: a pairing URI should show up within a few
-    // seconds if the relay is reachable and the project ID/domain are
-    // valid. If it never does, the person otherwise just sees the
-    // picker close with nothing else happening — say so plainly, and
-    // include a raw WebSocket probe straight to the relay (bypassing
-    // the SDK entirely) so the message says definitively whether the
-    // connection never opens at all (network/firewall blocking it) or
-    // opens and then gets closed (the relay itself rejecting it —
-    // almost always project ID / Allowed Domains).
-    const uriWatchdog = setTimeout(async () => {
-      if (sawDisplayUri) return;
-      const probe = await probeRelay(WALLETCONNECT_PROJECT_ID, 6000);
-      console.warn("VERUN wallet: no WalletConnect pairing URI appeared within 15s for", walletLabel, "— raw relay probe:", probe);
-      let cause;
-      if (!probe.everConnected) {
-        cause = "The connection to the relay (wss://relay.walletconnect.com) never opened at all — " + probe.detail + ". This points to a network/firewall block on WebSocket connections, not a project ID or domain problem.";
-      } else {
-        cause = "The relay connection opened, then closed — " + probe.detail + ". This points to the project ID or " + window.location.origin + " not being authorized in WalletConnect Cloud, not a network problem.";
-      }
-      alert(walletLabel + " didn't open.\n\nWalletConnect never produced a connection link.\n\n" + cause);
-    }, 15000);
-
     try {
       await connect(provider, null, { isWalletConnect: true });
     } finally {
+      settled = true;
       clearTimeout(uriWatchdog);
       if (typeof provider.off === "function") provider.off("display_uri", onDisplayUri);
       else if (typeof provider.removeListener === "function") provider.removeListener("display_uri", onDisplayUri);
       hideWalletConnectQr();
+      // If this attempt never got as far as producing a pairing URI at
+      // all, don't leave a half-initialized provider cached for next
+      // time — force the next click to build a completely fresh one.
+      if (!sawDisplayUri) resetWalletConnectProvider();
+      wcConnectInFlight = false;
     }
   }
 
