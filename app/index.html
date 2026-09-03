@@ -4598,7 +4598,7 @@
      desktop, deep link to the wallet app on mobile). Requires a free
      project ID from https://cloud.walletconnect.com — see
      WALLETCONNECT_PROJECT_ID in the wallet module below. -->
-<script src="https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2/dist/index.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.24.0/dist/index.umd.js"></script>
 <script>
 
   // ============================================
@@ -6739,37 +6739,109 @@ async function loadVerunLeaderboard() {
   }
 
   // ---- WalletConnect v2 (for wallets not installed in this browser) ----
+  // WalletConnect's current UMD build exports its module as:
+  // window["@walletconnect/ethereum-provider"].EthereumProvider
+  //
+  // We load it lazily as well as from the <script> tag above. This makes the
+  // connection reliable on GitHub Pages if a CDN request was delayed/blocked
+  // during the initial page load.
+  let wcLibraryPromise = null;
+
+  function getWalletConnectCtor() {
+    const module = window["@walletconnect/ethereum-provider"];
+    return (
+      (module && module.EthereumProvider) ||
+      window.EthereumProvider ||
+      window.WalletConnectEthereumProvider ||
+      (window.WalletConnectProvider && window.WalletConnectProvider.EthereumProvider) ||
+      null
+    );
+  }
+
+  function loadWalletConnectLibrary() {
+    const existing = getWalletConnectCtor();
+    if (existing) return Promise.resolve(existing);
+    if (wcLibraryPromise) return wcLibraryPromise;
+
+    wcLibraryPromise = new Promise((resolve, reject) => {
+      const urls = [
+        "https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.24.0/dist/index.umd.js",
+        "https://unpkg.com/@walletconnect/ethereum-provider@2.24.0/dist/index.umd.js"
+      ];
+      let index = 0;
+
+      const tryNext = () => {
+        const alreadyLoaded = getWalletConnectCtor();
+        if (alreadyLoaded) {
+          resolve(alreadyLoaded);
+          return;
+        }
+        if (index >= urls.length) {
+          reject(new Error("WalletConnect Ethereum Provider library could not be loaded."));
+          return;
+        }
+
+        const url = urls[index++];
+        const script = document.createElement("script");
+        script.src = url;
+        script.async = true;
+        script.onload = () => {
+          const ctor = getWalletConnectCtor();
+          if (ctor) resolve(ctor);
+          else tryNext();
+        };
+        script.onerror = () => tryNext();
+        document.head.appendChild(script);
+      };
+
+      tryNext();
+    }).catch((error) => {
+      wcLibraryPromise = null;
+      throw error;
+    });
+
+    return wcLibraryPromise;
+  }
+
   async function getWalletConnectProvider() {
     if (wcProviderPromise) return wcProviderPromise;
 
-    // WalletConnect Ethereum Provider v2 UMD exposes its module under
-    // window["@walletconnect/ethereum-provider"].EthereumProvider.
-    // Keep legacy fallbacks for compatibility with older bundles.
-    const WCModule = window["@walletconnect/ethereum-provider"];
-    const Ctor =
-      (WCModule && WCModule.EthereumProvider) ||
-      window.EthereumProvider ||
-      window.WalletConnectEthereumProvider ||
-      (window.WalletConnectProvider && window.WalletConnectProvider.EthereumProvider);
-
-    if (!Ctor || !WALLETCONNECT_PROJECT_ID || WALLETCONNECT_PROJECT_ID === "YOUR_WALLETCONNECT_PROJECT_ID") {
-      if (!Ctor) console.warn("VERUN wallet: WalletConnect script hasn't loaded — check the CDN script tag.");
-      else console.warn("VERUN wallet: WALLETCONNECT_PROJECT_ID isn't configured yet — get one at https://cloud.walletconnect.com");
+    if (!WALLETCONNECT_PROJECT_ID || WALLETCONNECT_PROJECT_ID === "YOUR_WALLETCONNECT_PROJECT_ID") {
+      console.error("VERUN wallet: WalletConnect Project ID is missing.");
       return null;
     }
 
-    wcProviderPromise = Ctor.init({
-      projectId: WALLETCONNECT_PROJECT_ID,
-      chains: [56],
-      showQrModal: true,
-      metadata: {
-        name: "VERUN",
-        description: "VERUN — $VERUN mining and Genesis Pass",
-        url: window.location.origin,
-        icons: [window.location.origin + "/favicon.ico"]
-      }
-    });
-    return wcProviderPromise;
+    let Ctor;
+    try {
+      Ctor = await loadWalletConnectLibrary();
+    } catch (error) {
+      console.error("VERUN wallet: WalletConnect library failed to load.", error);
+      return null;
+    }
+
+    try {
+      wcProviderPromise = Ctor.init({
+        projectId: WALLETCONNECT_PROJECT_ID,
+        optionalChains: [56],
+        showQrModal: true,
+        metadata: {
+          name: "VERUN",
+          description: "VERUN — $VERUN mining and Genesis Pass",
+          url: window.location.origin,
+          icons: [window.location.origin + "/favicon.ico"]
+        }
+      });
+
+      return await wcProviderPromise;
+    } catch (error) {
+      wcProviderPromise = null;
+      console.error("VERUN wallet: WalletConnect initialization failed.", error);
+      alert(
+        "WalletConnect could not start.\n\n" +
+        (error && error.message ? error.message : "Please refresh the page and try again.")
+      );
+      return null;
+    }
   }
 
   // ---- Popular wallet shortcuts (shown when not already "Installed") ----
