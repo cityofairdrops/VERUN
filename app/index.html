@@ -3425,7 +3425,7 @@
   </div>
 
   <nav class="verun-drawer-nav">
-    <a href="../home/" class="verun-drawer-link" data-nav="home"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Home</span></a>
+    <a href="../" class="verun-drawer-link" data-nav="home"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Home</span></a>
     <button class="verun-drawer-link" type="button" data-section="tasks"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span>Tasks</span></button>
     <button class="verun-drawer-link" type="button" data-section="genesisPass"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg><span>Genesis Pass</span></button>
     <button class="verun-drawer-link" type="button" data-section="referral"><svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg><span>Referral</span></button>
@@ -8455,7 +8455,7 @@ async function loadVerunLeaderboard() {
   function getAppRedirectUrl() {
     const path = window.location.pathname;
     const marker = "/app";
-    const base = path.includes(marker) ? path.split(marker)[0] : "/VERUN";
+    const base = path.includes(marker) ? path.split(marker)[0] : "";
     return window.location.origin + base + "/app/";
   }
 
