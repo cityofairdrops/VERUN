@@ -6847,34 +6847,69 @@ async function loadVerunLeaderboard() {
   }
 
   // ---- WalletConnect v2 (for wallets not installed in this browser) ----
-  // Bug fix: the @walletconnect/ethereum-provider UMD bundle does NOT
-  // expose a `window.EthereumProvider` global — it registers itself
-  // under the literal key "@walletconnect/ethereum-provider" (i.e.
-  // window["@walletconnect/ethereum-provider"].EthereumProvider). The
-  // old lookup below only checked window.EthereumProvider and similar
-  // names, which are never set, so `Ctor` was always undefined and
-  // WalletConnect silently refused to connect no matter how correct
-  // the project ID was.
-  function getWalletConnectCtor() {
-    const namedExport = window["@walletconnect/ethereum-provider"];
-    return (
-      (namedExport && namedExport.EthereumProvider) ||
-      window.EthereumProvider ||
-      window.WalletConnectEthereumProvider ||
-      (window.WalletConnectProvider && window.WalletConnectProvider.EthereumProvider) ||
-      null
-    );
+  // The @walletconnect/ethereum-provider UMD bundle does NOT expose a
+  // `window.EthereumProvider` global — historically it registers
+  // itself under the literal key "@walletconnect/ethereum-provider"
+  // (window["@walletconnect/ethereum-provider"].EthereumProvider).
+  // But UMD global names for scoped npm packages are not guaranteed
+  // to stay put across versions/bundlers, and "@2" tracks whatever
+  // the latest 2.x release currently is — so rather than betting the
+  // whole feature on one guessed name again, this scans every
+  // plausible spot AND, if none of them pan out, falls back to
+  // loading the package as a real ES module (which always exports a
+  // named `EthereumProvider`, no guessing required) from esm.sh.
+  function scanWindowForCtor() {
+    const direct = [
+      window["@walletconnect/ethereum-provider"],
+      window.WalletConnectEthereumProvider,
+      window.EthereumProvider,
+      window.WalletConnectProvider
+    ];
+    for (const ns of direct) {
+      if (ns && typeof ns.init === "function") return ns; // module itself is the export in some builds
+      if (ns && ns.EthereumProvider && typeof ns.EthereumProvider.init === "function") return ns.EthereumProvider;
+    }
+    return null;
+  }
+
+  async function loadWalletConnectCtor() {
+    const fromWindow = scanWindowForCtor();
+    if (fromWindow) return fromWindow;
+
+    // UMD global wasn't where expected (or the script tag never
+    // loaded at all, e.g. blocked by the network/CSP) — load the
+    // package directly as an ES module instead. This sidesteps the
+    // whole "what did the UMD bundle name its global" problem.
+    try {
+      const mod = await import("https://esm.sh/@walletconnect/ethereum-provider@2");
+      if (mod && mod.EthereumProvider && typeof mod.EthereumProvider.init === "function") {
+        return mod.EthereumProvider;
+      }
+      if (mod && mod.default && typeof mod.default.init === "function") {
+        return mod.default;
+      }
+    } catch (err) {
+      console.error("VERUN wallet: esm.sh fallback for @walletconnect/ethereum-provider failed to load.", err);
+    }
+    return null;
   }
 
   async function getWalletConnectProvider() {
     if (wcProviderPromise) return wcProviderPromise;
 
-    const Ctor = getWalletConnectCtor();
+    const Ctor = await loadWalletConnectCtor();
 
-    if (!Ctor || !WALLETCONNECT_PROJECT_ID || WALLETCONNECT_PROJECT_ID === "YOUR_WALLETCONNECT_PROJECT_ID") {
-      if (!Ctor) console.warn("VERUN wallet: WalletConnect script hasn't loaded — check the CDN script tag.");
-      else console.warn("VERUN wallet: WALLETCONNECT_PROJECT_ID isn't configured yet — get one at https://cloud.walletconnect.com");
-      return null;
+    if (!Ctor) {
+      console.warn("VERUN wallet: WalletConnect's EthereumProvider constructor could not be found or loaded from any source (CDN script tag or esm.sh fallback). This usually means the script request was blocked — check the browser console's Network tab for a failed/blocked request.");
+      const err = new Error("WalletConnect's provider library failed to load in this browser.");
+      err.wcReason = "script-load-failed";
+      throw err;
+    }
+
+    if (!WALLETCONNECT_PROJECT_ID || WALLETCONNECT_PROJECT_ID === "YOUR_WALLETCONNECT_PROJECT_ID") {
+      const err = new Error("No WalletConnect project ID is configured.");
+      err.wcReason = "no-project-id";
+      throw err;
     }
 
     // showQrModal is intentionally OFF. The bundled @walletconnect/modal
@@ -6895,7 +6930,8 @@ async function loadVerunLeaderboard() {
       }
     }).catch(err => {
       wcProviderPromise = null; // allow a retry on the next click instead of caching a broken init
-      console.error("VERUN wallet: WalletConnect init failed.", err);
+      err.wcReason = err.wcReason || "init-rejected";
+      console.error("VERUN wallet: WalletConnect init() rejected — likely an invalid project ID, or this domain isn't on the project's allowed-origins list in WalletConnect Cloud, or the relay (wss://relay.walletconnect.com) is unreachable.", err);
       throw err;
     });
     return wcProviderPromise;
@@ -7447,15 +7483,22 @@ async function loadVerunLeaderboard() {
     try {
       provider = await getWalletConnectProvider();
     } catch (err) {
-      provider = null;
-    }
-    if (!provider) {
-      alert(
-        "WalletConnect isn't available for this site right now.\n\n" +
-        "Either the WalletConnect script failed to load, or the project ID " +
-        "needs to be checked in the WalletConnect Cloud dashboard. " +
-        walletLabel + " can't connect until that's fixed."
-      );
+      // Surface the REAL reason instead of a generic message — the
+      // exact wording tells you whether the script failed to load,
+      // the project ID/domain isn't authorized, or the relay itself
+      // is unreachable. Full detail is always in the console too.
+      let reason;
+      if (err && err.wcReason === "script-load-failed") {
+        reason = "The WalletConnect provider library couldn't be loaded (blocked or failed request — check the browser console's Network tab for a failed request to esm.sh or cdn.jsdelivr.net).";
+      } else if (err && err.wcReason === "no-project-id") {
+        reason = "No WalletConnect project ID is configured for this site.";
+      } else {
+        reason = "WalletConnect rejected the connection attempt" +
+          (err && err.message ? (": " + err.message) : ".") +
+          " This usually means the project ID is wrong, or this exact domain (" + window.location.origin + ") isn't on the project's Allowed Domains list in WalletConnect Cloud.";
+      }
+      console.error("VERUN wallet: WalletConnect unavailable —", reason, err);
+      alert(walletLabel + " can't connect right now.\n\n" + reason);
       return;
     }
 
