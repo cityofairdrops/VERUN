@@ -6847,17 +6847,44 @@ async function loadVerunLeaderboard() {
   }
 
   // ---- WalletConnect v2 (for wallets not installed in this browser) ----
-  // The @walletconnect/ethereum-provider UMD bundle does NOT expose a
-  // `window.EthereumProvider` global — historically it registers
-  // itself under the literal key "@walletconnect/ethereum-provider"
-  // (window["@walletconnect/ethereum-provider"].EthereumProvider).
-  // But UMD global names for scoped npm packages are not guaranteed
-  // to stay put across versions/bundlers, and "@2" tracks whatever
-  // the latest 2.x release currently is — so rather than betting the
-  // whole feature on one guessed name again, this scans every
-  // plausible spot AND, if none of them pan out, falls back to
-  // loading the package as a real ES module (which always exports a
-  // named `EthereumProvider`, no guessing required) from esm.sh.
+  // The plain <script> UMD build of @walletconnect/ethereum-provider is
+  // unreliable loaded standalone in a browser — this is a known,
+  // widely-reported issue (see WalletConnect/walletconnect-monorepo
+  // discussion #3535, "EthereumProvider is not declared", using this
+  // exact CDN pattern). The package pulls in a large dependency tree
+  // (sign-client, core, relay-client, etc.) that a raw UMD file
+  // doesn't reliably resolve on its own, regardless of what name it's
+  // supposed to attach itself to on `window` — so no amount of
+  // guessing the global name fixes it.
+  //
+  // The reliable fix is to not use the UMD build at all: load the
+  // package as a proper ES module from a CDN that actually resolves
+  // its dependency tree into a working browser bundle. Two such CDNs
+  // are tried in turn, each with its own timeout so a stalled network
+  // request can't hang this silently forever; the raw `window` global
+  // (in case the UMD script tag happens to work) is only tried last,
+  // as a bonus fast-path rather than something relied on.
+  const WC_MODULE_SOURCES = [
+    "https://esm.sh/@walletconnect/ethereum-provider@2",
+    "https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2/+esm"
+  ];
+
+  function importWithTimeout(url, ms) {
+    return Promise.race([
+      import(/* @vite-ignore */ url),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("timed out loading " + url)), ms))
+    ]);
+  }
+
+  function extractCtor(mod) {
+    if (!mod) return null;
+    if (mod.EthereumProvider && typeof mod.EthereumProvider.init === "function") return mod.EthereumProvider;
+    if (mod.default && typeof mod.default.init === "function") return mod.default;
+    if (mod.default && mod.default.EthereumProvider && typeof mod.default.EthereumProvider.init === "function") return mod.default.EthereumProvider;
+    if (typeof mod.init === "function") return mod;
+    return null;
+  }
+
   function scanWindowForCtor() {
     const direct = [
       window["@walletconnect/ethereum-provider"],
@@ -6866,32 +6893,26 @@ async function loadVerunLeaderboard() {
       window.WalletConnectProvider
     ];
     for (const ns of direct) {
-      if (ns && typeof ns.init === "function") return ns; // module itself is the export in some builds
-      if (ns && ns.EthereumProvider && typeof ns.EthereumProvider.init === "function") return ns.EthereumProvider;
+      const ctor = extractCtor(ns) || (ns && typeof ns.init === "function" ? ns : null);
+      if (ctor) return ctor;
     }
     return null;
   }
 
   async function loadWalletConnectCtor() {
-    const fromWindow = scanWindowForCtor();
-    if (fromWindow) return fromWindow;
-
-    // UMD global wasn't where expected (or the script tag never
-    // loaded at all, e.g. blocked by the network/CSP) — load the
-    // package directly as an ES module instead. This sidesteps the
-    // whole "what did the UMD bundle name its global" problem.
-    try {
-      const mod = await import("https://esm.sh/@walletconnect/ethereum-provider@2");
-      if (mod && mod.EthereumProvider && typeof mod.EthereumProvider.init === "function") {
-        return mod.EthereumProvider;
+    for (const url of WC_MODULE_SOURCES) {
+      try {
+        const mod = await importWithTimeout(url, 12000);
+        const ctor = extractCtor(mod);
+        if (ctor) return ctor;
+        console.warn("VERUN wallet: loaded", url, "but couldn't find EthereumProvider in it — trying the next source.");
+      } catch (err) {
+        console.warn("VERUN wallet: failed to load WalletConnect from", url, "— trying the next source.", err);
       }
-      if (mod && mod.default && typeof mod.default.init === "function") {
-        return mod.default;
-      }
-    } catch (err) {
-      console.error("VERUN wallet: esm.sh fallback for @walletconnect/ethereum-provider failed to load.", err);
     }
-    return null;
+    // Last resort: maybe the plain UMD <script> tag actually worked
+    // this time (it sometimes does, depending on browser/CDN state).
+    return scanWindowForCtor();
   }
 
   async function getWalletConnectProvider() {
@@ -6900,7 +6921,7 @@ async function loadVerunLeaderboard() {
     const Ctor = await loadWalletConnectCtor();
 
     if (!Ctor) {
-      console.warn("VERUN wallet: WalletConnect's EthereumProvider constructor could not be found or loaded from any source (CDN script tag or esm.sh fallback). This usually means the script request was blocked — check the browser console's Network tab for a failed/blocked request.");
+      console.warn("VERUN wallet: WalletConnect's EthereumProvider constructor could not be loaded from esm.sh, jsdelivr's ESM endpoint, or the window global. Check the browser console's Network tab for blocked/failed requests.");
       const err = new Error("WalletConnect's provider library failed to load in this browser.");
       err.wcReason = "script-load-failed";
       throw err;
@@ -6918,20 +6939,27 @@ async function loadVerunLeaderboard() {
     // connectViaWalletConnect) so a specific wallet picked from OUR
     // list gets deep-linked straight to its own approve screen, with
     // our own lightweight QR fallback for desktop.
-    wcProviderPromise = Ctor.init({
-      projectId: WALLETCONNECT_PROJECT_ID,
-      chains: [56],
-      showQrModal: false,
-      metadata: {
-        name: "VERUN",
-        description: "VERUN — $VERUN mining and Genesis Pass",
-        url: window.location.origin,
-        icons: [window.location.origin + "/favicon.ico"]
-      }
-    }).catch(err => {
+    // `chains` is deprecated in favor of `optionalChains` — both are
+    // passed for compatibility across versions.
+    wcProviderPromise = withTimeout(
+      Ctor.init({
+        projectId: WALLETCONNECT_PROJECT_ID,
+        chains: [56],
+        optionalChains: [56],
+        showQrModal: false,
+        metadata: {
+          name: "VERUN",
+          description: "VERUN — $VERUN mining and Genesis Pass",
+          url: window.location.origin,
+          icons: [window.location.origin + "/favicon.ico"]
+        }
+      }),
+      15000,
+      "WalletConnect's init() call never finished — the relay (wss://relay.walletconnect.com) may be unreachable from this browser."
+    ).catch(err => {
       wcProviderPromise = null; // allow a retry on the next click instead of caching a broken init
       err.wcReason = err.wcReason || "init-rejected";
-      console.error("VERUN wallet: WalletConnect init() rejected — likely an invalid project ID, or this domain isn't on the project's allowed-origins list in WalletConnect Cloud, or the relay (wss://relay.walletconnect.com) is unreachable.", err);
+      console.error("VERUN wallet: WalletConnect init() failed — likely an invalid project ID, this domain isn't on the project's allowed-origins list in WalletConnect Cloud, or the relay is unreachable.", err);
       throw err;
     });
     return wcProviderPromise;
