@@ -4059,10 +4059,10 @@
       <div class="genesis-wallet-info">
         <span class="genesis-wallet-chain-badge">
           <span class="genesis-wallet-chain-dot"></span>
-          BNB Chain · EVM wallet
+          BNB Chain Testnet · EVM wallet
         </span>
         <p class="genesis-wallet-copy">
-          Connect your BNB Chain wallet to continue.
+          Connect your wallet on BNB Chain Testnet to continue.
         </p>
       </div>
       <button type="button" class="genesis-wallet-btn genesis-wallet-connect-btn" id="genesisWalletConnectButton">
@@ -4089,7 +4089,7 @@
           <span class="genesis-wallet-chain-dot"></span>
           <span id="genesisWalletAddressValue"></span>
         </span>
-        <p class="genesis-wallet-copy">Ownership verified on BNB Chain.</p>
+        <p class="genesis-wallet-copy">Ownership verified on BNB Chain Testnet.</p>
       </div>
       <button type="button" class="genesis-wallet-btn genesis-wallet-disconnect-btn" id="genesisWalletDisconnectButton">
         Disconnect Wallet
@@ -4178,18 +4178,34 @@
     </div>
     <p class="genesis-discount-feedback" id="genesisDiscountFeedback"></p>
     <p class="genesis-discount-hint">
-      Have a Genesis Pass holder's code? Apply it for 50% off — 0.0025 BNB instead of 0.005 BNB. Your discount is saved and will be ready the moment minting opens.
+      Have a Genesis Pass holder's code? Apply it for 50% off the mint price. It's verified on-chain the moment you mint.
     </p>
 
     <!-- Shown once minting is live -->
     <div id="genesisMintLiveArea" style="display:none;">
+
+      <!-- The contract requires each mint to register its own unique
+           genesis code on-chain in the same transaction — this becomes
+           the code others apply above for a discount (and pays you a
+           referral reward automatically). -->
+      <div class="genesis-discount-row">
+        <input
+          type="text"
+          id="genesisCodeInput"
+          class="genesis-discount-input"
+          placeholder="Choose your Genesis Code (e.g. shadowminer)"
+          autocomplete="off"
+          maxlength="20"
+        >
+      </div>
+      <p class="genesis-discount-feedback" id="genesisCodeFeedback"></p>
 
       <button type="button" class="genesis-mint-button" id="genesisMintButton">
         Mint Genesis Pass
       </button>
 
       <p class="genesis-mint-note" id="genesisMintNote">
-        Minting simulates payment for now — wallet connection is coming soon.
+        Connect and verify your BNB Chain Testnet wallet above, then choose a genesis code to enable minting.
       </p>
 
     </div>
@@ -4797,6 +4813,7 @@
 
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
 <script>
 
   // ============================================
@@ -6870,7 +6887,10 @@ async function loadVerunLeaderboard() {
 (function () {
   const REOWN_PROJECT_ID = "ad97eac1a3dd4ed30daa99ad5932e2d8";
   const REOWN_CDN = "https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.8.23/dist/appkit.min.js";
-  const BSC_CHAIN_ID = 56;
+  // VERUN Genesis Pass mint is currently wired to BSC TESTNET while the
+  // contract is being tested — swap to 56 / mainnet RPC + explorer when
+  // moving to production.
+  const BSC_CHAIN_ID = 97;
 
   let appKit = null;
   let bscNetwork = null;
@@ -6981,7 +7001,7 @@ async function loadVerunLeaderboard() {
     // Sign button — chain-aware copy and disabled state
     const pendingCopy = bscReady
       ? "Sign the message in your wallet to verify ownership."
-      : "Switch to BNB Chain, then sign to verify ownership.";
+      : "Switch to BNB Chain Testnet, then sign to verify ownership.";
     [e.genesisSignBtn, e.miningSignBtn].forEach(btn => {
       if (!btn) return;
       btn.disabled = walletState.signing || !bscReady;
@@ -7028,17 +7048,18 @@ async function loadVerunLeaderboard() {
       // single-file GitHub Pages deployment because the CDN bundle does
       // not have to expose every Viem network as a top-level export.
       bscNetwork = {
-        id: 56,
-        caipNetworkId: "eip155:56",
+        id: 97,
+        caipNetworkId: "eip155:97",
         chainNamespace: "eip155",
-        name: "BNB Smart Chain",
-        nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
+        name: "BNB Smart Chain Testnet",
+        nativeCurrency: { name: "tBNB", symbol: "tBNB", decimals: 18 },
         rpcUrls: {
-          default: { http: ["https://bsc-dataseed.binance.org"] }
+          default: { http: ["https://data-seed-prebsc-1-s1.binance.org:8545"] }
         },
         blockExplorers: {
-          default: { name: "BscScan", url: "https://bscscan.com" }
-        }
+          default: { name: "BscScan Testnet", url: "https://testnet.bscscan.com" }
+        },
+        testnet: true
       };
 
       if (!lib.createAppKit || !lib.WagmiAdapter) {
@@ -7189,7 +7210,7 @@ async function loadVerunLeaderboard() {
 
     const bscReady = Number(walletState.chainId) === BSC_CHAIN_ID;
     if (!bscReady) {
-      alert("Please switch to BNB Chain before signing.");
+      alert("Please switch to BNB Chain Testnet before signing.");
       return;
     }
 
@@ -7283,7 +7304,13 @@ async function loadVerunLeaderboard() {
   window.verunWallet = {
     getState: () => Object.assign({}, walletState),
     open: connectWallet,
-    disconnect: disconnectWallet
+    disconnect: disconnectWallet,
+    // Raw EIP-1193 provider for the connected wallet, so other modules
+    // (Genesis Pass mint) can build an ethers signer from it without
+    // re-implementing AppKit's connection handling.
+    getProvider: () => (appKit && typeof appKit.getWalletProvider === "function"
+      ? appKit.getWalletProvider()
+      : null)
   };
   window.loadWalletModule = loadWalletModule;
 
@@ -7732,14 +7759,14 @@ async function loadVerunLeaderboard() {
 // ============================================================
 // VERUN GENESIS PASS
 // ============================================================
-// No wallet/payment backend exists yet, so — same pattern as the
-// mining module — this runs client-side against localStorage,
-// namespaced per logged-in user id. window.verunHasGenesisPass is
-// the public hook the Mining module reads to decide whether to
-// unlock. Swap readState/writeState/mint for real contract reads +
-// a mint transaction once the Genesis Pass contract + wallet flow
-// exist; window.verunHasGenesisPass can then read on-chain
-// ownership instead of localStorage without touching Mining at all.
+// Genesis Pass minting is wired to a real contract on BSC Testnet (see
+// GENESIS_CONTRACT_ADDRESS below) — connecting a wallet, choosing a
+// genesis code, and minting all send real transactions. Ownership and
+// pool/price data are read live from the chain (refreshChainState());
+// per-user display state (pass name shown, mint date, referral log)
+// still lives in localStorage since the contract has no way to look
+// those up for us. window.verunHasGenesisPass is the public hook the
+// Mining module reads to decide whether to unlock.
 (function () {
 
   const TOTAL_SUPPLY = 11000;
@@ -7749,15 +7776,66 @@ async function loadVerunLeaderboard() {
   const PROJECT_SHARE_BNB = 0.002;     // paid to the project (0.0005 + 0.002 = 0.0025)
   const MIN_WITHDRAWAL_BNB = 0.001;    // minimum claimable referral balance
 
-  // TODO(genesis-pass + wallet): minting is intentionally locked
-  // until the payment gateway + wallet connection ship. Flip this to
-  // true once that's live — everything below (naming, discount
-  // codes, referral payouts) is already wired and ready to go.
-  const MINTING_ENABLED = false;
+  // Live on BSC Testnet — real transactions against this contract.
+  const GENESIS_CONTRACT_ADDRESS = "0x43a75ecd5e54ed8b9482c805aef9e3472ebb1087";
+  const BSC_TESTNET_RPC = "https://data-seed-prebsc-1-s1.binance.org:8545";
+  const GENESIS_CONTRACT_ABI = [{"inputs":[{"internalType":"address","name":"initialOwner","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"name":"ERC721IncorrectOwner","type":"error"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ERC721InsufficientApproval","type":"error"},{"inputs":[{"internalType":"address","name":"approver","type":"address"}],"name":"ERC721InvalidApprover","type":"error"},{"inputs":[{"internalType":"address","name":"operator","type":"address"}],"name":"ERC721InvalidOperator","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"ERC721InvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"receiver","type":"address"}],"name":"ERC721InvalidReceiver","type":"error"},{"inputs":[{"internalType":"address","name":"sender","type":"address"}],"name":"ERC721InvalidSender","type":"error"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ERC721NonexistentToken","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"OwnableInvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"OwnableUnauthorizedAccount","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"approved","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":false,"internalType":"bool","name":"approved","type":"bool"}],"name":"ApprovalForAll","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"bytes32","name":"genesisCodeHash","type":"bytes32"}],"name":"FreeGenesisPassMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"genesisCodeHash","type":"bytes32"},{"indexed":true,"internalType":"address","name":"owner","type":"address"}],"name":"GenesisCodeRegistered","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"bytes32","name":"genesisCodeHash","type":"bytes32"},{"indexed":false,"internalType":"address","name":"referrer","type":"address"},{"indexed":false,"internalType":"uint256","name":"price","type":"uint256"}],"name":"GenesisPassMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"bool","name":"enabled","type":"bool"}],"name":"MintStatusChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Transfer","type":"event"},{"inputs":[],"name":"DISCOUNTED_PRICE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"FREE_SUPPLY","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MAX_SUPPLY","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"NORMAL_PRICE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PROJECT_AMOUNT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PROJECT_NORMAL_AMOUNT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"pure","type":"function"},{"inputs":[],"name":"REFERRER_REWARD","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"approve","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"string","name":"genesisCode","type":"string"}],"name":"checkGenesisCode","outputs":[{"internalType":"bool","name":"exists","type":"bool"},{"internalType":"address","name":"codeOwner","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"freeMinted","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"name":"genesisCodeOwner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"getApproved","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"wallet","type":"address"}],"name":"getTokenId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"hasPass","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"operator","type":"address"}],"name":"isApprovedForAll","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"mintEnabled","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"recipient","type":"address"},{"internalType":"string","name":"genesisCode","type":"string"}],"name":"mintFree","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"genesisCode","type":"string"},{"internalType":"string","name":"referralCode","type":"string"}],"name":"mintWithReferral","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"string","name":"genesisCode","type":"string"}],"name":"mintWithoutReferral","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ownerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"bool","name":"approved","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bool","name":"enabled","type":"bool"}],"name":"setMintEnabled","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes4","name":"interfaceId","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"tokenGenesisCode","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tokenURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalMinted","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"transferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"walletTokenId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}];
+
+  // Kill switch for the whole mint UI, independent of the contract's
+  // own mintEnabled() — flip to false to hide the live mint area again
+  // without touching contract state.
+  const MINTING_ENABLED = true;
 
   let currentUserId = null;
   let appliedCode = null; // lowercase pass-name currently applied as a discount code
   let els = null;
+
+  // ── On-chain state (BSC Testnet) ───────────────────────────────────
+  // Cached here and refreshed by refreshChainState(); render() reads
+  // these synchronously so the UI doesn't have to await a network call
+  // on every keystroke/re-render. Falls back to the constants above
+  // if a read call fails (e.g. RPC temporarily unreachable).
+  let chain = {
+    ready: false,
+    totalMinted: null,
+    maxSupply: null,
+    mintEnabled: null,
+    normalPriceWei: null,
+    discountedPriceWei: null,
+    owned: false,
+    tokenId: null
+  };
+
+  function getEthers() {
+    return window.ethers || null;
+  }
+
+  // Read-only contract instance against the public testnet RPC — used
+  // for pool/price/eligibility reads that don't require a connected
+  // wallet.
+  function getReadContract() {
+    const ethers = getEthers();
+    if (!ethers) return null;
+    if (!getReadContract._provider) {
+      getReadContract._provider = new ethers.JsonRpcProvider(BSC_TESTNET_RPC);
+    }
+    return new ethers.Contract(GENESIS_CONTRACT_ADDRESS, GENESIS_CONTRACT_ABI, getReadContract._provider);
+  }
+
+  // Signer-backed contract instance for the actual mint transaction —
+  // built from the wallet provider the Wallet module already verified
+  // is connected to BNB Chain Testnet.
+  async function getWriteContract() {
+    const ethers = getEthers();
+    if (!ethers) throw new Error("Wallet library failed to load — refresh and try again.");
+    const rawProvider = window.verunWallet && typeof window.verunWallet.getProvider === "function"
+      ? window.verunWallet.getProvider()
+      : null;
+    if (!rawProvider) throw new Error("Wallet provider unavailable. Try reconnecting your wallet.");
+    const browserProvider = new ethers.BrowserProvider(rawProvider);
+    const signer = await browserProvider.getSigner();
+    return new ethers.Contract(GENESIS_CONTRACT_ADDRESS, GENESIS_CONTRACT_ABI, signer);
+  }
 
   function cacheEls() {
     if (els) return els;
@@ -7776,6 +7854,8 @@ async function loadVerunLeaderboard() {
       discountInput: document.getElementById("genesisDiscountInput"),
       discountApply: document.getElementById("genesisDiscountApply"),
       discountFeedback: document.getElementById("genesisDiscountFeedback"),
+      codeInput: document.getElementById("genesisCodeInput"),
+      codeFeedback: document.getElementById("genesisCodeFeedback"),
       mintButton: document.getElementById("genesisMintButton"),
       mintNote: document.getElementById("genesisMintNote"),
       ownedId: document.getElementById("genesisOwnedId"),
@@ -7864,10 +7944,11 @@ async function loadVerunLeaderboard() {
     localStorage.setItem("verunGenesisNames", JSON.stringify(registry));
   }
 
-  // TODO(genesis-pass + wallet): local simulation of referral
-  // payouts. Replace with the real on-chain split (0.0005 BNB to the
-  // code owner, 0.002 BNB to the project treasury) paid out directly
-  // by the mint transaction once wallet payment ships.
+  // Local, same-browser approximation of referral earnings for display
+  // only — the actual REFERRER_REWARD payout now happens automatically
+  // on-chain inside the mint transaction itself (see GenesisPassMinted's
+  // referrer/price fields). There's no on-chain "earnings owed" query in
+  // the ABI, so this counter only reflects mints made from this browser.
   function creditReferralEarnings(ownerUserId, amount) {
     const key = "verunGenesisReferralEarnings_" + ownerUserId;
     const current = parseFloat(localStorage.getItem(key) || "0") || 0;
@@ -7917,14 +7998,82 @@ async function loadVerunLeaderboard() {
   }
 
   function computePrice() {
+    const ethers = getEthers();
+    if (ethers && chain.ready) {
+      const wei = appliedCode ? chain.discountedPriceWei : chain.normalPriceWei;
+      if (wei !== null && wei !== undefined) {
+        return parseFloat(ethers.formatEther(wei));
+      }
+    }
     return appliedCode ? DISCOUNTED_PRICE_BNB : BASE_PRICE_BNB;
+  }
+
+  // The BigInt wei value actually sent as msg.value with the mint tx —
+  // prefers the live on-chain price so it never drifts from what the
+  // contract will actually charge.
+  function computePriceWei() {
+    const ethers = getEthers();
+    if (ethers && chain.ready) {
+      const wei = appliedCode ? chain.discountedPriceWei : chain.normalPriceWei;
+      if (wei !== null && wei !== undefined) return wei;
+    }
+    if (!ethers) throw new Error("Wallet library failed to load — refresh and try again.");
+    return ethers.parseEther(String(appliedCode ? DISCOUNTED_PRICE_BNB : BASE_PRICE_BNB));
+  }
+
+  // Pulls live pool/price/eligibility state from the contract. Never
+  // throws — falls back to the local constants/localStorage counters
+  // above on any RPC failure so the page still works if the testnet
+  // RPC is briefly unreachable.
+  async function refreshChainState() {
+    const read = getReadContract();
+    if (!read) return; // ethers.js hasn't loaded yet
+
+    try {
+      const [totalMinted, maxSupply, mintEnabledOnChain, normalPriceWei, discountedPriceWei] =
+        await Promise.all([
+          read.totalMinted(),
+          read.MAX_SUPPLY(),
+          read.mintEnabled(),
+          read.NORMAL_PRICE(),
+          read.DISCOUNTED_PRICE()
+        ]);
+
+      chain.totalMinted = Number(totalMinted);
+      chain.maxSupply = Number(maxSupply);
+      chain.mintEnabled = !!mintEnabledOnChain;
+      chain.normalPriceWei = normalPriceWei;
+      chain.discountedPriceWei = discountedPriceWei;
+      chain.ready = true;
+    } catch (err) {
+      console.error("VERUN Genesis Pass: failed to read contract state", err);
+    }
+
+    // Only check on-chain ownership once the wallet is connected AND
+    // signature-verified — mirrors the same gate the rest of the mint
+    // flow uses.
+    const walletState = window.verunWallet ? window.verunWallet.getState() : null;
+    if (walletState && walletState.verified && walletState.address) {
+      try {
+        const owned = await read.hasPass(walletState.address);
+        chain.owned = !!owned;
+        chain.tokenId = chain.owned ? Number(await read.getTokenId(walletState.address)) : null;
+      } catch (err) {
+        console.error("VERUN Genesis Pass: failed to read on-chain ownership", err);
+      }
+    } else {
+      chain.owned = false;
+      chain.tokenId = null;
+    }
+
+    render();
   }
 
   function discountCodeStorageKey(userId) {
     return "verunGenesisDiscountCode_" + userId;
   }
 
-  function applyDiscountCode() {
+  async function applyDiscountCode() {
     const e = cacheEls();
     const raw = e.discountInput ? e.discountInput.value : "";
     const code = raw.trim().toLowerCase();
@@ -7937,18 +8086,42 @@ async function loadVerunLeaderboard() {
       e.discountFeedback.textContent = "";
       e.discountFeedback.className = "genesis-discount-feedback";
       renderPrice();
+      render();
       return;
     }
 
-    const registry = readNameRegistry();
-    const entry = registry[code];
+    e.discountFeedback.textContent = "Checking code…";
+    e.discountFeedback.className = "genesis-discount-feedback";
 
-    if (!entry) {
+    // The real source of truth is now the contract's own genesis-code
+    // registry (checkGenesisCode), not the local same-device registry —
+    // a referral code is almost always shared from a different device
+    // than the one applying it. Only fall back to the local registry if
+    // the RPC read itself fails.
+    const read = getReadContract();
+    const walletAddress = window.verunWallet ? window.verunWallet.getState().address : null;
+    let exists = false;
+    let codeOwner = null;
+
+    if (read) {
+      try {
+        const result = await read.checkGenesisCode(code);
+        exists = !!result[0];
+        codeOwner = result[1];
+      } catch (err) {
+        console.error("VERUN Genesis Pass: checkGenesisCode failed", err);
+      }
+    } else {
+      const registry = readNameRegistry();
+      exists = !!registry[code];
+    }
+
+    if (!exists) {
       appliedCode = null;
       if (currentUserId) localStorage.removeItem(discountCodeStorageKey(currentUserId));
       e.discountFeedback.textContent = "Invalid discount code.";
       e.discountFeedback.className = "genesis-discount-feedback is-error";
-    } else if (entry.ownerUserId === currentUserId) {
+    } else if (codeOwner && walletAddress && codeOwner.toLowerCase() === walletAddress.toLowerCase()) {
       appliedCode = null;
       if (currentUserId) localStorage.removeItem(discountCodeStorageKey(currentUserId));
       e.discountFeedback.textContent = "You can't use your own code.";
@@ -7956,11 +8129,12 @@ async function loadVerunLeaderboard() {
     } else {
       appliedCode = code;
       if (currentUserId) localStorage.setItem(discountCodeStorageKey(currentUserId), code);
-      e.discountFeedback.textContent = "50% discount applied — this is saved and will carry over when minting opens.";
+      e.discountFeedback.textContent = "50% discount applied — verified on-chain.";
       e.discountFeedback.className = "genesis-discount-feedback is-success";
     }
 
     renderPrice();
+    render();
   }
 
   function renderPrice() {
@@ -7980,12 +8154,16 @@ async function loadVerunLeaderboard() {
 
   function renderPool() {
     const e = cacheEls();
-    const minted = Math.min(readMintedCount(), TOTAL_SUPPLY);
-    const remaining = TOTAL_SUPPLY - minted;
-    const pct = Math.min(100, (minted / TOTAL_SUPPLY) * 100);
+    const totalSupply = chain.ready && chain.maxSupply !== null ? chain.maxSupply : TOTAL_SUPPLY;
+    const minted = Math.min(
+      chain.ready && chain.totalMinted !== null ? chain.totalMinted : readMintedCount(),
+      totalSupply
+    );
+    const remaining = totalSupply - minted;
+    const pct = Math.min(100, (minted / totalSupply) * 100);
 
     if (e.mintedCount) e.mintedCount.textContent = formatIndian(minted);
-    if (e.totalSupply) e.totalSupply.textContent = formatIndian(TOTAL_SUPPLY);
+    if (e.totalSupply) e.totalSupply.textContent = formatIndian(totalSupply);
     if (e.poolFill) e.poolFill.style.width = pct.toFixed(2) + "%";
     if (e.poolPercent) e.poolPercent.textContent = pct.toFixed(2) + "% minted";
     if (e.poolRemainingCaption) e.poolRemainingCaption.textContent = formatIndian(remaining) + " remaining";
@@ -8064,14 +8242,14 @@ async function loadVerunLeaderboard() {
     if (e.earningsAmount) e.earningsAmount.textContent = formatBnb(earnings);
     if (e.earningsNote) {
       e.earningsNote.textContent =
-        "Claiming opens once the payment gateway is live. Minimum withdrawal: " +
-        formatBnb(MIN_WITHDRAWAL_BNB) + ".";
+        "Referral rewards (" + formatBnb(REFERRER_SHARE_BNB) + " per mint) are paid " +
+        "directly to your wallet on-chain the moment someone mints using your code — " +
+        "there's nothing to claim. This total only reflects mints made from this browser.";
     }
     if (e.claimButton) {
-      // TODO(genesis-pass + wallet): always disabled until the
-      // payment gateway ships. Once it does, enable when
-      // earnings >= MIN_WITHDRAWAL_BNB and wire this to the real
-      // withdrawal transaction.
+      // Rewards are paid out automatically by the mint transaction
+      // itself (see GenesisPassMinted's referrer/price fields) — there
+      // is no separate claim step, so this button stays disabled.
       e.claimButton.disabled = true;
     }
   }
@@ -8080,16 +8258,24 @@ async function loadVerunLeaderboard() {
     if (!currentUserId) return;
     const e = cacheEls();
     const state = readState(currentUserId);
-    const minted = readMintedCount();
-    const soldOut = minted >= TOTAL_SUPPLY;
+    const totalSupply = chain.ready && chain.maxSupply !== null ? chain.maxSupply : TOTAL_SUPPLY;
+    const minted = chain.ready && chain.totalMinted !== null ? chain.totalMinted : readMintedCount();
+    const soldOut = minted >= totalSupply;
 
     renderPool();
     renderPrice();
 
-    if (state.owned) {
+    // On-chain ownership (checked once the wallet is connected +
+    // verified) is the source of truth; fall back to the local record
+    // so a returning user sees their pass before reconnecting a wallet.
+    const owned = chain.owned || state.owned;
+
+    if (owned) {
       if (e.mintCard) e.mintCard.style.display = "none";
       if (e.ownedCard) e.ownedCard.style.display = "";
-      renderOwnedCard(state);
+      renderOwnedCard(chain.owned && chain.tokenId !== null
+        ? Object.assign({}, state, { tokenNumber: chain.tokenId, owned: true })
+        : state);
     } else {
       if (e.mintCard) e.mintCard.style.display = "";
       if (e.ownedCard) e.ownedCard.style.display = "none";
@@ -8098,75 +8284,164 @@ async function loadVerunLeaderboard() {
       if (e.mintLocked) e.mintLocked.style.display = MINTING_ENABLED ? "none" : "";
 
       // Minting requires a verified wallet connection (see the Wallet
-      // module above) in addition to MINTING_ENABLED — a pass can't
-      // be tied to on-chain ownership without one.
+      // module above), the contract's own mintEnabled() switch, and a
+      // valid genesis code — the mint call registers that code
+      // on-chain in the same transaction, so it can't be skipped.
       const walletVerified = !!(window.verunWallet && window.verunWallet.getState().verified);
+      const contractMintOff = chain.ready && chain.mintEnabled === false;
+      const codeValue = e.codeInput ? e.codeInput.value.trim().toLowerCase() : "";
+      const codeValid = /^[a-z0-9-]{3,20}$/.test(codeValue);
 
       if (e.mintButton) {
-        e.mintButton.disabled = soldOut || !walletVerified;
+        e.mintButton.disabled = soldOut || contractMintOff || !walletVerified || !codeValid;
         e.mintButton.textContent = soldOut
           ? "Sold Out"
-          : (walletVerified ? "Mint Genesis Pass" : "Connect Wallet to Mint");
+          : (contractMintOff
+              ? "Minting Paused"
+              : (walletVerified ? "Mint Genesis Pass" : "Connect Wallet to Mint"));
       }
       if (e.mintNote) {
         e.mintNote.textContent = soldOut
-          ? "All 11,000 Genesis Passes have been minted."
-          : (walletVerified
-              ? "Minting simulates payment for now — on-chain payment is coming soon."
-              : "Connect and verify your BNB Chain wallet above to enable minting.");
+          ? ("All " + formatIndian(totalSupply) + " Genesis Passes have been minted.")
+          : contractMintOff
+            ? "Minting is currently paused on the contract."
+            : (!walletVerified
+                ? "Connect and verify your BNB Chain Testnet wallet above to enable minting."
+                : (codeValid
+                    ? "This sends a real transaction on BNB Chain Testnet — confirm the price shown in your wallet."
+                    : "Choose a genesis code (3–20 lowercase letters, numbers or hyphens) to enable minting."));
       }
     }
   }
 
-  function mintPass() {
-    if (!MINTING_ENABLED || !currentUserId) return;
+  // Guards against a double-submit while a transaction is in flight —
+  // the button is disabled during this too, but re-entrancy here would
+  // fire a second transaction if a user manages to click twice fast.
+  let minting = false;
+
+  async function mintPass() {
+    if (!MINTING_ENABLED || !currentUserId || minting) return;
     // Defense in depth: the mint button is already disabled without a
     // verified wallet, but never trust client UI state alone as the
-    // only gate on an action that will move real funds once payment
-    // is wired up.
+    // only gate on an action that moves real testnet funds.
     const walletVerified = !!(window.verunWallet && window.verunWallet.getState().verified);
     if (!walletVerified) return;
     const state = readState(currentUserId);
-    if (state.owned) return;
+    if (state.owned || chain.owned) return;
 
-    const minted = readMintedCount();
-    if (minted >= TOTAL_SUPPLY) return; // sold out
+    const e = cacheEls();
+    const code = e.codeInput ? e.codeInput.value.trim().toLowerCase() : "";
+    if (!/^[a-z0-9-]{3,20}$/.test(code)) {
+      if (e.codeFeedback) {
+        e.codeFeedback.textContent = "Use 3–20 lowercase letters, numbers or hyphens only.";
+        e.codeFeedback.className = "genesis-discount-feedback is-error";
+      }
+      return;
+    }
+
+    const totalSupply = chain.ready && chain.maxSupply !== null ? chain.maxSupply : TOTAL_SUPPLY;
+    const minted = chain.ready && chain.totalMinted !== null ? chain.totalMinted : readMintedCount();
+    if (minted >= totalSupply) return; // sold out
 
     const price = computePrice();
     const codeLine = appliedCode
-      ? "\nCode \"" + appliedCode + "\" applied — 50% off."
+      ? "\nReferral code \"" + appliedCode + "\" applied — 50% off."
       : "";
 
-    // TODO(genesis-pass + wallet): simulated locally until real BNB
-    // payment + wallet connection ships. Replace this confirm() with
-    // the actual mint transaction, and only write state after the
-    // chain confirms payment and the contract confirms the mint.
     const confirmed = window.confirm(
-      "Mint your Genesis Pass for " + price + " BNB?" + codeLine + "\n" +
+      "Mint your Genesis Pass for " + price + " tBNB on BNB Chain Testnet?" + codeLine + "\n" +
+      "Your genesis code will be \"" + code + "\" — this can't be changed later.\n" +
       "This pass is soulbound and cannot be transferred once minted.\n" +
-      "(Wallet payment isn't wired up yet — this simulates the mint for now.)"
+      "Your wallet will ask you to confirm a real testnet transaction."
     );
     if (!confirmed) return;
 
-    const tokenNumber = minted + 1;
-    state.owned = true;
-    state.tokenNumber = tokenNumber;
-    state.mintedAt = Date.now();
-
-    writeState(currentUserId, state);
-    writeMintedCount(tokenNumber);
-
-    if (appliedCode) {
-      const registry = readNameRegistry();
-      const entry = registry[appliedCode];
-      if (entry) {
-        creditReferralEarnings(entry.ownerUserId, REFERRER_SHARE_BNB);
-        addReferral(entry.ownerUserId, { tokenNumber: tokenNumber, mintedAt: state.mintedAt });
-      }
-      appliedCode = null;
+    minting = true;
+    if (e.mintButton) {
+      e.mintButton.disabled = true;
+      e.mintButton.textContent = "Confirm in wallet…";
+    }
+    if (e.codeFeedback) {
+      e.codeFeedback.textContent = "";
+      e.codeFeedback.className = "genesis-discount-feedback";
     }
 
-    render();
+    try {
+      const read = getReadContract();
+
+      // Make sure the chosen genesis code isn't already taken on-chain.
+      if (read) {
+        const [codeExists] = await read.checkGenesisCode(code);
+        if (codeExists) {
+          throw new Error("That genesis code is already taken. Choose another.");
+        }
+      }
+
+      // Re-validate the applied referral code right before spending gas
+      // on it — it must exist on-chain and belong to someone else.
+      let referralCode = null;
+      const walletAddress = window.verunWallet.getState().address;
+      if (appliedCode && read) {
+        const [refExists, refOwner] = await read.checkGenesisCode(appliedCode);
+        if (refExists && refOwner && refOwner.toLowerCase() !== (walletAddress || "").toLowerCase()) {
+          referralCode = appliedCode;
+        }
+      }
+
+      const write = await getWriteContract();
+      const valueWei = computePriceWei();
+
+      const tx = referralCode
+        ? await write.mintWithReferral(code, referralCode, { value: valueWei })
+        : await write.mintWithoutReferral(code, { value: valueWei });
+
+      if (e.mintButton) e.mintButton.textContent = "Confirming on-chain…";
+      await tx.wait();
+
+      // Pull the freshly-minted tokenId back from the contract rather
+      // than guessing from a local counter.
+      let tokenNumber = null;
+      if (read && walletAddress) {
+        try { tokenNumber = Number(await read.getTokenId(walletAddress)); } catch (err) {}
+      }
+
+      state.owned = true;
+      state.tokenNumber = tokenNumber;
+      state.mintedAt = Date.now();
+      state.passName = code;
+      writeState(currentUserId, state);
+
+      // The contract only stores a hash of the genesis code, not the
+      // plaintext, so keep the same-device registry used elsewhere in
+      // this module for the discount-code lookup and referral-activity
+      // view to keep working for this browser.
+      const registry = readNameRegistry();
+      registry[code] = { ownerUserId: currentUserId, tokenNumber: tokenNumber };
+      writeNameRegistry(registry);
+
+      if (referralCode) {
+        const refEntry = registry[referralCode];
+        if (refEntry) {
+          creditReferralEarnings(refEntry.ownerUserId, REFERRER_SHARE_BNB);
+          addReferral(refEntry.ownerUserId, { tokenNumber: tokenNumber, mintedAt: state.mintedAt });
+        }
+      }
+      appliedCode = null;
+
+      chain.owned = true;
+      chain.tokenId = tokenNumber;
+
+      minting = false;
+      await refreshChainState(); // re-reads pool/price and re-renders
+    } catch (err) {
+      minting = false;
+      console.error("VERUN Genesis Pass mint failed:", err);
+      const message = (err && (err.code === "ACTION_REJECTED" || err.code === 4001))
+        ? "Transaction rejected in wallet."
+        : (err && err.reason) || (err && err.shortMessage) || (err && err.message) || "Mint failed. Please try again.";
+      alert(message);
+      render();
+    }
   }
 
   function setPassName() {
@@ -8280,6 +8555,17 @@ async function loadVerunLeaderboard() {
       e.nameCopy.dataset.genesisBound = "1";
       e.nameCopy.addEventListener("click", copyPassName);
     }
+    if (e.codeInput && !e.codeInput.dataset.genesisBound) {
+      e.codeInput.dataset.genesisBound = "1";
+      e.codeInput.addEventListener("input", () => {
+        e.codeInput.value = e.codeInput.value.toLowerCase();
+        if (e.codeFeedback) {
+          e.codeFeedback.textContent = "";
+          e.codeFeedback.className = "genesis-discount-feedback";
+        }
+        render();
+      });
+    }
     if (e.goToMining && !e.goToMining.dataset.genesisBound) {
       e.goToMining.dataset.genesisBound = "1";
       e.goToMining.addEventListener("click", async () => {
@@ -8318,26 +8604,36 @@ async function loadVerunLeaderboard() {
     if (saved && !appliedCode) {
       const e = cacheEls();
       if (e.discountInput) e.discountInput.value = saved;
-      appliedCode = saved;
-      if (e.discountFeedback) {
-        e.discountFeedback.textContent = "50% discount applied — this is saved and will carry over when minting opens.";
-        e.discountFeedback.className = "genesis-discount-feedback is-success";
-      }
+      // Re-verify against the contract rather than trusting the saved
+      // value outright — applyDiscountCode() sets appliedCode itself
+      // once the on-chain check resolves.
+      applyDiscountCode();
     }
 
     render();
+
+    // Fire-and-forget: paints instantly with cached/fallback data above,
+    // then re-renders once live pool/price/ownership data comes back
+    // from BSC Testnet.
+    refreshChainState();
   }
 
   // Public hook the Mining module reads to decide lock state.
   window.verunHasGenesisPass = function (userId) {
     if (!userId) return false;
+    if (userId === currentUserId && chain.owned) return true;
     return !!readState(userId).owned;
   };
 
   // Lets the Wallet module refresh mint-button eligibility the moment
-  // wallet state changes, without re-running the whole section load.
+  // wallet state changes. Re-runs the on-chain ownership/eligibility
+  // check (not just the local render) since connecting/switching a
+  // wallet is exactly when hasPass() on that new address needs to be
+  // re-checked.
   window.verunRenderGenesisPass = function () {
-    if (currentUserId) render();
+    if (!currentUserId) return;
+    render();
+    refreshChainState();
   };
 
   window.loadGenesisPassSection = loadGenesisPassSection;
