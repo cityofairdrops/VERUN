@@ -3172,14 +3172,29 @@
   border-bottom:1px solid var(--border);
   font-size:12px;
   font-weight:850;
+  flex-shrink: 0;
 }
 
 .verun-notif-panel-body {
+  flex: 1;
+  min-height: 0;
   overflow-y:auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   padding:6px;
   display:flex;
   flex-direction:column;
   gap:5px;
+}
+.verun-notif-panel-body::-webkit-scrollbar {
+  width: 6px;
+}
+.verun-notif-panel-body::-webkit-scrollbar-thumb {
+  background: var(--green-border);
+  border-radius: 6px;
+}
+.verun-notif-panel-body::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .verun-notif-item {
