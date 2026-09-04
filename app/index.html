@@ -7038,36 +7038,49 @@ async function loadVerunLeaderboard() {
         }
       });
 
+      // Restore an already-persisted AppKit session when possible.
+      try {
+        const isConnected = appKit.getIsConnected ? appKit.getIsConnected() : false;
+        setWalletState({
+          address: isConnected ? (appKit.getAddress ? appKit.getAddress() : null) : null,
+          chainId: isConnected ? (appKit.getChainId ? appKit.getChainId() : null) : null,
+          connecting: false
+        });
+      } catch (e) {}
+
       // AppKit reports address, chain and connection status through this
       // single provider subscription. Both page sections use this same state.
       if (typeof appKit.subscribeProvider === "function") {
-        appKit.subscribeProvider(async ({ address, chainId, isConnected }) => {
+        appKit.subscribeProvider(({ address, chainId, isConnected }) => {
           setWalletState({
             address: isConnected ? (address || null) : null,
             chainId: isConnected ? (chainId || null) : null,
             connecting: false
           });
-          // Auto-switch to testnet if connected to wrong chain
-          if (isConnected && chainId && Number(chainId) !== 97) {
-            try {
-              if (typeof appKit.switchNetwork === "function") {
-                setTimeout(() => appKit.switchNetwork({ chainId: 97 }), 300);
-              }
-            } catch (err) {
-              console.warn("Auto network switch failed:", err);
-            }
-          }
         });
       }
 
-      // Restore an already-persisted AppKit session when possible.
-      try {
-        setWalletState({
-          address: appKit.getIsConnected() ? (appKit.getAddress() || null) : null,
-          chainId: appKit.getIsConnected() ? (appKit.getChainId() || null) : null,
-          connecting: false
-        });
-      } catch (e) {}
+      // Fallback: Poll for connection state every 2 seconds in case subscription doesn't fire
+      const pollInterval = setInterval(() => {
+        try {
+          if (appKit.getIsConnected && appKit.getAddress) {
+            const isConnected = appKit.getIsConnected();
+            const address = appKit.getAddress ? appKit.getAddress() : null;
+            const chainId = appKit.getChainId ? appKit.getChainId() : null;
+            
+            if (isConnected && address) {
+              setWalletState({
+                address: address,
+                chainId: chainId,
+                connecting: false
+              });
+            }
+          }
+        } catch (e) {}
+      }, 2000);
+
+      // Store interval ID for cleanup
+      appKit._pollInterval = pollInterval;
 
       return appKit;
     })().catch(err => {
@@ -7086,16 +7099,28 @@ async function loadVerunLeaderboard() {
       const modal = await initializeAppKit();
       if (!modal) throw new Error("Wallet connector is unavailable.");
       modal.open({ view: "Connect", namespace: "eip155" });
-      // Attempt to switch to testnet after opening the connect modal
-      setTimeout(async () => {
+      
+      // After modal opens, check connection status every 500ms
+      const checkConnection = setInterval(() => {
         try {
-          if (appKit && typeof appKit.switchNetwork === "function") {
-            await appKit.switchNetwork({ chainId: 97 });
+          if (appKit && appKit.getIsConnected && appKit.getAddress) {
+            const isConnected = appKit.getIsConnected();
+            const address = appKit.getAddress();
+            if (isConnected && address) {
+              clearInterval(checkConnection);
+              setWalletState({
+                address: address,
+                chainId: appKit.getChainId ? appKit.getChainId() : null,
+                connecting: false
+              });
+            }
           }
-        } catch (err) {
-          console.warn("Network switch suggestion failed:", err);
-        }
+        } catch (err) {}
       }, 500);
+      
+      // Stop checking after 60 seconds
+      setTimeout(() => clearInterval(checkConnection), 60000);
+      
       // The provider subscription above will clear `connecting` as soon as
       // the wallet connects (or the modal is closed without connecting).
       setTimeout(() => {
