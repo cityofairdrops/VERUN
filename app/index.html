@@ -2220,6 +2220,10 @@
       min-width: 0;
     }
 
+    #genesisWalletCard .genesis-wallet-chain-badge {
+      align-self: center;
+    }
+
     .genesis-wallet-chain-badge,
     .mining-wallet-chain-badge {
       display: inline-flex;
@@ -3528,9 +3532,9 @@
 
 <aside id="verunSideMenu" class="verun-drawer" aria-hidden="true">
   <div class="verun-drawer-head">
-    <div>
-      <div class="verun-drawer-kicker">VERUN</div>
-      <div class="verun-drawer-title">Community</div>
+    <div class="brand">
+      <span class="brand-mark"></span>
+      VERUN
     </div>
     <button id="verunMenuClose" class="verun-drawer-close" type="button" aria-label="Close menu">×</button>
   </div>
@@ -4288,27 +4292,6 @@
   <!-- REFERRALS -->
 
 <section class="section app-section" id="referral">
-  <div class="section-head">
-    <div style="display:flex;align-items:center;gap:14px;">
-      <div class="verun-referral-icon-wrap" style="--rarity-glow:#8dffb7;">
-        <svg class="verun-referral-icon-svg" viewBox="0 0 48 48" width="42" height="42" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle class="referral-ring-pulse" cx="24" cy="24" r="16"/>
-          <circle class="referral-ring" cx="15" cy="18" r="5"/>
-          <path class="referral-ring" d="M6 36a9 9 0 0 1 18 0"/>
-          <circle class="referral-ring" cx="31" cy="18" r="5"/>
-          <path class="referral-ring" d="M22 36a9 9 0 0 1 18 0"/>
-          <circle class="referral-plus-bg" cx="24" cy="9" r="5.5"/>
-          <path class="referral-plus" d="M24 6.3v5.4M21.3 9h5.4"/>
-        </svg>
-      </div>
-      <div>
-        <h2 class="section-title">Referrals</h2>
-        <p class="section-description">
-          Invite people to join the VERUN community. Grow the network and earn referral XP.
-        </p>
-      </div>
-    </div>
-  </div>
 
   <!-- Referral Dashboard -->
 
@@ -4477,20 +4460,6 @@
 
 <!-- MINING SECTION -->
 <section class="section app-section" id="miningSection">
-
-  <div class="section-head">
-
-    <div>
-      <h2 class="section-title">
-        Mining
-      </h2>
-
-      <p class="section-description">
-        Run a 24-hour hashrate session and mine $VERUN from the fixed pool.
-      </p>
-    </div>
-
-  </div>
 
   <!-- Pool progress -->
   <div class="mining-pool-card">
