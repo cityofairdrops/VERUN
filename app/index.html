@@ -2368,6 +2368,94 @@
     }
 
 
+    .verun-wallet-modal-intro {
+      padding: 10px 12px 12px;
+      color: var(--muted);
+      font-size: 10.5px;
+      text-align: center;
+    }
+    .verun-wallet-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      padding: 0 8px;
+    }
+    .verun-wallet-grid .verun-wallet-option {
+      min-width: 0;
+      min-height: 82px;
+      flex-direction: column;
+      justify-content: center;
+      gap: 7px;
+      padding: 12px 8px 10px;
+      text-align: center;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.018);
+    }
+    .verun-wallet-grid .verun-wallet-option:hover { background: var(--panel2); }
+    .verun-wallet-grid .verun-wallet-option.is-installed { border-color: var(--green-border); }
+    .verun-wallet-grid .verun-wallet-option-name { width: 100%; flex-grow: 0; font-size: 11px; }
+    .verun-wallet-grid .verun-wallet-option-tag { font-size: 8px; }
+    .verun-wallet-modal-secure {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      margin: 12px 12px 2px;
+      padding: 9px 10px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--muted2);
+      font-size: 8.5px;
+      line-height: 1.45;
+    }
+    .verun-wallet-secure-dot {
+      width: 6px;
+      height: 6px;
+      margin-top: 3px;
+      flex: 0 0 6px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+    .verun-wallet-back {
+      margin: 2px 10px 2px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 10px;
+      cursor: pointer;
+    }
+    .verun-wallet-back:hover { color: var(--text); }
+    .verun-wallet-qr-choice {
+      width: calc(100% - 16px);
+      margin: 12px 8px 4px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel2);
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+      font: inherit;
+    }
+    .verun-wallet-qr-choice:hover { border-color: var(--green-border); }
+    .verun-wallet-qr-choice-icon {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--green);
+      font-size: 18px;
+    }
+    .verun-wallet-qr-choice span:nth-child(2) { flex: 1; }
+    .verun-wallet-qr-choice strong { display:block; font-size: 10.5px; }
+    .verun-wallet-qr-choice small { display:block; margin-top:2px; color:var(--muted2); font-size:8.5px; }
+    .verun-wallet-option-arrow { color: var(--muted2); font-size: 17px; }
+
     /* ================= WALLET VERIFICATION ================= */
     .verun-wallet-status {
       min-height: 14px;
@@ -2379,6 +2467,26 @@
     .verun-wallet-status.is-success { color: var(--green); }
     .verun-wallet-status.is-error { color: #ff8a8a; }
 
+    .verun-wallet-option.is-installed {
+      background: var(--green-soft);
+      border: 1px solid var(--green-border);
+    }
+    .verun-wallet-option.is-installed:hover {
+      background: var(--green-soft);
+    }
+    .verun-wallet-option-tag.is-installed {
+      color: var(--green);
+    }
+    .verun-wallet-modal-note {
+      margin: 2px 10px 8px;
+      padding: 9px 10px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: var(--panel2);
+      color: var(--muted2);
+      font-size: 9px;
+      line-height: 1.5;
+    }
     .verun-wallet-spinner {
       width: 13px;
       height: 13px;
@@ -2392,42 +2500,10 @@
     }
     @keyframes verunWalletSpin { to { transform: rotate(360deg); } }
 
-    .verun-wc-wallets-label {
-      margin-top: 16px;
-      color: var(--muted2);
-      font-size: 9.5px;
-      font-weight: 800;
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-      text-align: center;
-    }
-    .verun-wc-wallets-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .verun-wc-wallet-icon {
-      width: 40px;
-      height: 40px;
-      padding: 0;
-      border-radius: 11px;
-      border: 1px solid var(--border);
-      background: var(--panel2);
-      cursor: pointer;
-      overflow: hidden;
-      transition: border-color .12s ease, transform .12s ease;
-    }
-    .verun-wc-wallet-icon:hover {
-      border-color: var(--muted);
-      transform: translateY(-1px);
-    }
-    .verun-wc-wallet-icon img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
+    .verun-wc-wallets {
+      display: grid;
+      gap: 4px;
+      margin-top: 8px;
     }
     .verun-wc-back {
       width: 100%;
@@ -2536,82 +2612,90 @@
     }
 
     .verun-wallet-modal-body {
-      padding: 18px 16px 20px;
+      padding: 10px;
       min-height: 110px;
     }
 
-    /* Standard 4-up wallet grid: MetaMask / Trust / Bitget / WalletConnect.
-       Mirrors the familiar connector layout used across most dApps. */
-    .verun-wallet-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
+    .verun-wallet-section-label {
+      padding: 10px 10px 6px;
+      color: var(--muted2);
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
     }
 
-    .verun-wallet-tile {
+    .verun-wallet-option {
+      width: 100%;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
 
-      padding: 12px 4px 10px;
-      border: 1px solid var(--border);
-      background: var(--panel2);
-      border-radius: 13px;
+      padding: 10px;
+      border: none;
+      background: transparent;
+      border-radius: 10px;
       cursor: pointer;
+      text-align: left;
 
       color: var(--text);
       font-family: 'IBM Plex Mono', monospace;
-      transition: border-color .12s ease, background .12s ease, transform .12s ease;
+      transition: background .12s ease;
     }
 
-    .verun-wallet-tile:hover {
-      border-color: var(--muted);
-      transform: translateY(-1px);
+    .verun-wallet-option:hover {
+      background: var(--panel2);
     }
 
-    .verun-wallet-tile-icon {
-      position: relative;
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      overflow: hidden;
+    .verun-wallet-option-icon,
+    .verun-wallet-generic-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
       flex-shrink: 0;
 
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--panel);
+      overflow: hidden;
     }
 
-    .verun-wallet-tile-icon img {
+    .verun-wallet-option-icon img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
 
-    .verun-wallet-tile-dot {
-      position: absolute;
-      bottom: -1px;
-      right: -1px;
-      width: 11px;
-      height: 11px;
-      border-radius: 50%;
-      background: var(--green);
-      border: 2px solid var(--panel2);
+    .verun-wallet-generic-icon {
+      border: 1px solid;
+      font-size: 12.5px;
+      font-weight: 800;
     }
 
-    .verun-wallet-tile-name {
-      font-size: 9.5px;
+    .verun-wallet-option-name {
+      flex-grow: 1;
+      min-width: 0;
+      font-size: 12.5px;
       font-weight: 700;
-      text-align: center;
-      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    @media (max-width: 380px) {
-      .verun-wallet-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
+    .verun-wallet-option-tag {
+      flex-shrink: 0;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: var(--green);
+    }
+
+    .verun-wallet-empty {
+      padding: 26px 10px;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
     }
 
     .verun-wallet-modal-foot {
@@ -2638,11 +2722,56 @@
       text-decoration: underline;
     }
 
-    @media (max-width: 420px) {
+    @media (max-width: 640px) {
+      .verun-wallet-modal-overlay {
+        align-items: flex-end;
+        padding: 0;
+      }
       .verun-wallet-modal {
-        max-width: 100%;
+        width: 100%;
+        max-width: none;
+        max-height: 78vh;
+        border-radius: 22px 22px 0 0;
+        border-left: 0;
+        border-right: 0;
+        border-bottom: 0;
+      }
+      .verun-wallet-modal-head {
+        justify-content: center;
+        position: relative;
+        padding: 18px 52px 14px;
+      }
+      .verun-wallet-modal-head h3 { font-size: 15px; }
+      .verun-wallet-modal-close {
+        position: absolute;
+        right: 14px;
+      }
+      .verun-wallet-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .verun-wallet-grid .verun-wallet-option {
+        min-height: 96px;
+        padding: 10px 4px 9px;
+        border-radius: 12px;
+      }
+      .verun-wallet-grid .verun-wallet-option-icon,
+      .verun-wallet-grid .verun-wallet-generic-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 13px;
+      }
+      .verun-wallet-grid .verun-wallet-option-name {
+        font-size: 9.5px;
+      }
+      .verun-wallet-grid .verun-wallet-option-tag {
+        font-size: 7px;
+      }
+      .verun-wallet-modal-secure {
+        margin-bottom: 4px;
       }
     }
+
 
     /* ============ WALLETCONNECT "SCAN TO CONNECT" OVERLAY ============ */
     /* Separate from the wallet picker modal above — this only appears
@@ -6922,12 +7051,13 @@ async function loadVerunLeaderboard() {
 
   const WALLETS = [
     {
-      id: "metamask",
-      name: "MetaMask",
-      icon: "https://cdn.simpleicons.org/metamask",
-      rdns: ["io.metamask"],
-      detect: p => !!p && (p.isMetaMask === true && !p.isBraveWallet),
-      deepLink: uri => "https://metamask.app.link/wc?uri=" + encodeURIComponent(uri)
+      id: "bitget",
+      name: "Bitget Wallet",
+      icon: "https://cdn.simpleicons.org/bitget",
+      rdns: ["com.bitget.web3", "com.bitkeep.wallet"],
+      detect: p => !!p && (p.isBitKeep === true || p.isBitgetWallet === true),
+      deepLink: uri => "https://bkcode.vip/?deep_link_value=" + encodeURIComponent("bitkeep://bkconnect?uri=" + encodeURIComponent(uri)),
+      appLink: "https://bkcode.vip/"
     },
     {
       id: "trust",
@@ -6935,28 +7065,53 @@ async function loadVerunLeaderboard() {
       icon: "https://cdn.simpleicons.org/trustwallet",
       rdns: ["com.trustwallet.app", "com.trustwallet"],
       detect: p => !!p && (p.isTrust === true || p.isTrustWallet === true),
-      deepLink: uri => "https://link.trustwallet.com/wc?uri=" + encodeURIComponent(uri)
+      deepLink: uri => "https://link.trustwallet.com/wc?uri=" + encodeURIComponent(uri),
+      appLink: "https://link.trustwallet.com/"
     },
     {
-      id: "bitget",
-      name: "Bitget Wallet",
-      icon: "https://cdn.simpleicons.org/bitget",
-      rdns: ["com.bitget.web3", "com.bitkeep.wallet"],
-      detect: p => !!p && (p.isBitKeep === true || p.isBitgetWallet === true),
-      // Bitget's universal deeplink bridge can route into the installed app.
-      deepLink: uri => "https://bkcode.vip/?deep_link_value=" + encodeURIComponent("bitkeep://bkconnect?uri=" + encodeURIComponent(uri))
+      id: "metamask",
+      name: "MetaMask",
+      icon: "https://cdn.simpleicons.org/metamask",
+      rdns: ["io.metamask"],
+      detect: p => !!p && (p.isMetaMask === true && !p.isBraveWallet),
+      deepLink: uri => "https://metamask.app.link/wc?uri=" + encodeURIComponent(uri),
+      appLink: "https://metamask.app.link/"
+    },
+    {
+      id: "coinbase",
+      name: "Coinbase Wallet",
+      icon: "https://cdn.simpleicons.org/coinbase",
+      rdns: ["com.coinbase.wallet", "org.toshi"],
+      detect: p => !!p && (p.isCoinbaseWallet === true),
+      deepLink: uri => "https://go.cb-w.com/wc?uri=" + encodeURIComponent(uri),
+      appLink: "https://go.cb-w.com/"
+    },
+    {
+      id: "okx",
+      name: "OKX Wallet",
+      icon: "https://cdn.simpleicons.org/okx",
+      rdns: ["com.okex.wallet", "com.okx.wallet"],
+      detect: p => !!p && (p.isOkxWallet === true || p.isOKExWallet === true),
+      deepLink: uri => "okx://wallet/wc?uri=" + encodeURIComponent(uri),
+      appLink: "https://www.okx.com/web3"
+    },
+    {
+      id: "zerion",
+      name: "Zerion Wallet",
+      icon: "https://cdn.simpleicons.org/zerion",
+      rdns: ["io.zerion.wallet", "io.zerion"],
+      detect: p => !!p && (p.isZerion === true || p.isZerionWallet === true),
+      deepLink: uri => "zerion://wc?uri=" + encodeURIComponent(uri),
+      appLink: "https://zerion.io/"
     }
   ];
 
-  // The picker only ever shows this fixed, standard set of four options —
-  // MetaMask / Trust / Bitget as direct wallets, plus a generic WalletConnect
-  // tile that fans out to every other compatible wallet via QR/deeplink.
-  const WALLETCONNECT_TILE = {
+  const WALLETCONNECT_META = {
     id: "walletconnect",
     name: "WalletConnect",
-    icon: "https://cdn.simpleicons.org/walletconnect",
-    isGeneric: true
+    icon: "https://cdn.simpleicons.org/walletconnect"
   };
+  const MOBILE_WALLET_IDS = ["bitget", "trust", "metamask", "walletconnect"];
 
   let injectedProviders = [];
   let wcProvider = null;
@@ -7002,13 +7157,21 @@ async function loadVerunLeaderboard() {
     function add(info, provider) {
       if (!provider || seen.has(provider)) return;
       seen.add(provider);
-      const name = (info && info.name) || "";
-      const rdns = (info && info.rdns) || "";
-      const wallet = WALLETS.find(w =>
-        w.rdns.some(x => x.toLowerCase() === String(rdns).toLowerCase()) ||
-        w.detect(provider) ||
-        w.name.toLowerCase() === name.toLowerCase()
-      );
+      const name = String((info && info.name) || "").trim().toLowerCase();
+      const rdns = String((info && info.rdns) || "").trim().toLowerCase();
+
+      // EIP-6963 rdns/name is authoritative. Do not let a generic
+      // compatibility flag such as isMetaMask mislabel another wallet.
+      let wallet = rdns
+        ? WALLETS.find(w => w.rdns.some(x => x.toLowerCase() === rdns))
+        : null;
+      if (!wallet && name) {
+        wallet = WALLETS.find(w => w.name.toLowerCase() === name);
+      }
+      if (!wallet) {
+        const matches = WALLETS.filter(w => w.detect(provider));
+        if (matches.length === 1) wallet = matches[0];
+      }
       if (wallet) found.push({ wallet, provider, info });
     }
 
@@ -7048,12 +7211,12 @@ async function loadVerunLeaderboard() {
     modal.innerHTML = `
       <div class="verun-wallet-modal" role="dialog" aria-modal="true" aria-label="Connect wallet">
         <div class="verun-wallet-modal-head">
-          <h3>Connect Wallet</h3>
+          <h3 id="verunWalletModalTitle">Connect a Wallet</h3>
           <button type="button" class="verun-wallet-modal-close" aria-label="Close">×</button>
         </div>
         <div class="verun-wallet-modal-body" id="verunWalletModalBody"></div>
         <div class="verun-wallet-modal-foot">
-          <span>Secure EVM connection · BNB Chain</span>
+          <span>Secure connection · BNB Chain</span>
           <a href="https://walletconnect.com/" target="_blank" rel="noopener noreferrer">WalletConnect</a>
         </div>
       </div>`;
@@ -7078,30 +7241,90 @@ async function loadVerunLeaderboard() {
     document.body.classList.remove("verun-wallet-modal-lock");
   }
 
+  function iconHtml(wallet) {
+    return `<span class="verun-wallet-option-icon"><img src="${wallet.icon}" alt="" loading="lazy" referrerpolicy="no-referrer"></span>`;
+  }
+
+  function isMobileViewport() {
+    try { return window.matchMedia && window.matchMedia("(max-width: 640px)").matches; }
+    catch (e) { return false; }
+  }
+
+  function walletListForViewport(includeWalletConnect) {
+    const ids = isMobileViewport()
+      ? MOBILE_WALLET_IDS.filter(id => includeWalletConnect || id !== "walletconnect")
+      : WALLETS.map(w => w.id).concat(includeWalletConnect ? ["walletconnect"] : []);
+    return ids.map(id => id === "walletconnect" ? WALLETCONNECT_META : walletById(id)).filter(Boolean);
+  }
+
+  function renderWalletOption(button, wallet, installed, tagText) {
+    button.type = "button";
+    button.className = "verun-wallet-option" + (installed ? " is-installed" : "");
+    button.dataset.walletId = wallet.id;
+    button.innerHTML =
+      iconHtml(wallet) +
+      `<span class="verun-wallet-option-name">${wallet.name}</span>` +
+      `<span class="verun-wallet-option-tag${installed ? " is-installed" : ""}">${tagText || (installed ? "Installed" : "Connect")}</span>`;
+  }
+
   function refreshWalletModal() {
     if (!modal) return;
     const body = modal.querySelector("#verunWalletModalBody");
+    const title = modal.querySelector("#verunWalletModalTitle");
+    if (title) title.textContent = "Connect a Wallet";
     const detected = detectInjectedWallets();
     const detectedIds = new Set(detected.map(x => x.wallet.id));
+    const wallets = walletListForViewport(true);
 
-    body.innerHTML = `<div class="verun-wallet-grid" id="verunWalletGrid"></div>`;
+    body.innerHTML = `
+      <div class="verun-wallet-modal-intro">Choose a wallet to continue.</div>
+      <div class="verun-wallet-grid" id="verunWalletGrid"></div>
+      <div class="verun-wallet-modal-secure">
+        <span class="verun-wallet-secure-dot"></span>
+        <span>You will only be asked to approve a connection and a non-transactional signature.</span>
+      </div>`;
 
     const grid = body.querySelector("#verunWalletGrid");
-    const tiles = WALLETS.concat([WALLETCONNECT_TILE]);
-
-    tiles.forEach(wallet => {
-      const installed = !wallet.isGeneric && detectedIds.has(wallet.id);
+    wallets.forEach(wallet => {
       const button = document.createElement("button");
-      button.type = "button";
-      button.className = "verun-wallet-tile";
-      button.dataset.walletId = wallet.id;
-      button.innerHTML =
-        `<span class="verun-wallet-tile-icon">` +
-          `<img src="${wallet.icon}" alt="" loading="lazy" referrerpolicy="no-referrer">` +
-          (installed ? `<span class="verun-wallet-tile-dot" title="Installed"></span>` : "") +
-        `</span>` +
-        `<span class="verun-wallet-tile-name">${wallet.name}</span>`;
-      button.addEventListener("click", () => selectWallet(wallet.id));
+      const installed = detectedIds.has(wallet.id);
+      renderWalletOption(button, wallet, installed, wallet.id === "walletconnect" ? "More wallets" : (installed ? "Installed" : "Connect"));
+      button.addEventListener("click", () => {
+        if (wallet.id === "walletconnect") showWalletConnectChooser();
+        else selectWallet(wallet.id);
+      });
+      grid.appendChild(button);
+    });
+  }
+
+  function showWalletConnectChooser() {
+    ensureStylesAndModal();
+    const body = modal.querySelector("#verunWalletModalBody");
+    const title = modal.querySelector("#verunWalletModalTitle");
+    if (title) title.textContent = "Connect with WalletConnect";
+    const detected = detectInjectedWallets();
+    const detectedIds = new Set(detected.map(x => x.wallet.id));
+    const wallets = walletListForViewport(false);
+
+    body.innerHTML = `
+      <button type="button" class="verun-wallet-back" id="verunWalletBack">‹ Back</button>
+      <div class="verun-wallet-modal-intro">Choose a wallet app, or use a QR code.</div>
+      <div class="verun-wallet-grid" id="verunWcWalletGrid"></div>
+      <button type="button" class="verun-wallet-qr-choice" id="verunWalletQrChoice">
+        <span class="verun-wallet-qr-choice-icon">▦</span>
+        <span><strong>Connect with QR code</strong><small>Use any compatible WalletConnect wallet</small></span>
+        <span class="verun-wallet-option-arrow">›</span>
+      </button>`;
+
+    body.querySelector("#verunWalletBack").addEventListener("click", refreshWalletModal);
+    body.querySelector("#verunWalletQrChoice").addEventListener("click", () => startWalletConnect(null, {showQrImmediately: true}));
+
+    const grid = body.querySelector("#verunWcWalletGrid");
+    wallets.forEach(wallet => {
+      const button = document.createElement("button");
+      const installed = detectedIds.has(wallet.id);
+      renderWalletOption(button, wallet, installed, installed ? "Installed" : "Open app");
+      button.addEventListener("click", () => startWalletConnect(wallet.id));
       grid.appendChild(button);
     });
   }
@@ -7223,22 +7446,18 @@ async function loadVerunLeaderboard() {
       pendingWcUri = uri;
       if (!connecting) return;
 
-      // For a wallet explicitly chosen by the user, go straight to that
-      // wallet's WalletConnect deeplink. If the app does not open, the
-      // timeout in startWalletConnect() exposes the QR fallback.
       if (pendingPreferredWalletId) {
         const wallet = walletById(pendingPreferredWalletId);
         if (wallet) {
           closeModal();
-          try { window.location.href = wallet.deepLink(uri); } catch (e) {}
+          openWalletDeepLink(wallet, uri);
+          // Give the mobile app time to take over. QR is only a fallback;
+          // it is never the first screen for the WalletConnect option.
           setTimeout(() => {
-            if (connecting && pendingWcUri) showQrOverlay(pendingWcUri, true);
-          }, 1400);
-          return;
+            if (connecting && pendingWcUri) showQrOverlay(pendingWcUri, false);
+          }, 1800);
         }
       }
-
-      showQrOverlay(uri, true);
     });
 
     return wcProvider;
@@ -7251,9 +7470,9 @@ async function loadVerunLeaderboard() {
     qrOverlay.innerHTML = `
       <div class="verun-wc-qr-card">
         <button type="button" class="verun-wc-qr-close" aria-label="Close">×</button>
-        <div class="verun-wc-qr-title" id="verunWcQrTitle">Scan with your wallet</div>
+        <div class="verun-wc-qr-title" id="verunWcQrTitle">Connect with WalletConnect</div>
         <div class="verun-wc-qr-code" id="verunWcQrCode"></div>
-        <p class="verun-wc-qr-hint" id="verunWcQrHint">Open a compatible wallet app and scan to connect.</p>
+        <p class="verun-wc-qr-hint" id="verunWcQrHint">Scan this QR code with any compatible wallet.</p>
         <div class="verun-wc-wallets" id="verunWcWallets"></div>
         <button type="button" class="verun-wc-back">Back to wallets</button>
       </div>`;
@@ -7304,31 +7523,47 @@ async function loadVerunLeaderboard() {
     list.innerHTML = "";
     if (withWalletButtons) {
       const label = document.createElement("div");
-      label.className = "verun-wc-wallets-label";
-      label.textContent = "Or open directly in";
+      label.className = "verun-wallet-section-label";
+      label.style.padding = "2px 0 4px";
+      label.textContent = "Open in wallet";
       list.appendChild(label);
 
-      const row = document.createElement("div");
-      row.className = "verun-wc-wallets-row";
-      WALLETS.forEach(wallet => {
+      const wallets = walletListForViewport(false);
+      wallets.forEach(wallet => {
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "verun-wc-wallet-icon";
-        btn.title = wallet.name;
-        btn.innerHTML = `<img src="${wallet.icon}" alt="${wallet.name}" loading="lazy" referrerpolicy="no-referrer">`;
+        btn.className = "verun-wallet-option";
+        btn.innerHTML = iconHtml(wallet) +
+          `<span class="verun-wallet-option-name">${wallet.name}</span>` +
+          `<span class="verun-wallet-option-tag">Open</span>`;
         btn.addEventListener("click", () => openWalletDeepLink(wallet, uri));
-        row.appendChild(btn);
+        list.appendChild(btn);
       });
-      list.appendChild(row);
     }
     qrOverlay.classList.add("is-open");
   }
 
   function openWalletDeepLink(wallet, uri) {
-    // The browser remains on this page; the wallet app receives only the
-    // WalletConnect pairing URI. No seed phrase/private key is ever exposed.
+    // Must be called from a user gesture whenever possible (especially iOS).
+    // Only the WalletConnect pairing URI is handed to the wallet app.
     const url = wallet.deepLink(uri);
-    window.location.href = url;
+    try { window.location.href = url; } catch (e) {}
+  }
+
+  function wakeWalletApp(wallet) {
+    if (!wallet) return;
+    // Trigger from the actual Sign tap. Opening in a separate browsing target
+    // keeps the DApp page alive while the mobile wallet is foregrounded.
+    try {
+      const a = document.createElement("a");
+      a.href = wallet.appLink || wallet.deepLink("");
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {}
   }
 
   async function ensureBnbChain(provider) {
@@ -7400,7 +7635,7 @@ async function loadVerunLeaderboard() {
     }
   }
 
-  async function startWalletConnect(preferredWalletId) {
+  async function startWalletConnect(preferredWalletId, options = {}) {
     if (connecting) return;
     setConnecting(true);
     closeModal();
@@ -7435,7 +7670,7 @@ async function loadVerunLeaderboard() {
         await new Promise(r => setTimeout(r, 50));
       }
 
-      if (pendingWcUri && !pendingPreferredWalletId) {
+      if (pendingWcUri && !pendingPreferredWalletId && options.showQrImmediately) {
         await showQrOverlay(pendingWcUri, true);
       }
 
@@ -7513,7 +7748,13 @@ async function loadVerunLeaderboard() {
 
   async function signVerification() {
     if (!currentState.address || currentState.connecting) return;
+
+    // Update the button immediately so a tap never appears to do nothing.
     setConnecting(true);
+    ["genesisWalletDisconnectButton", "miningWalletDisconnectButton"].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.textContent = "Signing…";
+    });
 
     try {
       const provider = await getActiveProvider();
@@ -7522,6 +7763,17 @@ async function loadVerunLeaderboard() {
       await ensureBnbChain(provider);
       const signerAddress = currentState.address;
       const message = verificationMessage(signerAddress);
+
+      // WalletConnect sessions on a normal mobile browser do not always
+      // foreground the selected wallet when a later signing request arrives.
+      // Wake the selected app directly from this user-initiated Sign click.
+      if (currentState.providerType === "walletconnect") {
+        const selectedWallet = walletById(currentState.walletId);
+        if (selectedWallet && selectedWallet.id !== "walletconnect") {
+          wakeWalletApp(selectedWallet);
+          await new Promise(r => setTimeout(r, 180));
+        }
+      }
 
       const signature = await provider.request({
         method: "personal_sign",
@@ -7572,16 +7824,15 @@ async function loadVerunLeaderboard() {
   async function disconnectWallet() {
     if (currentState.connecting) return;
 
-    try {
-      if (currentState.providerType === "walletconnect" && wcProvider) {
-        try {
-          await wcProvider.disconnect();
-        } catch (e) {}
-      }
-    } finally {
-      resetState();
-      closeModal();
-      closeQrOverlay();
+    const provider = wcProvider;
+    const wasWalletConnect = currentState.providerType === "walletconnect";
+
+    // Clear the app state immediately. The UI should never wait for the
+    // WalletConnect relay/app to acknowledge a disconnect.
+    resetState();
+
+    if (wasWalletConnect && provider) {
+      try { await provider.disconnect(); } catch (e) {}
     }
   }
 
@@ -7658,6 +7909,7 @@ async function loadVerunLeaderboard() {
     ensureStylesAndModal();
     bindEventsOnce();
     requestEip6963Discovery();
+    try { window.addEventListener("resize", () => { if (modal && modal.classList.contains("is-open")) refreshWalletModal(); }); } catch (e) {}
 
     // Give extension providers a tick to announce, then restore if safe.
     setTimeout(() => {
