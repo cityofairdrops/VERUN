@@ -7041,12 +7041,22 @@ async function loadVerunLeaderboard() {
       // AppKit reports address, chain and connection status through this
       // single provider subscription. Both page sections use this same state.
       if (typeof appKit.subscribeProvider === "function") {
-        appKit.subscribeProvider(({ address, chainId, isConnected }) => {
+        appKit.subscribeProvider(async ({ address, chainId, isConnected }) => {
           setWalletState({
             address: isConnected ? (address || null) : null,
             chainId: isConnected ? (chainId || null) : null,
             connecting: false
           });
+          // Auto-switch to testnet if connected to wrong chain
+          if (isConnected && chainId && Number(chainId) !== 97) {
+            try {
+              if (typeof appKit.switchNetwork === "function") {
+                setTimeout(() => appKit.switchNetwork({ chainId: 97 }), 300);
+              }
+            } catch (err) {
+              console.warn("Auto network switch failed:", err);
+            }
+          }
         });
       }
 
@@ -7076,6 +7086,16 @@ async function loadVerunLeaderboard() {
       const modal = await initializeAppKit();
       if (!modal) throw new Error("Wallet connector is unavailable.");
       modal.open({ view: "Connect", namespace: "eip155" });
+      // Attempt to switch to testnet after opening the connect modal
+      setTimeout(async () => {
+        try {
+          if (appKit && typeof appKit.switchNetwork === "function") {
+            await appKit.switchNetwork({ chainId: 97 });
+          }
+        } catch (err) {
+          console.warn("Network switch suggestion failed:", err);
+        }
+      }, 500);
       // The provider subscription above will clear `connecting` as soon as
       // the wallet connects (or the modal is closed without connecting).
       setTimeout(() => {
