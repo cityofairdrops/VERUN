@@ -6854,7 +6854,7 @@ async function loadVerunLeaderboard() {
 (function () {
   const REOWN_PROJECT_ID = "ad97eac1a3dd4ed30daa99ad5932e2d8";
   const REOWN_CDN = "https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.8.23/dist/appkit.min.js";
-  const BSC_CHAIN_ID = 56;
+  const BSC_CHAIN_ID = 97;
 
   let appKit = null;
   let bscNetwork = null;
@@ -6960,7 +6960,7 @@ async function loadVerunLeaderboard() {
 
     // Existing Genesis Pass logic uses `verified` as its wallet gate.
     // For this connection-only feature, the gate means: an AppKit wallet
-    // is connected and the active chain is BNB Chain (chain 56). No private
+    // is connected and the active chain is BNB Chain (chain 97). No private
     // key or seed phrase ever reaches this page.
     walletState.verified = bscReady;
 
@@ -6987,7 +6987,7 @@ async function loadVerunLeaderboard() {
       // not have to expose every Viem network as a top-level export.
       bscNetwork = {
         id: 97,
-        caipNetworkId: "eip155:56",
+        caipNetworkId: "eip155:97",
         chainNamespace: "eip155",
         name: "BNB Smart Chain Testnet",
         nativeCurrency: { name: "tBNB", symbol: "tBNB", decimals: 18 },
