@@ -7067,10 +7067,40 @@ async function loadVerunLeaderboard() {
         }
       });
 
-      // AppKit reports address, chain and connection status through this
-      // single provider subscription. Both page sections use this same state.
+      // ── Subscription strategy ────────────────────────────────────────
+      // subscribeProvider fires only on CHANGES, so it misses a session
+      // that was already restored before our subscription ran (the
+      // WalletConnect handshake is async / IndexedDB-backed). We fix
+      // this with three overlapping layers:
+      //
+      // 1. subscribeAccount — AppKit fires this immediately with the
+      //    current account state AND whenever it changes.  It is the
+      //    most reliable signal for session restores.
+      // 2. subscribeProvider — kept for chain-switch events after the
+      //    initial connection.
+      // 3. Delayed fallback — if WC's session verification takes longer
+      //    than expected, a one-shot setTimeout re-reads live state.
+
+      if (typeof appKit.subscribeAccount === "function") {
+        appKit.subscribeAccount(function ({ address, isConnected, status }) {
+          // "reconnecting" is the transient state while WalletConnect
+          // re-verifies a persisted session.  Skip it to avoid a flash
+          // of "not connected" that immediately corrects itself.
+          if (status === "reconnecting") return;
+          setWalletState({
+            address: isConnected ? (address || null) : null,
+            chainId: isConnected
+              ? (typeof appKit.getChainId === "function" ? (appKit.getChainId() || null) : null)
+              : null,
+            connecting: false
+          });
+        });
+      }
+
+      // Keep subscribeProvider for chain-switch events (chainId updates
+      // after the wallet is already connected).
       if (typeof appKit.subscribeProvider === "function") {
-        appKit.subscribeProvider(({ address, chainId, isConnected }) => {
+        appKit.subscribeProvider(function ({ address, chainId, isConnected }) {
           setWalletState({
             address: isConnected ? (address || null) : null,
             chainId: isConnected ? (chainId || null) : null,
@@ -7079,14 +7109,34 @@ async function loadVerunLeaderboard() {
         });
       }
 
-      // Restore an already-persisted AppKit session when possible.
+      // Synchronous snapshot — works when AppKit already has the session
+      // in memory (e.g. injected wallets that report instantly).
       try {
-        setWalletState({
-          address: appKit.getIsConnected() ? (appKit.getAddress() || null) : null,
-          chainId: appKit.getIsConnected() ? (appKit.getChainId() || null) : null,
-          connecting: false
-        });
+        if (appKit.getIsConnected()) {
+          setWalletState({
+            address: appKit.getAddress() || null,
+            chainId: appKit.getChainId() || null,
+            connecting: false
+          });
+        }
       } catch (e) {}
+
+      // Delayed fallback: WalletConnect session verification can take
+      // 500–1500 ms.  If subscribeAccount only fired "reconnecting" and
+      // the wallet is now confirmed, pick it up here.
+      var _snapTimer = setTimeout(function () {
+        try {
+          if (typeof appKit.getIsConnected === "function" &&
+              appKit.getIsConnected() &&
+              !walletState.address) {
+            setWalletState({
+              address: (typeof appKit.getAddress === "function" ? appKit.getAddress() : null) || null,
+              chainId: (typeof appKit.getChainId === "function" ? appKit.getChainId() : null) || null,
+              connecting: false
+            });
+          }
+        } catch (e) {}
+      }, 1500);
 
       return appKit;
     })().catch(err => {
