@@ -6876,6 +6876,7 @@ async function loadVerunLeaderboard() {
   let initPromise = null;
   let ethersPromise = null;
   let signInProgress = false;
+  let syncTimer = null;
   let walletState = {
     address: null,
     chainId: null,
@@ -6911,6 +6912,63 @@ async function loadVerunLeaderboard() {
   function setWalletState(next) {
     walletState = Object.assign({}, walletState, next);
     updateUI();
+  }
+
+  // AppKit's provider subscription is the primary source of truth, but a
+  // short reconciliation loop makes the UI resilient to wallets that finish
+  // a WalletConnect/deep-link handshake after the initial subscription event.
+  // This fixes the common case where the wallet is connected in AppKit while
+  // the page still shows "Connect Wallet".
+  function syncFromAppKit() {
+    if (!appKit) return;
+    try {
+      const connected = !!appKit.getIsConnected();
+      const nextAddress = connected ? (appKit.getAddress() || null) : null;
+      const nextChainId = connected ? (appKit.getChainId() || null) : null;
+
+      if (!nextAddress) {
+        if (walletState.address || walletState.verified || walletState.verification) {
+          setWalletState({
+            address: null,
+            chainId: null,
+            verified: false,
+            signing: false,
+            connecting: false,
+            verification: null
+          });
+        } else {
+          setWalletState({ connecting: false });
+        }
+        return;
+      }
+
+      const changed = !walletState.address ||
+        walletState.address.toLowerCase() !== nextAddress.toLowerCase();
+      const chainChanged = walletState.chainId != null &&
+        Number(walletState.chainId) !== Number(nextChainId);
+
+      setWalletState({
+        address: nextAddress,
+        chainId: nextChainId,
+        verified: changed || chainChanged ? false : walletState.verified,
+        verification: changed || chainChanged ? null : walletState.verification,
+        signing: false,
+        connecting: false
+      });
+    } catch (e) {
+      console.debug("VERUN AppKit state sync pending:", e);
+    }
+  }
+
+  function startStateSync() {
+    if (syncTimer) return;
+    syncTimer = setInterval(() => {
+      syncFromAppKit();
+      if (appKit && !appKit.getState?.().open) {
+        // Keep a light reconciliation loop while the page is open; AppKit
+        // sessions can also change outside the modal (wallet app / extension).
+      }
+    }, 700);
   }
 
   function persistWalletForCurrentUser(address) {
@@ -6953,7 +7011,7 @@ async function loadVerunLeaderboard() {
     [e.genesisSignBtn, e.miningSignBtn].forEach(btn => {
       if (!btn) return;
       btn.style.display = connected && !verified ? "" : "none";
-      btn.disabled = walletState.signing || !bscReady;
+      btn.disabled = walletState.signing;
       btn.textContent = walletState.signing ? "Signing…" : "Sign";
     });
 
@@ -7157,23 +7215,30 @@ async function loadVerunLeaderboard() {
         enableReconnect: true
       });
 
+      startStateSync();
+
       if (typeof appKit.subscribeProvider === "function") {
         appKit.subscribeProvider(({ address, chainId, isConnected }) => {
           const nextAddress = isConnected ? (address || null) : null;
+          const nextChainId = isConnected ? (chainId || null) : null;
           const addressChanged = !!walletState.address &&
             !!nextAddress &&
             walletState.address.toLowerCase() !== nextAddress.toLowerCase();
+          const chainChanged = walletState.chainId != null &&
+            nextChainId != null &&
+            Number(walletState.chainId) !== Number(nextChainId);
           const disconnected = !nextAddress;
 
-          // A new address or a disconnect invalidates the previous proof.
-          if (addressChanged || disconnected) {
+          // A new address, chain change, or disconnect invalidates the
+          // previous proof. The user must sign again for the new state.
+          if (addressChanged || chainChanged || disconnected) {
             walletState.verification = null;
           }
 
           setWalletState({
             address: nextAddress,
-            chainId: isConnected ? (chainId || null) : null,
-            verified: addressChanged || disconnected ? false : walletState.verified,
+            chainId: nextChainId,
+            verified: addressChanged || chainChanged || disconnected ? false : walletState.verified,
             signing: false,
             connecting: false
           });
@@ -7218,9 +7283,17 @@ async function loadVerunLeaderboard() {
       const modal = await initializeAppKit();
       if (!modal) throw new Error("Wallet connector is unavailable.");
       modal.open({ view: "Connect", namespace: "eip155" });
-      setTimeout(() => {
-        if (!walletState.address) setWalletState({ connecting: false });
-      }, 1200);
+
+      // Do not wait for a single AppKit event. Some injected wallets and
+      // WalletConnect mobile sessions update AppKit asynchronously.
+      [150, 500, 1000, 1800, 3000].forEach(delay => {
+        setTimeout(() => {
+          syncFromAppKit();
+          if (!walletState.address && delay === 3000) {
+            setWalletState({ connecting: false });
+          }
+        }, delay);
+      });
     } catch (err) {
       setWalletState({ connecting: false });
       alert("Unable to open wallet connection: " + (err && err.message ? err.message : err));
