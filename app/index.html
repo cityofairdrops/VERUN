@@ -6934,6 +6934,8 @@ async function loadVerunLeaderboard() {
     const connected = !!walletState.address;
     const bscReady = connected && Number(walletState.chainId) === BSC_CHAIN_ID;
 
+    console.log("updateUI called:", { connected, address: walletState.address, chainId: walletState.chainId, bscReady, BSC_CHAIN_ID });
+
     [e.genesisConnectWrap, e.miningConnectWrap].forEach(el => {
       if (el) el.style.display = connected ? "none" : "";
     });
@@ -6983,7 +6985,9 @@ async function loadVerunLeaderboard() {
   }
 
   function setWalletState(next) {
+    const prevAddress = walletState.address;
     walletState = Object.assign({}, walletState, next);
+    console.log("setWalletState called:", { prev: prevAddress, new: walletState.address, chainId: walletState.chainId });
     updateUI();
   }
 
@@ -7038,88 +7042,119 @@ async function loadVerunLeaderboard() {
         }
       });
 
-      // Get the actual provider and listen to account/chain changes
-      let provider = null;
-      try {
-        if (appKit.getWalletProvider) {
-          provider = appKit.getWalletProvider();
-        } else if (appKit.provider) {
-          provider = appKit.provider;
-        } else if (window.ethereum) {
-          provider = window.ethereum;
-        }
-      } catch (e) {}
+      // Reown AppKit doesn't fire subscribeProvider on initial connection.
+      // We need to actively poll for connection state changes.
+      let lastAddress = null;
+      let lastChainId = null;
+      let pollingAttempts = 0;
 
-      // Listen to account changes on the provider
-      if (provider) {
-        if (provider.on && typeof provider.on === "function") {
-          provider.on("accountsChanged", (accounts) => {
-            const address = accounts && accounts[0] ? accounts[0] : null;
+      // Poll for connection state every 300ms
+      const pollInterval = setInterval(() => {
+        pollingAttempts++;
+        try {
+          let currentAddress = null;
+          let currentChainId = null;
+
+          // Try multiple ways to get address from AppKit
+          // Method 1: getAddress() function
+          if (appKit.getAddress && typeof appKit.getAddress === "function") {
+            try {
+              currentAddress = appKit.getAddress();
+            } catch (e) {}
+          }
+
+          // Method 2: Direct state property
+          if (!currentAddress && appKit.state && appKit.state.address) {
+            currentAddress = appKit.state.address;
+          }
+
+          // Method 3: Account property
+          if (!currentAddress && appKit.account) {
+            currentAddress = appKit.account.address || appKit.account;
+          }
+
+          // Method 4: Wagmi config state
+          if (!currentAddress && appKit._wagmiConfig && appKit._wagmiConfig.state && appKit._wagmiConfig.state.data) {
+            currentAddress = appKit._wagmiConfig.state.data.account;
+          }
+
+          // Log first 5 attempts and whenever we detect a change
+          if (pollingAttempts <= 5 || currentAddress !== lastAddress) {
+            console.log("Wallet poll attempt", pollingAttempts, "| Address:", currentAddress, "| Last:", lastAddress);
+          }
+
+          // Get chain ID
+          if (appKit.getChainId && typeof appKit.getChainId === "function") {
+            try {
+              currentChainId = appKit.getChainId();
+            } catch (e) {}
+          }
+
+          if (!currentChainId && appKit.state && appKit.state.chainId) {
+            currentChainId = appKit.state.chainId;
+          }
+
+          // Only update if state changed
+          if (currentAddress !== lastAddress || currentChainId !== lastChainId) {
+            lastAddress = currentAddress;
+            lastChainId = currentChainId;
+
+            console.log("Wallet state changed! Address:", currentAddress, "ChainId:", currentChainId);
+            
             setWalletState({
-              address: address,
-              chainId: address ? (appKit.getChainId ? appKit.getChainId() : null) : null,
+              address: currentAddress || null,
+              chainId: currentChainId || null,
               connecting: false
             });
-          });
+          }
+        } catch (e) {
+          console.error("Wallet polling error:", e);
+        }
+      }, 300);
 
-          provider.on("chainChanged", (chainId) => {
-            if (walletState.address) {
+      // Store poll interval for potential cleanup
+      appKit._pollInterval = pollInterval;
+
+      // Also try subscribeProvider as a bonus detection layer
+      try {
+        if (typeof appKit.subscribeProvider === "function") {
+          appKit.subscribeProvider(({ address, chainId, isConnected }) => {
+            console.log("subscribeProvider fired:", { address, chainId, isConnected });
+            if (address && address !== lastAddress) {
+              lastAddress = address;
+              lastChainId = chainId;
               setWalletState({
-                address: walletState.address,
+                address: address,
                 chainId: chainId,
                 connecting: false
               });
             }
           });
-
-          provider.on("connect", () => {
-            try {
-              const address = appKit.getAddress ? appKit.getAddress() : null;
-              if (address) {
-                setWalletState({
-                  address: address,
-                  chainId: appKit.getChainId ? appKit.getChainId() : null,
-                  connecting: false
-                });
-              }
-            } catch (err) {}
-          });
-
-          provider.on("disconnect", () => {
-            setWalletState({
-              address: null,
-              chainId: null,
-              connecting: false
-            });
-          });
         }
-      }
+      } catch (e) {}
 
-      // Fallback subscribeProvider
-      if (typeof appKit.subscribeProvider === "function") {
-        appKit.subscribeProvider(({ address, chainId, isConnected }) => {
-          if (isConnected && address) {
-            setWalletState({
-              address: address,
-              chainId: chainId,
-              connecting: false
-            });
-          }
-        });
-      }
-
-      // Restore an already-persisted AppKit session when possible.
+      // Check for existing connection immediately
       try {
-        const address = appKit.getAddress ? appKit.getAddress() : null;
-        const isConnected = appKit.getIsConnected ? appKit.getIsConnected() : !!address;
-        if (isConnected && address) {
+        let existingAddress = null;
+        if (appKit.getAddress && typeof appKit.getAddress === "function") {
+          existingAddress = appKit.getAddress();
+        } else if (appKit.state && appKit.state.address) {
+          existingAddress = appKit.state.address;
+        }
+
+        if (existingAddress) {
+          console.log("Found existing connection:", existingAddress);
+          lastAddress = existingAddress;
+          lastChainId = appKit.getChainId ? appKit.getChainId() : null;
           setWalletState({
-            address: address,
-            chainId: appKit.getChainId ? appKit.getChainId() : null,
+            address: existingAddress,
+            chainId: lastChainId,
             connecting: false
           });
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error("Error checking existing connection:", e);
+      }
 
       return appKit;
     })().catch(err => {
@@ -7138,32 +7173,19 @@ async function loadVerunLeaderboard() {
       const modal = await initializeAppKit();
       if (!modal) throw new Error("Wallet connector is unavailable.");
       
-      // Open modal and wait for connection
+      // Open the connection modal
       modal.open({ view: "Connect", namespace: "eip155" });
       
-      // Check connection every 300ms for up to 60 seconds
-      let connectionAttempts = 0;
-      const maxAttempts = 200; // 200 * 300ms = 60 seconds
+      // Set a timeout to stop showing "connecting" after 60 seconds
+      const connectTimeout = setTimeout(() => {
+        setWalletState({ connecting: false });
+      }, 60000);
       
-      const checkConnection = setInterval(() => {
-        connectionAttempts++;
-        try {
-          const address = appKit.getAddress ? appKit.getAddress() : null;
-          if (address) {
-            clearInterval(checkConnection);
-            // Force UI update with new connection state
-            updateUI();
-            return;
-          }
-        } catch (err) {}
-        
-        if (connectionAttempts >= maxAttempts) {
-          clearInterval(checkConnection);
-          setWalletState({ connecting: false });
-        }
-      }, 300);
+      // Store timeout for cleanup if needed
+      if (!appKit._connectTimeouts) appKit._connectTimeouts = [];
+      appKit._connectTimeouts.push(connectTimeout);
       
-      // The provider events or subscribeProvider will update state when connection happens
+      // The polling interval in initializeAppKit will detect when connection succeeds
       setTimeout(() => {
         if (!walletState.address) setWalletState({ connecting: false });
       }, 1200);
