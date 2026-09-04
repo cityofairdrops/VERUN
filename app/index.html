@@ -2379,26 +2379,6 @@
     .verun-wallet-status.is-success { color: var(--green); }
     .verun-wallet-status.is-error { color: #ff8a8a; }
 
-    .verun-wallet-option.is-installed {
-      background: var(--green-soft);
-      border: 1px solid var(--green-border);
-    }
-    .verun-wallet-option.is-installed:hover {
-      background: var(--green-soft);
-    }
-    .verun-wallet-option-tag.is-installed {
-      color: var(--green);
-    }
-    .verun-wallet-modal-note {
-      margin: 2px 10px 8px;
-      padding: 9px 10px;
-      border: 1px solid var(--border);
-      border-radius: 9px;
-      background: var(--panel2);
-      color: var(--muted2);
-      font-size: 9px;
-      line-height: 1.5;
-    }
     .verun-wallet-spinner {
       width: 13px;
       height: 13px;
@@ -2412,10 +2392,42 @@
     }
     @keyframes verunWalletSpin { to { transform: rotate(360deg); } }
 
-    .verun-wc-wallets {
-      display: grid;
-      gap: 4px;
-      margin-top: 8px;
+    .verun-wc-wallets-label {
+      margin-top: 16px;
+      color: var(--muted2);
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .verun-wc-wallets-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .verun-wc-wallet-icon {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border-radius: 11px;
+      border: 1px solid var(--border);
+      background: var(--panel2);
+      cursor: pointer;
+      overflow: hidden;
+      transition: border-color .12s ease, transform .12s ease;
+    }
+    .verun-wc-wallet-icon:hover {
+      border-color: var(--muted);
+      transform: translateY(-1px);
+    }
+    .verun-wc-wallet-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
     .verun-wc-back {
       width: 100%;
@@ -2524,90 +2536,82 @@
     }
 
     .verun-wallet-modal-body {
-      padding: 10px;
+      padding: 18px 16px 20px;
       min-height: 110px;
     }
 
-    .verun-wallet-section-label {
-      padding: 10px 10px 6px;
-      color: var(--muted2);
-      font-size: 9.5px;
-      font-weight: 800;
-      letter-spacing: 1.2px;
-      text-transform: uppercase;
+    /* Standard 4-up wallet grid: MetaMask / Trust / Bitget / WalletConnect.
+       Mirrors the familiar connector layout used across most dApps. */
+    .verun-wallet-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
     }
 
-    .verun-wallet-option {
-      width: 100%;
+    .verun-wallet-tile {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
 
-      padding: 10px;
-      border: none;
-      background: transparent;
-      border-radius: 10px;
+      padding: 12px 4px 10px;
+      border: 1px solid var(--border);
+      background: var(--panel2);
+      border-radius: 13px;
       cursor: pointer;
-      text-align: left;
 
       color: var(--text);
       font-family: 'IBM Plex Mono', monospace;
-      transition: background .12s ease;
+      transition: border-color .12s ease, background .12s ease, transform .12s ease;
     }
 
-    .verun-wallet-option:hover {
-      background: var(--panel2);
+    .verun-wallet-tile:hover {
+      border-color: var(--muted);
+      transform: translateY(-1px);
     }
 
-    .verun-wallet-option-icon,
-    .verun-wallet-generic-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 9px;
+    .verun-wallet-tile-icon {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      overflow: hidden;
       flex-shrink: 0;
 
       display: flex;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
+      background: var(--panel);
     }
 
-    .verun-wallet-option-icon img {
+    .verun-wallet-tile-icon img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
 
-    .verun-wallet-generic-icon {
-      border: 1px solid;
-      font-size: 12.5px;
-      font-weight: 800;
+    .verun-wallet-tile-dot {
+      position: absolute;
+      bottom: -1px;
+      right: -1px;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--green);
+      border: 2px solid var(--panel2);
     }
 
-    .verun-wallet-option-name {
-      flex-grow: 1;
-      min-width: 0;
-      font-size: 12.5px;
+    .verun-wallet-tile-name {
+      font-size: 9.5px;
       font-weight: 700;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .verun-wallet-option-tag {
-      flex-shrink: 0;
-      font-size: 9px;
-      font-weight: 800;
-      letter-spacing: 0.4px;
-      text-transform: uppercase;
-      color: var(--green);
-    }
-
-    .verun-wallet-empty {
-      padding: 26px 10px;
-      color: var(--muted);
-      font-size: 11px;
       text-align: center;
+      line-height: 1.25;
+    }
+
+    @media (max-width: 380px) {
+      .verun-wallet-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
 
     .verun-wallet-modal-foot {
@@ -6941,32 +6945,18 @@ async function loadVerunLeaderboard() {
       detect: p => !!p && (p.isBitKeep === true || p.isBitgetWallet === true),
       // Bitget's universal deeplink bridge can route into the installed app.
       deepLink: uri => "https://bkcode.vip/?deep_link_value=" + encodeURIComponent("bitkeep://bkconnect?uri=" + encodeURIComponent(uri))
-    },
-    {
-      id: "coinbase",
-      name: "Coinbase Wallet",
-      icon: "https://cdn.simpleicons.org/coinbase",
-      rdns: ["com.coinbase.wallet", "org.toshi"],
-      detect: p => !!p && (p.isCoinbaseWallet === true),
-      deepLink: uri => "https://go.cb-w.com/wc?uri=" + encodeURIComponent(uri)
-    },
-    {
-      id: "okx",
-      name: "OKX Wallet",
-      icon: "https://cdn.simpleicons.org/okx",
-      rdns: ["com.okex.wallet", "com.okx.wallet"],
-      detect: p => !!p && (p.isOkxWallet === true || p.isOKExWallet === true),
-      deepLink: uri => "okx://wallet/wc?uri=" + encodeURIComponent(uri)
-    },
-    {
-      id: "zerion",
-      name: "Zerion Wallet",
-      icon: "https://cdn.simpleicons.org/zerion",
-      rdns: ["io.zerion.wallet", "io.zerion"],
-      detect: p => !!p && (p.isZerion === true || p.isZerionWallet === true),
-      deepLink: uri => "zerion://wc?uri=" + encodeURIComponent(uri)
     }
   ];
+
+  // The picker only ever shows this fixed, standard set of four options —
+  // MetaMask / Trust / Bitget as direct wallets, plus a generic WalletConnect
+  // tile that fans out to every other compatible wallet via QR/deeplink.
+  const WALLETCONNECT_TILE = {
+    id: "walletconnect",
+    name: "WalletConnect",
+    icon: "https://cdn.simpleicons.org/walletconnect",
+    isGeneric: true
+  };
 
   let injectedProviders = [];
   let wcProvider = null;
@@ -7088,45 +7078,32 @@ async function loadVerunLeaderboard() {
     document.body.classList.remove("verun-wallet-modal-lock");
   }
 
-  function iconHtml(wallet) {
-    return `<span class="verun-wallet-option-icon"><img src="${wallet.icon}" alt="" loading="lazy" referrerpolicy="no-referrer"></span>`;
-  }
-
   function refreshWalletModal() {
     if (!modal) return;
     const body = modal.querySelector("#verunWalletModalBody");
     const detected = detectInjectedWallets();
     const detectedIds = new Set(detected.map(x => x.wallet.id));
 
-    body.innerHTML = `
-      <div class="verun-wallet-section-label">Browser wallets</div>
-      <div class="verun-wallet-modal-note">
-        Installed browser wallets are detected automatically. Selecting one uses its native provider directly.
-      </div>
-      <div id="verunInjectedWalletList"></div>
-      <div class="verun-wallet-section-label">Connect another wallet</div>
-      <button type="button" class="verun-wallet-option" data-wallet-id="walletconnect">
-        <span class="verun-wallet-option-icon"><img src="https://cdn.simpleicons.org/walletconnect" alt="" loading="lazy" referrerpolicy="no-referrer"></span>
-        <span class="verun-wallet-option-name">WalletConnect</span>
-        <span class="verun-wallet-option-tag">QR / app</span>
-      </button>`;
+    body.innerHTML = `<div class="verun-wallet-grid" id="verunWalletGrid"></div>`;
 
-    const list = body.querySelector("#verunInjectedWalletList");
-    WALLETS.forEach(wallet => {
-      const installed = detectedIds.has(wallet.id);
+    const grid = body.querySelector("#verunWalletGrid");
+    const tiles = WALLETS.concat([WALLETCONNECT_TILE]);
+
+    tiles.forEach(wallet => {
+      const installed = !wallet.isGeneric && detectedIds.has(wallet.id);
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "verun-wallet-option" + (installed ? " is-installed" : "");
+      button.className = "verun-wallet-tile";
       button.dataset.walletId = wallet.id;
       button.innerHTML =
-        iconHtml(wallet) +
-        `<span class="verun-wallet-option-name">${wallet.name}</span>` +
-        `<span class="verun-wallet-option-tag${installed ? " is-installed" : ""}">${installed ? "Installed" : "Open app"}</span>`;
+        `<span class="verun-wallet-tile-icon">` +
+          `<img src="${wallet.icon}" alt="" loading="lazy" referrerpolicy="no-referrer">` +
+          (installed ? `<span class="verun-wallet-tile-dot" title="Installed"></span>` : "") +
+        `</span>` +
+        `<span class="verun-wallet-tile-name">${wallet.name}</span>`;
       button.addEventListener("click", () => selectWallet(wallet.id));
-      list.appendChild(button);
+      grid.appendChild(button);
     });
-
-    body.querySelector('[data-wallet-id="walletconnect"]').addEventListener("click", () => startWalletConnect(null));
   }
 
   function setButtonState(button, text, disabled) {
@@ -7274,9 +7251,9 @@ async function loadVerunLeaderboard() {
     qrOverlay.innerHTML = `
       <div class="verun-wc-qr-card">
         <button type="button" class="verun-wc-qr-close" aria-label="Close">×</button>
-        <div class="verun-wc-qr-title" id="verunWcQrTitle">Connect with WalletConnect</div>
+        <div class="verun-wc-qr-title" id="verunWcQrTitle">Scan with your wallet</div>
         <div class="verun-wc-qr-code" id="verunWcQrCode"></div>
-        <p class="verun-wc-qr-hint" id="verunWcQrHint">Scan this QR code with any compatible wallet.</p>
+        <p class="verun-wc-qr-hint" id="verunWcQrHint">Open a compatible wallet app and scan to connect.</p>
         <div class="verun-wc-wallets" id="verunWcWallets"></div>
         <button type="button" class="verun-wc-back">Back to wallets</button>
       </div>`;
@@ -7327,21 +7304,22 @@ async function loadVerunLeaderboard() {
     list.innerHTML = "";
     if (withWalletButtons) {
       const label = document.createElement("div");
-      label.className = "verun-wallet-section-label";
-      label.style.padding = "2px 0 4px";
-      label.textContent = "Open in wallet";
+      label.className = "verun-wc-wallets-label";
+      label.textContent = "Or open directly in";
       list.appendChild(label);
 
+      const row = document.createElement("div");
+      row.className = "verun-wc-wallets-row";
       WALLETS.forEach(wallet => {
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "verun-wallet-option";
-        btn.innerHTML = iconHtml(wallet) +
-          `<span class="verun-wallet-option-name">${wallet.name}</span>` +
-          `<span class="verun-wallet-option-tag">Open</span>`;
+        btn.className = "verun-wc-wallet-icon";
+        btn.title = wallet.name;
+        btn.innerHTML = `<img src="${wallet.icon}" alt="${wallet.name}" loading="lazy" referrerpolicy="no-referrer">`;
         btn.addEventListener("click", () => openWalletDeepLink(wallet, uri));
-        list.appendChild(btn);
+        row.appendChild(btn);
       });
+      list.appendChild(row);
     }
     qrOverlay.classList.add("is-open");
   }
