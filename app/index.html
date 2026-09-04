@@ -4070,6 +4070,19 @@
       </button>
     </div>
 
+    <div class="genesis-wallet-pending-sign" id="genesisWalletPendingSign" style="display:none;">
+      <div class="genesis-wallet-info">
+        <span class="genesis-wallet-chain-badge is-connected">
+          <span class="genesis-wallet-chain-dot"></span>
+          <span id="genesisWalletPendingAddress"></span>
+        </span>
+        <p class="genesis-wallet-copy" id="genesisWalletPendingCopy">Sign the message in your wallet to verify ownership.</p>
+      </div>
+      <button type="button" class="genesis-wallet-btn genesis-wallet-connect-btn" id="genesisWalletSignButton">
+        Sign
+      </button>
+    </div>
+
     <div class="genesis-wallet-connected" id="genesisWalletConnected" style="display:none;">
       <div class="genesis-wallet-info">
         <span class="genesis-wallet-chain-badge is-connected">
@@ -4078,14 +4091,9 @@
         </span>
         <p class="genesis-wallet-copy">Ownership verified on BNB Chain.</p>
       </div>
-      <div style="display: flex; gap: 12px;">
-        <button type="button" class="genesis-wallet-btn genesis-wallet-sign-btn" id="genesisWalletSignButton">
-          Sign
-        </button>
-        <button type="button" class="genesis-wallet-btn genesis-wallet-disconnect-btn" id="genesisWalletDisconnectButton">
-          Disconnect
-        </button>
-      </div>
+      <button type="button" class="genesis-wallet-btn genesis-wallet-disconnect-btn" id="genesisWalletDisconnectButton">
+        Disconnect Wallet
+      </button>
     </div>
 
   </div>
@@ -4172,19 +4180,6 @@
     <p class="genesis-discount-hint">
       Have a Genesis Pass holder's code? Apply it for 50% off — 0.0025 BNB instead of 0.005 BNB. Your discount is saved and will be ready the moment minting opens.
     </p>
-
-    <!-- Genesis code input -->
-    <div class="genesis-discount-row">
-      <input
-        type="text"
-        id="genesisCodeInput"
-        class="genesis-discount-input"
-        placeholder="Genesis code (optional)"
-        autocomplete="off"
-      >
-      <button type="button" class="genesis-discount-apply" id="genesisCodeApply">Apply</button>
-    </div>
-    <p class="genesis-code-feedback" id="genesisCodeFeedback"></p>
 
     <!-- Shown once minting is live -->
     <div id="genesisMintLiveArea" style="display:none;">
@@ -4627,6 +4622,19 @@
       </button>
     </div>
 
+    <div class="mining-wallet-pending-sign" id="miningWalletPendingSign" style="display:none;">
+      <div class="mining-wallet-info">
+        <span class="mining-wallet-chain-badge is-connected">
+          <span class="mining-wallet-chain-dot"></span>
+          <span id="miningWalletPendingAddress"></span>
+        </span>
+        <p class="mining-wallet-copy" id="miningWalletPendingCopy">Sign the message in your wallet to verify ownership.</p>
+      </div>
+      <button type="button" class="mining-wallet-btn mining-wallet-connect-btn" id="miningWalletSignButton">
+        Sign
+      </button>
+    </div>
+
     <div class="mining-wallet-connected" id="miningWalletConnected" style="display:none;">
       <div class="mining-wallet-info">
         <span class="mining-wallet-chain-badge is-connected">
@@ -4635,14 +4643,9 @@
         </span>
         <p class="mining-wallet-copy">Ownership verified on BNB Chain.</p>
       </div>
-      <div style="display: flex; gap: 12px;">
-        <button type="button" class="mining-wallet-btn mining-wallet-sign-btn" id="miningWalletSignButton">
-          Sign
-        </button>
-        <button type="button" class="mining-wallet-btn mining-wallet-disconnect-btn" id="miningWalletDisconnectButton">
-          Disconnect
-        </button>
-      </div>
+      <button type="button" class="mining-wallet-btn mining-wallet-disconnect-btn" id="miningWalletDisconnectButton">
+        Disconnect Wallet
+      </button>
     </div>
 
   </div>
@@ -6867,7 +6870,7 @@ async function loadVerunLeaderboard() {
 (function () {
   const REOWN_PROJECT_ID = "ad97eac1a3dd4ed30daa99ad5932e2d8";
   const REOWN_CDN = "https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.8.23/dist/appkit.min.js";
-  const BSC_CHAIN_ID = 97;
+  const BSC_CHAIN_ID = 56;
 
   let appKit = null;
   let bscNetwork = null;
@@ -6876,34 +6879,32 @@ async function loadVerunLeaderboard() {
     address: null,
     chainId: null,
     verified: false,
-    connecting: false
+    connecting: false,
+    signed: false,
+    signing: false
   };
 
   function els() {
-    const result = {
+    return {
       genesisConnectBtn: document.getElementById("genesisWalletConnectButton"),
       genesisSignBtn: document.getElementById("genesisWalletSignButton"),
       genesisDisconnectBtn: document.getElementById("genesisWalletDisconnectButton"),
       genesisConnectWrap: document.getElementById("genesisWalletNotConnected"),
+      genesisPendingWrap: document.getElementById("genesisWalletPendingSign"),
       genesisConnectedWrap: document.getElementById("genesisWalletConnected"),
       genesisAddress: document.getElementById("genesisWalletAddressValue"),
-      genesisCopy: document.querySelector("#genesisWalletCard .genesis-wallet-copy"),
+      genesisPendingAddress: document.getElementById("genesisWalletPendingAddress"),
+      genesisPendingCopy: document.getElementById("genesisWalletPendingCopy"),
       miningConnectBtn: document.getElementById("miningWalletConnectButton"),
       miningSignBtn: document.getElementById("miningWalletSignButton"),
       miningDisconnectBtn: document.getElementById("miningWalletDisconnectButton"),
       miningConnectWrap: document.getElementById("miningWalletNotConnected"),
+      miningPendingWrap: document.getElementById("miningWalletPendingSign"),
       miningConnectedWrap: document.getElementById("miningWalletConnected"),
       miningAddress: document.getElementById("miningWalletAddressValue"),
-      miningCopy: document.querySelector("#miningWalletCard .mining-wallet-copy")
+      miningPendingAddress: document.getElementById("miningWalletPendingAddress"),
+      miningPendingCopy: document.getElementById("miningWalletPendingCopy")
     };
-    
-    // Log any missing elements
-    const missing = Object.entries(result).filter(([k, v]) => !v);
-    if (missing.length > 0) {
-      console.warn("Missing DOM elements:", missing.map(([k]) => k));
-    }
-    
-    return result;
   }
 
   function shortAddress(address) {
@@ -6941,74 +6942,63 @@ async function loadVerunLeaderboard() {
     const e = els();
     const connected = !!walletState.address;
     const bscReady = connected && Number(walletState.chainId) === BSC_CHAIN_ID;
+    const signed = walletState.signed;
 
-    console.log("updateUI called:", { connected, address: walletState.address, chainId: walletState.chainId, bscReady, BSC_CHAIN_ID });
-    
-    // Debug: Check if elements exist
-    console.log("DOM elements found:", {
-      genesisConnectWrap: !!e.genesisConnectWrap,
-      genesisConnectedWrap: !!e.genesisConnectedWrap,
-      genesisConnectBtn: !!e.genesisConnectBtn,
-      genesisDisconnectBtn: !!e.genesisDisconnectBtn
+    // ── Three states ──────────────────────────────────────────────────
+    // 1. Not connected  → show connect wrap only
+    // 2. Connected, not signed → show pending-sign wrap only
+    // 3. Connected + signed   → show connected (verified) wrap only
+    const showPending = connected && !signed;
+    const showVerified = connected && signed;
+
+    [e.genesisConnectWrap, e.miningConnectWrap].forEach(el => {
+      if (el) el.style.display = connected ? "none" : "";
+    });
+    [e.genesisPendingWrap, e.miningPendingWrap].forEach(el => {
+      if (el) el.style.display = showPending ? "" : "none";
+    });
+    [e.genesisConnectedWrap, e.miningConnectedWrap].forEach(el => {
+      if (el) el.style.display = showVerified ? "" : "none";
     });
 
-    [e.genesisConnectWrap, e.miningConnectWrap].forEach((el, idx) => {
-      if (el) {
-        const newDisplay = connected ? "none" : "block";
-        const oldDisplay = el.style.display;
-        el.style.display = newDisplay;
-        console.log(`Connect wrap ${idx}: changed display from "${oldDisplay}" to "${newDisplay}"`);
-      } else {
-        console.warn(`Connect wrap ${idx} is NULL!`);
-      }
-    });
-    
-    [e.genesisConnectedWrap, e.miningConnectedWrap].forEach((el, idx) => {
-      if (el) {
-        const newDisplay = connected ? "block" : "none";
-        const oldDisplay = el.style.display;
-        el.style.display = newDisplay;
-        console.log(`Connected wrap ${idx}: changed display from "${oldDisplay}" to "${newDisplay}"`);
-      } else {
-        console.warn(`Connected wrap ${idx} is NULL!`);
-      }
-    });
-
+    // Address in verified panel
     [e.genesisAddress, e.miningAddress].forEach(el => {
       if (el) el.textContent = shortAddress(walletState.address);
     });
 
+    // Address in pending-sign panel
+    [e.genesisPendingAddress, e.miningPendingAddress].forEach(el => {
+      if (el) el.textContent = shortAddress(walletState.address);
+    });
+
+    // Connect button
     [e.genesisConnectBtn, e.miningConnectBtn].forEach(btn => {
       if (!btn) return;
       btn.disabled = walletState.connecting;
       btn.textContent = walletState.connecting ? "Connecting…" : "Connect Wallet";
     });
 
+    // Sign button — chain-aware copy and disabled state
+    const pendingCopy = bscReady
+      ? "Sign the message in your wallet to verify ownership."
+      : "Switch to BNB Chain, then sign to verify ownership.";
     [e.genesisSignBtn, e.miningSignBtn].forEach(btn => {
       if (!btn) return;
-      btn.disabled = walletState.connecting || !bscReady;
-      btn.textContent = walletState.connecting ? "Signing…" : "Sign";
+      btn.disabled = walletState.signing || !bscReady;
+      btn.textContent = walletState.signing ? "Signing…" : "Sign";
     });
+    if (e.genesisPendingCopy) e.genesisPendingCopy.textContent = pendingCopy;
+    if (e.miningPendingCopy) e.miningPendingCopy.textContent = pendingCopy;
 
+    // Disconnect button
     [e.genesisDisconnectBtn, e.miningDisconnectBtn].forEach(btn => {
       if (btn) btn.disabled = walletState.connecting;
     });
 
-    // Keep the existing card language unless the wallet is connected to
-    // a different EVM chain. In that case the UI clearly asks for BNB.
-    const copy = bscReady
-      ? "Connected to BNB Chain."
-      : (connected ? "Switch to BNB Chain to continue." : "Connect your BNB Chain wallet to continue.");
-    if (e.genesisCopy) e.genesisCopy.textContent = copy;
-    if (e.miningCopy) e.miningCopy.textContent = copy;
-
     persistWalletForCurrentUser(walletState.address);
 
-    // Existing Genesis Pass logic uses `verified` as its wallet gate.
-    // For this connection-only feature, the gate means: an AppKit wallet
-    // is connected and the active chain is BNB Chain (chain 56). No private
-    // key or seed phrase ever reaches this page.
-    walletState.verified = bscReady;
+    // `verified` now requires wallet connected on BNB Chain AND ownership signed
+    walletState.verified = bscReady && signed;
 
     if (typeof window.verunRenderGenesisPass === "function") {
       try { window.verunRenderGenesisPass(); } catch (err) {}
@@ -7016,11 +7006,15 @@ async function loadVerunLeaderboard() {
   }
 
   function setWalletState(next) {
-    const prevAddress = walletState.address;
+    // If the wallet address changes (new connection or disconnect), reset signature
+    if ("address" in next && next.address !== walletState.address) {
+      next.signed = false;
+      next.signing = false;
+    }
     walletState = Object.assign({}, walletState, next);
-    console.log("setWalletState called:", { prev: prevAddress, new: walletState.address, chainId: walletState.chainId });
     updateUI();
   }
+
 
   async function initializeAppKit() {
     if (appKit) return appKit;
@@ -7034,16 +7028,16 @@ async function loadVerunLeaderboard() {
       // single-file GitHub Pages deployment because the CDN bundle does
       // not have to expose every Viem network as a top-level export.
       bscNetwork = {
-        id: 97,
-        caipNetworkId: "eip155:97",
+        id: 56,
+        caipNetworkId: "eip155:56",
         chainNamespace: "eip155",
-        name: "BNB Smart Chain Testnet",
+        name: "BNB Smart Chain",
         nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
         rpcUrls: {
-          default: { http: ["https://data-seed-prebsc-1-1.binance.org:8545"] }
+          default: { http: ["https://bsc-dataseed.binance.org"] }
         },
         blockExplorers: {
-          default: { name: "BscScan Testnet", url: "https://testnet.bscscan.com" }
+          default: { name: "BscScan", url: "https://bscscan.com" }
         }
       };
 
@@ -7073,119 +7067,26 @@ async function loadVerunLeaderboard() {
         }
       });
 
-      // Reown AppKit doesn't fire subscribeProvider on initial connection.
-      // We need to actively poll for connection state changes.
-      let lastAddress = null;
-      let lastChainId = null;
-      let pollingAttempts = 0;
-
-      // Poll for connection state every 300ms
-      const pollInterval = setInterval(() => {
-        pollingAttempts++;
-        try {
-          let currentAddress = null;
-          let currentChainId = null;
-
-          // Try multiple ways to get address from AppKit
-          // Method 1: getAddress() function
-          if (appKit.getAddress && typeof appKit.getAddress === "function") {
-            try {
-              currentAddress = appKit.getAddress();
-            } catch (e) {}
-          }
-
-          // Method 2: Direct state property
-          if (!currentAddress && appKit.state && appKit.state.address) {
-            currentAddress = appKit.state.address;
-          }
-
-          // Method 3: Account property
-          if (!currentAddress && appKit.account) {
-            currentAddress = appKit.account.address || appKit.account;
-          }
-
-          // Method 4: Wagmi config state
-          if (!currentAddress && appKit._wagmiConfig && appKit._wagmiConfig.state && appKit._wagmiConfig.state.data) {
-            currentAddress = appKit._wagmiConfig.state.data.account;
-          }
-
-          // Log first 5 attempts and whenever we detect a change
-          if (pollingAttempts <= 5 || currentAddress !== lastAddress) {
-            console.log("Wallet poll attempt", pollingAttempts, "| Address:", currentAddress, "| Last:", lastAddress);
-          }
-
-          // Get chain ID
-          if (appKit.getChainId && typeof appKit.getChainId === "function") {
-            try {
-              currentChainId = appKit.getChainId();
-            } catch (e) {}
-          }
-
-          if (!currentChainId && appKit.state && appKit.state.chainId) {
-            currentChainId = appKit.state.chainId;
-          }
-
-          // Only update if state changed
-          if (currentAddress !== lastAddress || currentChainId !== lastChainId) {
-            lastAddress = currentAddress;
-            lastChainId = currentChainId;
-
-            console.log("Wallet state changed! Address:", currentAddress, "ChainId:", currentChainId);
-            
-            setWalletState({
-              address: currentAddress || null,
-              chainId: currentChainId || null,
-              connecting: false
-            });
-          }
-        } catch (e) {
-          console.error("Wallet polling error:", e);
-        }
-      }, 300);
-
-      // Store poll interval for potential cleanup
-      appKit._pollInterval = pollInterval;
-
-      // Also try subscribeProvider as a bonus detection layer
-      try {
-        if (typeof appKit.subscribeProvider === "function") {
-          appKit.subscribeProvider(({ address, chainId, isConnected }) => {
-            console.log("subscribeProvider fired:", { address, chainId, isConnected });
-            if (address && address !== lastAddress) {
-              lastAddress = address;
-              lastChainId = chainId;
-              setWalletState({
-                address: address,
-                chainId: chainId,
-                connecting: false
-              });
-            }
-          });
-        }
-      } catch (e) {}
-
-      // Check for existing connection immediately
-      try {
-        let existingAddress = null;
-        if (appKit.getAddress && typeof appKit.getAddress === "function") {
-          existingAddress = appKit.getAddress();
-        } else if (appKit.state && appKit.state.address) {
-          existingAddress = appKit.state.address;
-        }
-
-        if (existingAddress) {
-          console.log("Found existing connection:", existingAddress);
-          lastAddress = existingAddress;
-          lastChainId = appKit.getChainId ? appKit.getChainId() : null;
+      // AppKit reports address, chain and connection status through this
+      // single provider subscription. Both page sections use this same state.
+      if (typeof appKit.subscribeProvider === "function") {
+        appKit.subscribeProvider(({ address, chainId, isConnected }) => {
           setWalletState({
-            address: existingAddress,
-            chainId: lastChainId,
+            address: isConnected ? (address || null) : null,
+            chainId: isConnected ? (chainId || null) : null,
             connecting: false
           });
-        }
-      } catch (e) {
-        console.error("Error checking existing connection:", e);
+        });
       }
+
+      // Restore an already-persisted AppKit session when possible.
+      try {
+        setWalletState({
+          address: appKit.getIsConnected() ? (appKit.getAddress() || null) : null,
+          chainId: appKit.getIsConnected() ? (appKit.getChainId() || null) : null,
+          connecting: false
+        });
+      } catch (e) {}
 
       return appKit;
     })().catch(err => {
@@ -7203,89 +7104,15 @@ async function loadVerunLeaderboard() {
       setWalletState({ connecting: true });
       const modal = await initializeAppKit();
       if (!modal) throw new Error("Wallet connector is unavailable.");
-      
-      // Open the connection modal
       modal.open({ view: "Connect", namespace: "eip155" });
-      
-      // Set a timeout to stop showing "connecting" after 60 seconds
-      const connectTimeout = setTimeout(() => {
-        setWalletState({ connecting: false });
-      }, 60000);
-      
-      // Store timeout for cleanup if needed
-      if (!appKit._connectTimeouts) appKit._connectTimeouts = [];
-      appKit._connectTimeouts.push(connectTimeout);
-      
-      // The polling interval in initializeAppKit will detect when connection succeeds
+      // The provider subscription above will clear `connecting` as soon as
+      // the wallet connects (or the modal is closed without connecting).
       setTimeout(() => {
         if (!walletState.address) setWalletState({ connecting: false });
       }, 1200);
     } catch (err) {
       setWalletState({ connecting: false });
       alert("Unable to open wallet connection: " + (err && err.message ? err.message : err));
-    }
-  }
-
-  function generateNonce() {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-  }
-
-  async function signWalletOwnership() {
-    try {
-      if (!appKit || !walletState.address) {
-        alert("Wallet is not connected.");
-        return;
-      }
-
-      setWalletState({ connecting: true });
-
-      const nonce = generateNonce();
-      const timestamp = Date.now();
-      const websiteUrl = window.location.origin;
-
-      // Create the message to sign with nonce, timestamp, and website URL
-      const message = `Verify wallet ownership\n\nNonce: ${nonce}\nTimestamp: ${timestamp}\nWebsite: ${websiteUrl}\nAddress: ${walletState.address}`;
-
-      // Get the wagmi client for signing
-      const wagmiConfig = appKit.getWagmiConfig?.();
-      if (!wagmiConfig) {
-        throw new Error("Wagmi config not available");
-      }
-
-      // Import necessary functions from wagmi
-      const { signMessage } = await import("https://cdn.jsdelivr.net/npm/@wagmi/core@latest/dist/index.js");
-
-      // Request wallet signature
-      const signature = await signMessage(wagmiConfig, {
-        account: walletState.address,
-        message: message
-      });
-
-      // Verify the signature
-      if (signature) {
-        // Store verification data for backend verification
-        const verificationData = {
-          address: walletState.address,
-          message: message,
-          signature: signature,
-          nonce: nonce,
-          timestamp: timestamp,
-          websiteUrl: websiteUrl
-        };
-
-        // Log success and store verification data
-        console.log("Wallet ownership verified", verificationData);
-        localStorage.setItem("walletVerification_" + walletState.address, JSON.stringify(verificationData));
-
-        // Show success message
-        alert("Wallet ownership verified successfully!");
-      }
-
-      setWalletState({ connecting: false });
-    } catch (err) {
-      setWalletState({ connecting: false });
-      console.error("VERUN wallet sign failed:", err);
-      alert("Failed to sign message: " + (err && err.message ? err.message : err));
     }
   }
 
@@ -7302,7 +7129,68 @@ async function loadVerunLeaderboard() {
     } catch (err) {
       console.error("VERUN wallet disconnect failed:", err);
     } finally {
-      setWalletState({ address: null, chainId: null, verified: false, connecting: false });
+      setWalletState({ address: null, chainId: null, verified: false, connecting: false, signed: false, signing: false });
+    }
+  }
+
+  async function signWallet() {
+    const address = walletState.address;
+    if (!address || !appKit) return;
+
+    const bscReady = Number(walletState.chainId) === BSC_CHAIN_ID;
+    if (!bscReady) {
+      alert("Please switch to BNB Chain before signing.");
+      return;
+    }
+
+    // Build a human-readable ownership message with a random nonce,
+    // timestamp and site URL so each signature is unique and bound to
+    // this domain — replaying a signature from elsewhere would fail.
+    const nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map(b => b.toString(16).padStart(2, "0")).join("");
+    const timestamp = new Date().toISOString();
+    const domain = window.location.host || window.location.hostname;
+
+    const message = [
+      "VERUN — Verify Wallet Ownership",
+      "",
+      "Sign this message to confirm you control this wallet.",
+      "This request will NOT trigger a blockchain transaction or cost any gas.",
+      "",
+      "Wallet:    " + address,
+      "Nonce:     " + nonce,
+      "Timestamp: " + timestamp,
+      "Domain:    " + domain
+    ].join("\n");
+
+    try {
+      setWalletState({ signing: true });
+
+      const provider = appKit.getWalletProvider
+        ? appKit.getWalletProvider()
+        : null;
+
+      if (!provider || typeof provider.request !== "function") {
+        throw new Error("Wallet provider is not available. Try reconnecting.");
+      }
+
+      const signature = await provider.request({
+        method: "personal_sign",
+        params: [message, address]
+      });
+
+      if (!signature) throw new Error("No signature returned.");
+
+      // Signature received — mark as verified client-side.
+      // For production: send { message, signature, address } to your
+      // backend and use ecrecover / ethers.verifyMessage() server-side.
+      setWalletState({ signed: true, signing: false });
+
+    } catch (err) {
+      setWalletState({ signing: false });
+      // Code 4001 = user rejected — silent, no alert needed
+      if (err && err.code === 4001) return;
+      alert("Signing failed: " + (err && err.message ? err.message : String(err)));
     }
   }
 
@@ -7317,7 +7205,7 @@ async function loadVerunLeaderboard() {
     [e.genesisSignBtn, e.miningSignBtn].forEach(btn => {
       if (btn && !btn.dataset.walletBound) {
         btn.dataset.walletBound = "1";
-        btn.addEventListener("click", signWalletOwnership);
+        btn.addEventListener("click", signWallet);
       }
     });
     [e.genesisDisconnectBtn, e.miningDisconnectBtn].forEach(btn => {
@@ -7333,19 +7221,6 @@ async function loadVerunLeaderboard() {
     bindEventsOnce();
     try {
       await initializeAppKit();
-      // After initialization, force a connection state check
-      if (appKit) {
-        try {
-          const address = appKit.getAddress ? appKit.getAddress() : null;
-          if (address) {
-            setWalletState({
-              address: address,
-              chainId: appKit.getChainId ? appKit.getChainId() : null,
-              connecting: false
-            });
-          }
-        } catch (err) {}
-      }
     } catch (err) {
       // Do not break the rest of VERUN if the external AppKit CDN is
       // temporarily unreachable. The wallet buttons simply remain usable
@@ -7823,13 +7698,12 @@ async function loadVerunLeaderboard() {
   const REFERRER_SHARE_BNB = 0.0005;   // paid to the code owner
   const PROJECT_SHARE_BNB = 0.002;     // paid to the project (0.0005 + 0.002 = 0.0025)
   const MIN_WITHDRAWAL_BNB = 0.001;    // minimum claimable referral balance
-  const MINT_CONTRACT = "0x43a75ecd5e54ed8b9482c805aef9e3472ebb1087";
 
   // TODO(genesis-pass + wallet): minting is intentionally locked
   // until the payment gateway + wallet connection ship. Flip this to
   // true once that's live — everything below (naming, discount
   // codes, referral payouts) is already wired and ready to go.
-  const MINTING_ENABLED = true;
+  const MINTING_ENABLED = false;
 
   let currentUserId = null;
   let appliedCode = null; // lowercase pass-name currently applied as a discount code
@@ -7852,9 +7726,6 @@ async function loadVerunLeaderboard() {
       discountInput: document.getElementById("genesisDiscountInput"),
       discountApply: document.getElementById("genesisDiscountApply"),
       discountFeedback: document.getElementById("genesisDiscountFeedback"),
-      genesisCodeInput: document.getElementById("genesisCodeInput"),
-      genesisCodeApply: document.getElementById("genesisCodeApply"),
-      genesisCodeFeedback: document.getElementById("genesisCodeFeedback"),
       mintButton: document.getElementById("genesisMintButton"),
       mintNote: document.getElementById("genesisMintNote"),
       ownedId: document.getElementById("genesisOwnedId"),
