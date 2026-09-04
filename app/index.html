@@ -2342,6 +2342,23 @@
       color: var(--green);
     }
 
+    .genesis-wallet-sign-btn,
+    .mining-wallet-sign-btn {
+      border: 1px solid var(--green);
+      background: var(--green);
+      color: #071009;
+      cursor: pointer;
+    }
+    .genesis-wallet-sign-btn:hover,
+    .mining-wallet-sign-btn:hover {
+      opacity: 0.85;
+    }
+    .genesis-wallet-sign-btn:disabled,
+    .mining-wallet-sign-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
     .genesis-wallet-disconnect-btn,
     .mining-wallet-disconnect-btn {
       border: 1px dashed var(--border-strong);
@@ -4078,8 +4095,11 @@
         </span>
         <p class="genesis-wallet-copy">Ownership verified on BNB Chain.</p>
       </div>
-      <button type="button" class="genesis-wallet-btn genesis-wallet-disconnect-btn" id="genesisWalletDisconnectButton">
-        Disconnect
+      <button type="button" class="genesis-wallet-btn genesis-wallet-sign-btn" id="genesisWalletSignButton">
+        Sign
+      </button>
+      <button type="button" class="genesis-wallet-btn genesis-wallet-disconnect-btn" id="genesisWalletDisconnectButton" style="display:none;">
+        Disconnect Wallet
       </button>
     </div>
 
@@ -4617,8 +4637,11 @@
         </span>
         <p class="mining-wallet-copy">Ownership verified on BNB Chain.</p>
       </div>
-      <button type="button" class="mining-wallet-btn mining-wallet-disconnect-btn" id="miningWalletDisconnectButton">
-        Disconnect
+      <button type="button" class="mining-wallet-btn mining-wallet-sign-btn" id="miningWalletSignButton">
+        Sign
+      </button>
+      <button type="button" class="mining-wallet-btn mining-wallet-disconnect-btn" id="miningWalletDisconnectButton" style="display:none;">
+        Disconnect Wallet
       </button>
     </div>
 
@@ -6838,33 +6861,41 @@ async function loadVerunLeaderboard() {
 // VERUN WALLET — REOWN APPKIT
 // ============================================================
 // One shared EVM wallet session for both Genesis Pass and Mining.
-// Reown AppKit supplies the native wallet-selection UI, WalletConnect
-// QR/deep-link flow, and injected-wallet support. Nothing else in the
-// app is changed by this module.
+// Reown AppKit handles wallet selection / WalletConnect / injected
+// wallets. A fresh EIP-191 personal signature is required after every
+// connection before the wallet is considered verified.
 (function () {
   const REOWN_PROJECT_ID = "ad97eac1a3dd4ed30daa99ad5932e2d8";
   const REOWN_CDN = "https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.8.23/dist/appkit.min.js";
+  const ETHERS_CDN = "https://cdn.jsdelivr.net/npm/ethers@6.15.0/+esm";
   const BSC_CHAIN_ID = 56;
+  const VERIFICATION_TTL_MS = 10 * 60 * 1000;
 
   let appKit = null;
   let bscNetwork = null;
   let initPromise = null;
+  let ethersPromise = null;
+  let signInProgress = false;
   let walletState = {
     address: null,
     chainId: null,
     verified: false,
-    connecting: false
+    connecting: false,
+    signing: false,
+    verification: null
   };
 
   function els() {
     return {
       genesisConnectBtn: document.getElementById("genesisWalletConnectButton"),
+      genesisSignBtn: document.getElementById("genesisWalletSignButton"),
       genesisDisconnectBtn: document.getElementById("genesisWalletDisconnectButton"),
       genesisConnectWrap: document.getElementById("genesisWalletNotConnected"),
       genesisConnectedWrap: document.getElementById("genesisWalletConnected"),
       genesisAddress: document.getElementById("genesisWalletAddressValue"),
       genesisCopy: document.querySelector("#genesisWalletCard .genesis-wallet-copy"),
       miningConnectBtn: document.getElementById("miningWalletConnectButton"),
+      miningSignBtn: document.getElementById("miningWalletSignButton"),
       miningDisconnectBtn: document.getElementById("miningWalletDisconnectButton"),
       miningConnectWrap: document.getElementById("miningWalletNotConnected"),
       miningConnectedWrap: document.getElementById("miningWalletConnected"),
@@ -6877,20 +6908,12 @@ async function loadVerunLeaderboard() {
     return address ? address.slice(0, 6) + "…" + address.slice(-4) : "";
   }
 
-  function getCurrentUserId() {
-    try {
-      const user = window.supabaseClient && window.supabaseClient.auth;
-      if (!user) return null;
-      return null;
-    } catch (e) {
-      return null;
-    }
+  function setWalletState(next) {
+    walletState = Object.assign({}, walletState, next);
+    updateUI();
   }
 
   function persistWalletForCurrentUser(address) {
-    // The Genesis Pass module already uses this key to display the wallet
-    // on an owned pass. Keep the storage write best-effort only; AppKit
-    // remains the source of truth for the live connection.
     try {
       const auth = window.supabaseClient && window.supabaseClient.auth;
       if (!auth || !auth.getSession) return;
@@ -6908,6 +6931,7 @@ async function loadVerunLeaderboard() {
     const e = els();
     const connected = !!walletState.address;
     const bscReady = connected && Number(walletState.chainId) === BSC_CHAIN_ID;
+    const verified = !!walletState.verified;
 
     [e.genesisConnectWrap, e.miningConnectWrap].forEach(el => {
       if (el) el.style.display = connected ? "none" : "";
@@ -6926,34 +6950,162 @@ async function loadVerunLeaderboard() {
       btn.textContent = walletState.connecting ? "Connecting…" : "Connect Wallet";
     });
 
-    [e.genesisDisconnectBtn, e.miningDisconnectBtn].forEach(btn => {
-      if (btn) btn.disabled = walletState.connecting;
+    [e.genesisSignBtn, e.miningSignBtn].forEach(btn => {
+      if (!btn) return;
+      btn.style.display = connected && !verified ? "" : "none";
+      btn.disabled = walletState.signing || !bscReady;
+      btn.textContent = walletState.signing ? "Signing…" : "Sign";
     });
 
-    // Keep the existing card language unless the wallet is connected to
-    // a different EVM chain. In that case the UI clearly asks for BNB.
-    const copy = bscReady
-      ? "Connected to BNB Chain."
-      : (connected ? "Switch to BNB Chain to continue." : "Connect your BNB Chain wallet to continue.");
+    [e.genesisDisconnectBtn, e.miningDisconnectBtn].forEach(btn => {
+      if (!btn) return;
+      btn.style.display = connected && verified ? "" : "none";
+      btn.disabled = walletState.signing || walletState.connecting;
+      btn.textContent = "Disconnect Wallet";
+    });
+
+    let copy;
+    if (!connected) {
+      copy = "Connect your BNB Chain wallet to continue.";
+    } else if (!bscReady) {
+      copy = "Switch to BNB Chain to continue.";
+    } else if (!verified) {
+      copy = "Sign the message to verify wallet ownership.";
+    } else {
+      copy = "Ownership verified on BNB Chain.";
+    }
     if (e.genesisCopy) e.genesisCopy.textContent = copy;
     if (e.miningCopy) e.miningCopy.textContent = copy;
 
     persistWalletForCurrentUser(walletState.address);
 
     // Existing Genesis Pass logic uses `verified` as its wallet gate.
-    // For this connection-only feature, the gate means: an AppKit wallet
-    // is connected and the active chain is BNB Chain (chain 56). No private
-    // key or seed phrase ever reaches this page.
-    walletState.verified = bscReady;
-
     if (typeof window.verunRenderGenesisPass === "function") {
       try { window.verunRenderGenesisPass(); } catch (err) {}
     }
   }
 
-  function setWalletState(next) {
-    walletState = Object.assign({}, walletState, next);
-    updateUI();
+  async function loadEthers() {
+    if (!ethersPromise) {
+      ethersPromise = import(ETHERS_CDN);
+    }
+    return ethersPromise;
+  }
+
+  function makeNonce() {
+    const bytes = new Uint8Array(24);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  function buildVerificationMessage(address) {
+    const issuedAt = new Date();
+    const expirationTime = new Date(issuedAt.getTime() + VERIFICATION_TTL_MS);
+    const origin = window.location.origin;
+    const uri = window.location.href.split("#")[0];
+    const nonce = makeNonce();
+
+    return {
+      message:
+        "VERUN Wallet Verification\n\n" +
+        "This signature proves control of this wallet.\n" +
+        "No transaction will be sent and no gas will be charged.\n\n" +
+        "Domain: " + window.location.host + "\n" +
+        "Address: " + address + "\n" +
+        "Chain ID: " + BSC_CHAIN_ID + "\n" +
+        "URI: " + uri + "\n" +
+        "Nonce: " + nonce + "\n" +
+        "Issued At: " + issuedAt.toISOString() + "\n" +
+        "Expiration Time: " + expirationTime.toISOString(),
+      nonce,
+      issuedAt: issuedAt.toISOString(),
+      expirationTime: expirationTime.toISOString(),
+      domain: window.location.host,
+      uri
+    };
+  }
+
+  async function verifySignature(message, signature, expectedAddress) {
+    const ethers = await loadEthers();
+    const recovered = ethers.verifyMessage(message, signature);
+    return recovered.toLowerCase() === expectedAddress.toLowerCase();
+  }
+
+  async function signWallet() {
+    if (signInProgress) return;
+    if (!appKit || !walletState.address) return;
+
+    if (Number(walletState.chainId) !== BSC_CHAIN_ID) {
+      try {
+        if (typeof appKit.switchNetwork === "function" && bscNetwork) {
+          await appKit.switchNetwork(bscNetwork);
+        }
+      } catch (e) {}
+      return;
+    }
+
+    signInProgress = true;
+    setWalletState({ signing: true });
+
+    try {
+      const provider = typeof appKit.getWalletProvider === "function"
+        ? appKit.getWalletProvider()
+        : null;
+      if (!provider || typeof provider.request !== "function") {
+        throw new Error("Connected wallet provider is unavailable.");
+      }
+
+      const address = walletState.address;
+      const verification = buildVerificationMessage(address);
+
+      // EIP-1193 personal_sign. Reown forwards this request to the
+      // connected wallet, including WalletConnect mobile deep-links.
+      const signature = await provider.request({
+        method: "personal_sign",
+        params: [verification.message, address]
+      });
+
+      if (!signature || typeof signature !== "string") {
+        throw new Error("The wallet did not return a signature.");
+      }
+
+      const valid = await verifySignature(
+        verification.message,
+        signature,
+        address
+      );
+
+      if (!valid) {
+        throw new Error("Signature verification failed. The signed wallet does not match the connected wallet.");
+      }
+
+      // Keep the verified state tied to this exact address/message and
+      // expiration. A fresh connection requires a fresh signature.
+      walletState.verification = {
+        address,
+        signature,
+        nonce: verification.nonce,
+        issuedAt: verification.issuedAt,
+        expirationTime: verification.expirationTime,
+        domain: verification.domain,
+        uri: verification.uri
+      };
+
+      setWalletState({
+        verified: true,
+        signing: false,
+        verification: walletState.verification
+      });
+    } catch (err) {
+      console.error("VERUN wallet signature failed:", err);
+      setWalletState({ signing: false, verified: false });
+      const msg = String(err && err.message ? err.message : err);
+      if (!/reject|denied|user rejected|cancel/i.test(msg)) {
+        alert("Wallet verification failed: " + msg);
+      }
+    } finally {
+      signInProgress = false;
+    }
   }
 
   async function initializeAppKit() {
@@ -6963,10 +7115,6 @@ async function loadVerunLeaderboard() {
     initPromise = (async function () {
       const lib = await import(REOWN_CDN);
 
-      // Use an explicit BNB Chain definition instead of relying on a
-      // network re-export from the CDN bundle. This is important for a
-      // single-file GitHub Pages deployment because the CDN bundle does
-      // not have to expose every Viem network as a top-level export.
       bscNetwork = {
         id: 56,
         caipNetworkId: "eip155:56",
@@ -7004,27 +7152,45 @@ async function loadVerunLeaderboard() {
           analytics: false,
           email: false,
           socials: []
-        }
+        },
+        enableNetworkSwitch: true,
+        enableReconnect: true
       });
 
-      // AppKit reports address, chain and connection status through this
-      // single provider subscription. Both page sections use this same state.
       if (typeof appKit.subscribeProvider === "function") {
         appKit.subscribeProvider(({ address, chainId, isConnected }) => {
+          const nextAddress = isConnected ? (address || null) : null;
+          const addressChanged = !!walletState.address &&
+            !!nextAddress &&
+            walletState.address.toLowerCase() !== nextAddress.toLowerCase();
+          const disconnected = !nextAddress;
+
+          // A new address or a disconnect invalidates the previous proof.
+          if (addressChanged || disconnected) {
+            walletState.verification = null;
+          }
+
           setWalletState({
-            address: isConnected ? (address || null) : null,
+            address: nextAddress,
             chainId: isConnected ? (chainId || null) : null,
+            verified: addressChanged || disconnected ? false : walletState.verified,
+            signing: false,
             connecting: false
           });
         });
       }
 
-      // Restore an already-persisted AppKit session when possible.
+      // Restore an existing AppKit connection. Verification is deliberately
+      // NOT restored: possession must be proven by signing after connection.
       try {
+        const connected = appKit.getIsConnected();
         setWalletState({
-          address: appKit.getIsConnected() ? (appKit.getAddress() || null) : null,
-          chainId: appKit.getIsConnected() ? (appKit.getChainId() || null) : null,
-          connecting: false
+          address: connected ? (appKit.getAddress() || null) : null,
+          chainId: connected ? (appKit.getChainId() || null) : null,
+          verified: false,
+          signing: false,
+          connecting: false,
+          verification: null
         });
       } catch (e) {}
 
@@ -7041,12 +7207,17 @@ async function loadVerunLeaderboard() {
 
   async function connectWallet() {
     try {
+      if (walletState.address) {
+        if (!walletState.verified) {
+          await signWallet();
+        }
+        return;
+      }
+
       setWalletState({ connecting: true });
       const modal = await initializeAppKit();
       if (!modal) throw new Error("Wallet connector is unavailable.");
       modal.open({ view: "Connect", namespace: "eip155" });
-      // The provider subscription above will clear `connecting` as soon as
-      // the wallet connects (or the modal is closed without connecting).
       setTimeout(() => {
         if (!walletState.address) setWalletState({ connecting: false });
       }, 1200);
@@ -7069,7 +7240,15 @@ async function loadVerunLeaderboard() {
     } catch (err) {
       console.error("VERUN wallet disconnect failed:", err);
     } finally {
-      setWalletState({ address: null, chainId: null, verified: false, connecting: false });
+      setWalletState({
+        address: null,
+        chainId: null,
+        verified: false,
+        signing: false,
+        connecting: false,
+        verification: null
+      });
+      persistWalletForCurrentUser(null);
     }
   }
 
@@ -7081,13 +7260,18 @@ async function loadVerunLeaderboard() {
         btn.addEventListener("click", connectWallet);
       }
     });
+    [e.genesisSignBtn, e.miningSignBtn].forEach(btn => {
+      if (btn && !btn.dataset.walletBound) {
+        btn.dataset.walletBound = "1";
+        btn.addEventListener("click", signWallet);
+      }
+    });
     [e.genesisDisconnectBtn, e.miningDisconnectBtn].forEach(btn => {
       if (btn && !btn.dataset.walletBound) {
         btn.dataset.walletBound = "1";
         btn.addEventListener("click", disconnectWallet);
       }
     });
-    updateUI();
   }
 
   async function loadWalletModule() {
@@ -7095,9 +7279,6 @@ async function loadVerunLeaderboard() {
     try {
       await initializeAppKit();
     } catch (err) {
-      // Do not break the rest of VERUN if the external AppKit CDN is
-      // temporarily unreachable. The wallet buttons simply remain usable
-      // once the connection library becomes reachable again.
       console.error("VERUN wallet connector unavailable:", err);
     }
     updateUI();
@@ -7106,13 +7287,13 @@ async function loadVerunLeaderboard() {
   window.verunWallet = {
     getState: () => Object.assign({}, walletState),
     open: connectWallet,
+    sign: signWallet,
     disconnect: disconnectWallet
   };
   window.loadWalletModule = loadWalletModule;
 
-  // Bind immediately because section navigation can call the loader more
-  // than once, while the buttons themselves exist only once in the DOM.
   bindEventsOnce();
+  updateUI();
 })();
 
 // ============================================================
