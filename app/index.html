@@ -19,6 +19,11 @@
       --green: #8dffb7;
       --green-soft: rgba(141,255,183,0.10);
       --green-border: rgba(141,255,183,0.25);
+      --topbar-bg: rgba(7,9,9,0.86);
+      --drawer-bg: linear-gradient(180deg,#0d1110,#090c0b);
+      --input-bg: #080b09;
+      --avatar-bg: #1b211e;
+      --shadow-color: rgba(0,0,0,.45);
     }
 
     html[data-theme="light"] {
@@ -32,6 +37,11 @@
       --green: #0a9d5c;
       --green-soft: rgba(10,157,92,0.08);
       --green-border: rgba(10,157,92,0.28);
+      --topbar-bg: rgba(255,255,255,0.86);
+      --drawer-bg: linear-gradient(180deg,#ffffff,#f0f2f1);
+      --input-bg: #eef1ef;
+      --avatar-bg: #dde5e0;
+      --shadow-color: rgba(20,30,24,.14);
     }
 
     * {
@@ -86,7 +96,7 @@
       left: 0;
       right: 0;
       z-index: 50;
-      background: rgba(7,9,9,0.86);
+      background: var(--topbar-bg);
       backdrop-filter: blur(18px);
       border-bottom: 1px solid var(--border);
       transform: translateZ(0); /* own compositor layer: avoids repaint gap */
@@ -148,7 +158,7 @@
       width: 30px;
       height: 30px;
       border-radius: 50%;
-      background: #1b211e;
+      background: var(--avatar-bg);
 
       display: flex;
       align-items: center;
@@ -865,7 +875,7 @@
       flex: 1;
       min-width: 0;
 
-      background: #080b09;
+      background: var(--input-bg);
       border: 1px solid var(--border);
       border-radius: 8px;
 
@@ -1545,7 +1555,7 @@
     }
 
     .mining-ring-track {
-      fill: #0b0f0d;
+      fill: var(--panel2);
       stroke: var(--border);
       stroke-width: 3;
     }
@@ -3131,7 +3141,7 @@
   display:none;
   align-items:center;
   justify-content:center;
-  border:1.5px solid #070909;
+  border:1.5px solid var(--bg);
 }
 
 .verun-notif-panel {
@@ -3253,9 +3263,9 @@
                shows/hides or the page rubber-bands */
   width:min(350px,88vw);
   z-index:9999;
-  background:linear-gradient(180deg,#0d1110,#090c0b);
+  background:var(--drawer-bg);
   border-left:1px solid var(--border);
-  box-shadow:-30px 0 80px rgba(0,0,0,.45);
+  box-shadow:-30px 0 80px var(--shadow-color);
   transform:translateX(105%);
   transition:transform .32s cubic-bezier(.2,.8,.2,1);
   display:flex;
@@ -3355,7 +3365,7 @@
   height:42px;
   border-radius:50%;
   object-fit:cover;
-  background:#1b211e;
+  background:var(--avatar-bg);
   border:1px solid var(--green-border);
 }
 .verun-account-name {
@@ -5258,6 +5268,7 @@ async function markAllNotificationsRead() {
   const toggleButton = document.getElementById("verunThemeToggle");
   const darkIcon = document.getElementById("verunThemeIconDark");
   const lightIcon = document.getElementById("verunThemeIconLight");
+  const metaThemeColor = document.querySelector('meta[name="theme-color"]');
   if (!toggleButton) return;
 
   function reflectIcons() {
@@ -5268,6 +5279,9 @@ async function markAllNotificationsRead() {
       "aria-label",
       isLight ? "Switch to dark theme" : "Switch to light theme"
     );
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute("content", isLight ? "#f4f6f5" : "#070909");
+    }
   }
 
   reflectIcons();
@@ -5547,7 +5561,7 @@ async function markAllNotificationsRead() {
     <div style="
       width:100%;
       max-width:400px;
-      background:#111827;
+      background:var(--panel);
       border-radius:20px;
       padding:28px 22px;
       text-align:center;
@@ -5578,6 +5592,8 @@ async function markAllNotificationsRead() {
           font-weight:bold;
           font-size:16px;
           margin-bottom:10px;
+          background:var(--green);
+          color:#071009;
         "
       >
         Claim Bonus
@@ -5591,7 +5607,7 @@ async function markAllNotificationsRead() {
           padding:12px;
           background:transparent;
           color:inherit;
-          border:1px solid rgba(255,255,255,0.2);
+          border:1px solid var(--border);
           border-radius:12px;
         "
       >
