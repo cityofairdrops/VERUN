@@ -4173,6 +4173,19 @@
       Have a Genesis Pass holder's code? Apply it for 50% off — 0.0025 BNB instead of 0.005 BNB. Your discount is saved and will be ready the moment minting opens.
     </p>
 
+    <!-- Genesis code input -->
+    <div class="genesis-discount-row">
+      <input
+        type="text"
+        id="genesisCodeInput"
+        class="genesis-discount-input"
+        placeholder="Genesis code (optional)"
+        autocomplete="off"
+      >
+      <button type="button" class="genesis-discount-apply" id="genesisCodeApply">Apply</button>
+    </div>
+    <p class="genesis-code-feedback" id="genesisCodeFeedback"></p>
+
     <!-- Shown once minting is live -->
     <div id="genesisMintLiveArea" style="display:none;">
 
@@ -6854,7 +6867,7 @@ async function loadVerunLeaderboard() {
 (function () {
   const REOWN_PROJECT_ID = "ad97eac1a3dd4ed30daa99ad5932e2d8";
   const REOWN_CDN = "https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.8.23/dist/appkit.min.js";
-  const BSC_CHAIN_ID = 56;
+  const BSC_CHAIN_ID = 97;
 
   let appKit = null;
   let bscNetwork = null;
@@ -6986,16 +6999,16 @@ async function loadVerunLeaderboard() {
       // single-file GitHub Pages deployment because the CDN bundle does
       // not have to expose every Viem network as a top-level export.
       bscNetwork = {
-        id: 56,
-        caipNetworkId: "eip155:56",
+        id: 97,
+        caipNetworkId: "eip155:97",
         chainNamespace: "eip155",
-        name: "BNB Smart Chain",
+        name: "BNB Smart Chain Testnet",
         nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
         rpcUrls: {
-          default: { http: ["https://bsc-dataseed.binance.org"] }
+          default: { http: ["https://data-seed-prebsc-1-1.binance.org:8545"] }
         },
         blockExplorers: {
-          default: { name: "BscScan", url: "https://bscscan.com" }
+          default: { name: "BscScan Testnet", url: "https://testnet.bscscan.com" }
         }
       };
 
@@ -7658,12 +7671,13 @@ async function loadVerunLeaderboard() {
   const REFERRER_SHARE_BNB = 0.0005;   // paid to the code owner
   const PROJECT_SHARE_BNB = 0.002;     // paid to the project (0.0005 + 0.002 = 0.0025)
   const MIN_WITHDRAWAL_BNB = 0.001;    // minimum claimable referral balance
+  const MINT_CONTRACT = "0x43a75ecd5e54ed8b9482c805aef9e3472ebb1087";
 
   // TODO(genesis-pass + wallet): minting is intentionally locked
   // until the payment gateway + wallet connection ship. Flip this to
   // true once that's live — everything below (naming, discount
   // codes, referral payouts) is already wired and ready to go.
-  const MINTING_ENABLED = false;
+  const MINTING_ENABLED = true;
 
   let currentUserId = null;
   let appliedCode = null; // lowercase pass-name currently applied as a discount code
@@ -7686,6 +7700,9 @@ async function loadVerunLeaderboard() {
       discountInput: document.getElementById("genesisDiscountInput"),
       discountApply: document.getElementById("genesisDiscountApply"),
       discountFeedback: document.getElementById("genesisDiscountFeedback"),
+      genesisCodeInput: document.getElementById("genesisCodeInput"),
+      genesisCodeApply: document.getElementById("genesisCodeApply"),
+      genesisCodeFeedback: document.getElementById("genesisCodeFeedback"),
       mintButton: document.getElementById("genesisMintButton"),
       mintNote: document.getElementById("genesisMintNote"),
       ownedId: document.getElementById("genesisOwnedId"),
