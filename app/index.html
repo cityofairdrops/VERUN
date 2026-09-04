@@ -2367,6 +2367,70 @@
       }
     }
 
+
+    /* ================= WALLET VERIFICATION ================= */
+    .verun-wallet-status {
+      min-height: 14px;
+      margin-top: 2px;
+      color: var(--muted2);
+      font-size: 9.5px;
+      line-height: 1.45;
+    }
+    .verun-wallet-status.is-success { color: var(--green); }
+    .verun-wallet-status.is-error { color: #ff8a8a; }
+
+    .verun-wallet-option.is-installed {
+      background: var(--green-soft);
+      border: 1px solid var(--green-border);
+    }
+    .verun-wallet-option.is-installed:hover {
+      background: var(--green-soft);
+    }
+    .verun-wallet-option-tag.is-installed {
+      color: var(--green);
+    }
+    .verun-wallet-modal-note {
+      margin: 2px 10px 8px;
+      padding: 9px 10px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: var(--panel2);
+      color: var(--muted2);
+      font-size: 9px;
+      line-height: 1.5;
+    }
+    .verun-wallet-spinner {
+      width: 13px;
+      height: 13px;
+      border: 2px solid var(--border);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: verunWalletSpin .7s linear infinite;
+      display: inline-block;
+      vertical-align: -2px;
+      margin-right: 6px;
+    }
+    @keyframes verunWalletSpin { to { transform: rotate(360deg); } }
+
+    .verun-wc-wallets {
+      display: grid;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    .verun-wc-back {
+      width: 100%;
+      margin-top: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font: inherit;
+      font-size: 9.5px;
+      cursor: pointer;
+    }
+    .verun-wc-back:hover { color: var(--text); border-color: var(--muted); }
+
     /* ================= WALLET PICKER MODAL ================= */
     /* Shared by both the Genesis Pass and Mining "Connect Wallet"
        buttons — one wallet connection, one modal instance. */
@@ -4062,7 +4126,7 @@
           BNB Chain · EVM wallet
         </span>
         <p class="genesis-wallet-copy">
-          Wallet connection is temporarily unavailable while it's being rebuilt for reliability. Check back soon.
+          Connect a BNB Chain wallet, then sign a verification message. No transaction or private key is ever requested.
         </p>
       </div>
       <button type="button" class="genesis-wallet-btn genesis-wallet-connect-btn" id="genesisWalletConnectButton">
@@ -4076,10 +4140,10 @@
           <span class="genesis-wallet-chain-dot"></span>
           <span id="genesisWalletAddressValue"></span>
         </span>
-        <p class="genesis-wallet-copy">Ownership verified on BNB Chain.</p>
+        <p class="genesis-wallet-copy" id="genesisWalletStatus">Wallet connected. Sign the message to verify ownership.</p>
       </div>
       <button type="button" class="genesis-wallet-btn genesis-wallet-disconnect-btn" id="genesisWalletDisconnectButton">
-        Disconnect
+        Sign
       </button>
     </div>
 
@@ -4601,7 +4665,7 @@
           BNB Chain · EVM wallet
         </span>
         <p class="mining-wallet-copy">
-          Wallet connection is temporarily unavailable while it's being rebuilt for reliability. Check back soon.
+          Connect a BNB Chain wallet, then sign a verification message. No transaction or private key is ever requested.
         </p>
       </div>
       <button type="button" class="mining-wallet-btn mining-wallet-connect-btn" id="miningWalletConnectButton">
@@ -4615,10 +4679,10 @@
           <span class="mining-wallet-chain-dot"></span>
           <span id="miningWalletAddressValue"></span>
         </span>
-        <p class="mining-wallet-copy">Ownership verified on BNB Chain.</p>
+        <p class="mining-wallet-copy" id="miningWalletStatus">Wallet connected. Sign the message to verify ownership.</p>
       </div>
       <button type="button" class="mining-wallet-btn mining-wallet-disconnect-btn" id="miningWalletDisconnectButton">
-        Disconnect
+        Sign
       </button>
     </div>
 
@@ -6835,67 +6899,814 @@ async function loadVerunLeaderboard() {
     
 
 // ============================================================
-// VERUN WALLET (disabled placeholder)
+// VERUN WALLET
+// Real EIP-6963 injected-wallet discovery + WalletConnect v2.
+// BNB Chain (chain id 56) is used throughout this app.
 // ============================================================
-// The previous real wallet-connection flow (EIP-6963 / injected
-// provider discovery, WalletConnect v2, EIP-191 signature
-// verification) has been removed entirely at the user's request
-// after repeated, hard-to-diagnose WalletConnect relay failures.
-//
-// This stub keeps only the public surface other modules already
-// depend on so nothing else on the page breaks:
-//   - window.verunWallet.getState() — read by the Genesis Pass and
-//     Mining modules to gate mint/mining actions. Always reports
-//     "not connected" now.
-//   - window.loadWalletModule() — called from the section loader at
-//     page load / navigation; now just wires up the buttons.
-//
-// The Connect/Disconnect buttons stay in the markup and visible, but
-// clicking either one only ever shows the disclaimer below — no
-// wallet, provider, or signature is ever touched.
 (function () {
+  "use strict";
 
-  const DISCLAIMER =
-    "Wallet connection is temporarily unavailable while it's being rebuilt for reliability. " +
-    "No wallet is connected yet, and none is required until this comes back.";
+  const PROJECT_ID = "ad97eac1a3dd4ed30daa99ad5932e2d8";
+  const CHAIN_ID = 56;
+  const CHAIN_HEX = "0x38";
+  const CHAIN_NAME = "BNB Chain";
+  const APP_NAME = "VERUN";
+  const STORAGE_KEY = "verunWalletSession";
+  const MESSAGE_VERSION = "VERUN wallet ownership verification";
+  const WC_PROVIDER_URL = "https://esm.sh/@walletconnect/ethereum-provider@2.24.0";
+  const QR_URL = "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js";
 
-  function els() {
-    return {
-      genesisConnectBtn: document.getElementById("genesisWalletConnectButton"),
-      genesisDisconnectBtn: document.getElementById("genesisWalletDisconnectButton"),
-      miningConnectBtn: document.getElementById("miningWalletConnectButton"),
-      miningDisconnectBtn: document.getElementById("miningWalletDisconnectButton")
-    };
+  const WALLETS = [
+    {
+      id: "metamask",
+      name: "MetaMask",
+      icon: "https://cdn.simpleicons.org/metamask",
+      rdns: ["io.metamask"],
+      detect: p => !!p && (p.isMetaMask === true && !p.isBraveWallet),
+      deepLink: uri => "https://metamask.app.link/wc?uri=" + encodeURIComponent(uri)
+    },
+    {
+      id: "trust",
+      name: "Trust Wallet",
+      icon: "https://cdn.simpleicons.org/trustwallet",
+      rdns: ["com.trustwallet.app", "com.trustwallet"],
+      detect: p => !!p && (p.isTrust === true || p.isTrustWallet === true),
+      deepLink: uri => "https://link.trustwallet.com/wc?uri=" + encodeURIComponent(uri)
+    },
+    {
+      id: "bitget",
+      name: "Bitget Wallet",
+      icon: "https://cdn.simpleicons.org/bitget",
+      rdns: ["com.bitget.web3", "com.bitkeep.wallet"],
+      detect: p => !!p && (p.isBitKeep === true || p.isBitgetWallet === true),
+      // Bitget's universal deeplink bridge can route into the installed app.
+      deepLink: uri => "https://bkcode.vip/?deep_link_value=" + encodeURIComponent("bitkeep://bkconnect?uri=" + encodeURIComponent(uri))
+    },
+    {
+      id: "coinbase",
+      name: "Coinbase Wallet",
+      icon: "https://cdn.simpleicons.org/coinbase",
+      rdns: ["com.coinbase.wallet", "org.toshi"],
+      detect: p => !!p && (p.isCoinbaseWallet === true),
+      deepLink: uri => "https://go.cb-w.com/wc?uri=" + encodeURIComponent(uri)
+    },
+    {
+      id: "okx",
+      name: "OKX Wallet",
+      icon: "https://cdn.simpleicons.org/okx",
+      rdns: ["com.okex.wallet", "com.okx.wallet"],
+      detect: p => !!p && (p.isOkxWallet === true || p.isOKExWallet === true),
+      deepLink: uri => "okx://wallet/wc?uri=" + encodeURIComponent(uri)
+    },
+    {
+      id: "zerion",
+      name: "Zerion Wallet",
+      icon: "https://cdn.simpleicons.org/zerion",
+      rdns: ["io.zerion.wallet", "io.zerion"],
+      detect: p => !!p && (p.isZerion === true || p.isZerionWallet === true),
+      deepLink: uri => "zerion://wc?uri=" + encodeURIComponent(uri)
+    }
+  ];
+
+  let injectedProviders = [];
+  let wcProvider = null;
+  let ethersLib = null;
+  let connecting = false;
+  let modal = null;
+  let qrOverlay = null;
+  let qrInstance = null;
+  let pendingWcUri = null;
+  let pendingPreferredWalletId = null;
+  let discoveryBound = false;
+  let currentState = {
+    address: null,
+    verified: false,
+    connecting: false,
+    walletId: null,
+    providerType: null,
+    chainId: null
+  };
+
+  function safeStorageGet(key) {
+    try { return sessionStorage.getItem(key); } catch (e) { return null; }
+  }
+  function safeStorageSet(key, value) {
+    try { sessionStorage.setItem(key, value); } catch (e) {}
+  }
+  function safeStorageRemove(key) {
+    try { sessionStorage.removeItem(key); } catch (e) {}
   }
 
-  function showDisclaimer() {
-    alert(DISCLAIMER);
+  function shortenAddress(address) {
+    return address ? address.slice(0, 6) + "…" + address.slice(-4) : "";
   }
 
-  function bindEventsOnce() {
-    const e = els();
-    [e.genesisConnectBtn, e.miningConnectBtn, e.genesisDisconnectBtn, e.miningDisconnectBtn].forEach(btn => {
-      if (btn && !btn.dataset.walletBound) {
-        btn.dataset.walletBound = "1";
-        btn.addEventListener("click", showDisclaimer);
+  function walletById(id) {
+    return WALLETS.find(w => w.id === id) || null;
+  }
+
+  function detectInjectedWallets() {
+    const found = [];
+    const seen = new Set();
+
+    function add(info, provider) {
+      if (!provider || seen.has(provider)) return;
+      seen.add(provider);
+      const name = (info && info.name) || "";
+      const rdns = (info && info.rdns) || "";
+      const wallet = WALLETS.find(w =>
+        w.rdns.some(x => x.toLowerCase() === String(rdns).toLowerCase()) ||
+        w.detect(provider) ||
+        w.name.toLowerCase() === name.toLowerCase()
+      );
+      if (wallet) found.push({ wallet, provider, info });
+    }
+
+    injectedProviders.forEach(x => add(x.info, x.provider));
+
+    // Backward-compatible fallback for browsers that do not expose EIP-6963.
+    if (window.ethereum) {
+      const candidates = Array.isArray(window.ethereum.providers)
+        ? window.ethereum.providers
+        : [window.ethereum];
+      candidates.forEach(p => add(null, p));
+    }
+    return found;
+  }
+
+  function requestEip6963Discovery() {
+    if (!window.addEventListener || discoveryBound) return;
+    discoveryBound = true;
+    window.addEventListener("eip6963:announceProvider", event => {
+      const detail = event.detail || {};
+      if (!detail.provider) return;
+      if (!injectedProviders.some(x => x.provider === detail.provider)) {
+        injectedProviders.push({ info: detail.info || {}, provider: detail.provider });
+      }
+      refreshWalletModal();
+    });
+    try {
+      window.dispatchEvent(new Event("eip6963:requestProvider"));
+    } catch (e) {}
+  }
+
+  function ensureStylesAndModal() {
+    if (modal) return;
+
+    modal = document.createElement("div");
+    modal.className = "verun-wallet-modal-overlay";
+    modal.innerHTML = `
+      <div class="verun-wallet-modal" role="dialog" aria-modal="true" aria-label="Connect wallet">
+        <div class="verun-wallet-modal-head">
+          <h3>Connect Wallet</h3>
+          <button type="button" class="verun-wallet-modal-close" aria-label="Close">×</button>
+        </div>
+        <div class="verun-wallet-modal-body" id="verunWalletModalBody"></div>
+        <div class="verun-wallet-modal-foot">
+          <span>Secure EVM connection · BNB Chain</span>
+          <a href="https://walletconnect.com/" target="_blank" rel="noopener noreferrer">WalletConnect</a>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+
+    modal.querySelector(".verun-wallet-modal-close").addEventListener("click", closeModal);
+    modal.addEventListener("click", e => {
+      if (e.target === modal) closeModal();
+    });
+  }
+
+  function openModal() {
+    ensureStylesAndModal();
+    refreshWalletModal();
+    modal.classList.add("is-open");
+    document.body.classList.add("verun-wallet-modal-lock");
+  }
+
+  function closeModal() {
+    if (!modal) return;
+    modal.classList.remove("is-open");
+    document.body.classList.remove("verun-wallet-modal-lock");
+  }
+
+  function iconHtml(wallet) {
+    return `<span class="verun-wallet-option-icon"><img src="${wallet.icon}" alt="" loading="lazy" referrerpolicy="no-referrer"></span>`;
+  }
+
+  function refreshWalletModal() {
+    if (!modal) return;
+    const body = modal.querySelector("#verunWalletModalBody");
+    const detected = detectInjectedWallets();
+    const detectedIds = new Set(detected.map(x => x.wallet.id));
+
+    body.innerHTML = `
+      <div class="verun-wallet-section-label">Browser wallets</div>
+      <div class="verun-wallet-modal-note">
+        Installed browser wallets are detected automatically. Selecting one uses its native provider directly.
+      </div>
+      <div id="verunInjectedWalletList"></div>
+      <div class="verun-wallet-section-label">Connect another wallet</div>
+      <button type="button" class="verun-wallet-option" data-wallet-id="walletconnect">
+        <span class="verun-wallet-option-icon"><img src="https://cdn.simpleicons.org/walletconnect" alt="" loading="lazy" referrerpolicy="no-referrer"></span>
+        <span class="verun-wallet-option-name">WalletConnect</span>
+        <span class="verun-wallet-option-tag">QR / app</span>
+      </button>`;
+
+    const list = body.querySelector("#verunInjectedWalletList");
+    WALLETS.forEach(wallet => {
+      const installed = detectedIds.has(wallet.id);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "verun-wallet-option" + (installed ? " is-installed" : "");
+      button.dataset.walletId = wallet.id;
+      button.innerHTML =
+        iconHtml(wallet) +
+        `<span class="verun-wallet-option-name">${wallet.name}</span>` +
+        `<span class="verun-wallet-option-tag${installed ? " is-installed" : ""}">${installed ? "Installed" : "Open app"}</span>`;
+      button.addEventListener("click", () => selectWallet(wallet.id));
+      list.appendChild(button);
+    });
+
+    body.querySelector('[data-wallet-id="walletconnect"]').addEventListener("click", () => startWalletConnect(null));
+  }
+
+  function setButtonState(button, text, disabled) {
+    if (!button) return;
+    button.disabled = !!disabled;
+    button.textContent = text;
+  }
+
+  function setConnectedUi() {
+    const address = currentState.address;
+    const verified = currentState.verified;
+    const genesisNot = document.getElementById("genesisWalletNotConnected");
+    const genesisCon = document.getElementById("genesisWalletConnected");
+    const miningNot = document.getElementById("miningWalletNotConnected");
+    const miningCon = document.getElementById("miningWalletConnected");
+
+    [genesisNot, miningNot].forEach(x => { if (x) x.style.display = address ? "none" : ""; });
+    [genesisCon, miningCon].forEach(x => { if (x) x.style.display = address ? "" : "none"; });
+
+    ["genesisWalletAddressValue", "miningWalletAddressValue"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = shortenAddress(address);
+    });
+
+    const statusText = verified
+      ? "Ownership verified. Signature matched the connected address."
+      : "Wallet connected. Sign the verification message to verify ownership.";
+
+    ["genesisWalletStatus", "miningWalletStatus"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.textContent = statusText;
+        el.classList.toggle("is-success", verified);
+      }
+    });
+
+    ["genesisWalletDisconnectButton", "miningWalletDisconnectButton"].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) {
+        btn.textContent = verified ? "Disconnect" : "Sign";
+        btn.disabled = !!currentState.connecting;
       }
     });
   }
 
-  async function loadWalletModule() {
-    bindEventsOnce();
-    // Let the Genesis Pass module re-check mint eligibility now that
-    // it can read window.verunWallet — always "not connected".
+  function updatePublicState() {
+    window.verunWalletState = Object.assign({}, currentState);
+    setConnectedUi();
+
     if (typeof window.verunRenderGenesisPass === "function") {
       try { window.verunRenderGenesisPass(); } catch (e) {}
     }
   }
 
+  function resetState() {
+    currentState = {
+      address: null,
+      verified: false,
+      connecting: false,
+      walletId: null,
+      providerType: null,
+      chainId: null
+    };
+    safeStorageRemove(STORAGE_KEY);
+    updatePublicState();
+  }
+
+  async function loadEthers() {
+    if (ethersLib) return ethersLib;
+    ethersLib = await import("https://cdn.jsdelivr.net/npm/ethers@6.15.0/+esm");
+    return ethersLib;
+  }
+
+  async function loadWalletConnectProvider() {
+    if (wcProvider) return wcProvider;
+    const mod = await import(WC_PROVIDER_URL);
+    const EthereumProvider = mod.EthereumProvider || mod.default?.EthereumProvider;
+    if (!EthereumProvider) throw new Error("WalletConnect provider failed to load.");
+    wcProvider = await EthereumProvider.init({
+      projectId: PROJECT_ID,
+      optionalChains: [CHAIN_ID],
+      showQrModal: false,
+      metadata: {
+        name: APP_NAME,
+        description: "VERUN wallet connection",
+        url: window.location.origin,
+        icons: [window.location.origin + "/favicon.ico"]
+      },
+      optionalMethods: [
+        "eth_accounts",
+        "eth_requestAccounts",
+        "personal_sign",
+        "eth_chainId",
+        "wallet_switchEthereumChain",
+        "wallet_addEthereumChain"
+      ],
+      optionalEvents: ["accountsChanged", "chainChanged", "disconnect"]
+    });
+
+    wcProvider.on("accountsChanged", accounts => {
+      if (!accounts || !accounts[0]) resetState();
+      else if (currentState.address && accounts[0].toLowerCase() !== currentState.address.toLowerCase()) {
+        currentState.address = accounts[0];
+        currentState.verified = false;
+        safeStorageRemove(STORAGE_KEY);
+        updatePublicState();
+        maybeAutoSign();
+      }
+    });
+    wcProvider.on("disconnect", resetState);
+    wcProvider.on("chainChanged", chain => {
+      currentState.chainId = Number(chain);
+      updatePublicState();
+    });
+
+    wcProvider.on("display_uri", uri => {
+      pendingWcUri = uri;
+      if (!connecting) return;
+
+      // For a wallet explicitly chosen by the user, go straight to that
+      // wallet's WalletConnect deeplink. If the app does not open, the
+      // timeout in startWalletConnect() exposes the QR fallback.
+      if (pendingPreferredWalletId) {
+        const wallet = walletById(pendingPreferredWalletId);
+        if (wallet) {
+          closeModal();
+          try { window.location.href = wallet.deepLink(uri); } catch (e) {}
+          setTimeout(() => {
+            if (connecting && pendingWcUri) showQrOverlay(pendingWcUri, true);
+          }, 1400);
+          return;
+        }
+      }
+
+      showQrOverlay(uri, true);
+    });
+
+    return wcProvider;
+  }
+
+  function createQrOverlay() {
+    if (qrOverlay) return;
+    qrOverlay = document.createElement("div");
+    qrOverlay.className = "verun-wc-qr-overlay";
+    qrOverlay.innerHTML = `
+      <div class="verun-wc-qr-card">
+        <button type="button" class="verun-wc-qr-close" aria-label="Close">×</button>
+        <div class="verun-wc-qr-title" id="verunWcQrTitle">Connect with WalletConnect</div>
+        <div class="verun-wc-qr-code" id="verunWcQrCode"></div>
+        <p class="verun-wc-qr-hint" id="verunWcQrHint">Scan this QR code with any compatible wallet.</p>
+        <div class="verun-wc-wallets" id="verunWcWallets"></div>
+        <button type="button" class="verun-wc-back">Back to wallets</button>
+      </div>`;
+    document.body.appendChild(qrOverlay);
+    qrOverlay.querySelector(".verun-wc-qr-close").addEventListener("click", closeQrOverlay);
+    qrOverlay.querySelector(".verun-wc-back").addEventListener("click", () => {
+      closeQrOverlay();
+      openModal();
+    });
+    qrOverlay.addEventListener("click", e => {
+      if (e.target === qrOverlay) closeQrOverlay();
+    });
+  }
+
+  function closeQrOverlay() {
+    if (!qrOverlay) return;
+    qrOverlay.classList.remove("is-open");
+    if (qrInstance) {
+      try { qrInstance.clear(); } catch (e) {}
+      qrInstance = null;
+    }
+  }
+
+  async function ensureQrLibrary() {
+    if (window.QRCode) return;
+    await new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = QR_URL;
+      script.onload = resolve;
+      script.onerror = () => reject(new Error("QR code library could not be loaded."));
+      document.head.appendChild(script);
+    });
+  }
+
+  async function showQrOverlay(uri, withWalletButtons) {
+    createQrOverlay();
+    await ensureQrLibrary();
+    const code = qrOverlay.querySelector("#verunWcQrCode");
+    code.innerHTML = "";
+    qrInstance = new QRCode(code, {
+      text: uri,
+      width: 220,
+      height: 220,
+      correctLevel: QRCode.CorrectLevel.M
+    });
+
+    const list = qrOverlay.querySelector("#verunWcWallets");
+    list.innerHTML = "";
+    if (withWalletButtons) {
+      const label = document.createElement("div");
+      label.className = "verun-wallet-section-label";
+      label.style.padding = "2px 0 4px";
+      label.textContent = "Open in wallet";
+      list.appendChild(label);
+
+      WALLETS.forEach(wallet => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "verun-wallet-option";
+        btn.innerHTML = iconHtml(wallet) +
+          `<span class="verun-wallet-option-name">${wallet.name}</span>` +
+          `<span class="verun-wallet-option-tag">Open</span>`;
+        btn.addEventListener("click", () => openWalletDeepLink(wallet, uri));
+        list.appendChild(btn);
+      });
+    }
+    qrOverlay.classList.add("is-open");
+  }
+
+  function openWalletDeepLink(wallet, uri) {
+    // The browser remains on this page; the wallet app receives only the
+    // WalletConnect pairing URI. No seed phrase/private key is ever exposed.
+    const url = wallet.deepLink(uri);
+    window.location.href = url;
+  }
+
+  async function ensureBnbChain(provider) {
+    const chain = await provider.request({ method: "eth_chainId" });
+    const numeric = typeof chain === "string" ? parseInt(chain, 16) : Number(chain);
+    if (numeric === CHAIN_ID) return;
+
+    try {
+      await provider.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: CHAIN_HEX }]
+      });
+    } catch (switchError) {
+      if (switchError && (switchError.code === 4902 || /unknown chain|unrecognized chain/i.test(switchError.message || ""))) {
+        await provider.request({
+          method: "wallet_addEthereumChain",
+          params: [{
+            chainId: CHAIN_HEX,
+            chainName: CHAIN_NAME,
+            nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
+            rpcUrls: ["https://bsc-dataseed.binance.org/"],
+            blockExplorerUrls: ["https://bscscan.com/"]
+          }]
+        });
+      } else {
+        throw switchError;
+      }
+    }
+
+    const after = await provider.request({ method: "eth_chainId" });
+    if (parseInt(String(after), 16) !== CHAIN_ID) {
+      throw new Error("Please switch the wallet to BNB Chain to continue.");
+    }
+  }
+
+  function setConnecting(yes) {
+    connecting = yes;
+    currentState.connecting = yes;
+    updatePublicState();
+  }
+
+  async function connectInjected(walletId, provider) {
+    await loadEthers();
+    setConnecting(true);
+    try {
+      await ensureBnbChain(provider);
+      const accounts = await provider.request({ method: "eth_requestAccounts" });
+      const address = accounts && accounts[0];
+      if (!address) throw new Error("The wallet did not return an account.");
+
+      currentState.address = address;
+      currentState.walletId = walletId;
+      currentState.providerType = "injected";
+      currentState.chainId = CHAIN_ID;
+      currentState.verified = false;
+      safeStorageSet(STORAGE_KEY, JSON.stringify({
+        address,
+        walletId,
+        providerType: "injected",
+        verified: false
+      }));
+      setConnecting(false);
+      closeModal();
+      updatePublicState();
+      await maybeAutoSign();
+    } catch (err) {
+      setConnecting(false);
+      showWalletError(err);
+    }
+  }
+
+  async function startWalletConnect(preferredWalletId) {
+    if (connecting) return;
+    setConnecting(true);
+    closeModal();
+    pendingPreferredWalletId = preferredWalletId || null;
+
+    try {
+      const provider = await loadWalletConnectProvider();
+
+      // Reuse a persisted WalletConnect session when possible.
+      if (provider.session && provider.accounts && provider.accounts[0]) {
+        await ensureBnbChain(provider);
+        currentState.address = provider.accounts[0];
+        currentState.walletId = preferredWalletId || "walletconnect";
+        currentState.providerType = "walletconnect";
+        currentState.chainId = CHAIN_ID;
+        currentState.verified = false;
+        pendingPreferredWalletId = null;
+        setConnecting(false);
+        updatePublicState();
+        await maybeAutoSign();
+        return;
+      }
+
+      pendingWcUri = null;
+
+      // provider.connect() emits display_uri. For a named wallet we use that
+      // URI to invoke the wallet app directly; WalletConnect QR remains the
+      // universal fallback for every compatible wallet.
+      const connectPromise = provider.connect();
+      const started = Date.now();
+      while (!pendingWcUri && Date.now() - started < 8000) {
+        await new Promise(r => setTimeout(r, 50));
+      }
+
+      if (pendingWcUri && !pendingPreferredWalletId) {
+        await showQrOverlay(pendingWcUri, true);
+      }
+
+      await connectPromise;
+      closeQrOverlay();
+      pendingPreferredWalletId = null;
+
+      await ensureBnbChain(provider);
+      const accounts = await provider.request({ method: "eth_requestAccounts" });
+      const address = accounts && accounts[0];
+      if (!address) throw new Error("WalletConnect connected without an account.");
+
+      currentState.address = address;
+      currentState.walletId = preferredWalletId || "walletconnect";
+      currentState.providerType = "walletconnect";
+      currentState.chainId = CHAIN_ID;
+      currentState.verified = false;
+      safeStorageSet(STORAGE_KEY, JSON.stringify({
+        address,
+        walletId: currentState.walletId,
+        providerType: "walletconnect",
+        verified: false
+      }));
+      setConnecting(false);
+      updatePublicState();
+      await maybeAutoSign();
+    } catch (err) {
+      pendingPreferredWalletId = null;
+      closeQrOverlay();
+      setConnecting(false);
+      if (!/reset|rejected|denied|cancel/i.test(err?.message || "")) {
+        showWalletError(err);
+      }
+    }
+  }
+
+  async function selectWallet(walletId) {
+    if (walletId === "walletconnect") return startWalletConnect(null);
+
+    const found = detectInjectedWallets().find(x => x.wallet.id === walletId);
+    if (found) {
+      return connectInjected(walletId, found.provider);
+    }
+
+    // No extension is installed. Create a WalletConnect session and redirect
+    // the selected mobile wallet using its WalletConnect deeplink.
+    return startWalletConnect(walletId);
+  }
+
+  async function getActiveProvider() {
+    if (currentState.providerType === "walletconnect") return await loadWalletConnectProvider();
+    const found = detectInjectedWallets().find(x => x.wallet.id === currentState.walletId);
+    if (found) return found.provider;
+    const all = detectInjectedWallets();
+    return all[0]?.provider || window.ethereum || null;
+  }
+
+  function verificationMessage(address) {
+    const nonce = crypto.getRandomValues(new Uint32Array(4)).join("-");
+    const issued = new Date().toISOString();
+    const origin = window.location.origin;
+    return [
+      MESSAGE_VERSION,
+      "",
+      "Domain: " + origin,
+      "Address: " + address,
+      "Chain: BNB Chain (56)",
+      "Nonce: " + nonce,
+      "Issued At: " + issued,
+      "",
+      "This signature only verifies control of this wallet.",
+      "It does not authorize a transaction or transfer funds."
+    ].join("\n");
+  }
+
+  async function signVerification() {
+    if (!currentState.address || currentState.connecting) return;
+    setConnecting(true);
+
+    try {
+      const provider = await getActiveProvider();
+      if (!provider) throw new Error("Connected wallet provider is no longer available.");
+
+      await ensureBnbChain(provider);
+      const signerAddress = currentState.address;
+      const message = verificationMessage(signerAddress);
+
+      const signature = await provider.request({
+        method: "personal_sign",
+        params: [message, signerAddress]
+      });
+
+      const ethers = await loadEthers();
+      const recovered = ethers.verifyMessage(message, signature);
+      if (recovered.toLowerCase() !== signerAddress.toLowerCase()) {
+        throw new Error("Signature verification failed. The recovered address does not match the connected wallet.");
+      }
+
+      currentState.verified = true;
+      safeStorageSet(STORAGE_KEY, JSON.stringify({
+        address: signerAddress,
+        walletId: currentState.walletId,
+        providerType: currentState.providerType,
+        verified: true
+      }));
+      setConnecting(false);
+      updatePublicState();
+    } catch (err) {
+      currentState.verified = false;
+      setConnecting(false);
+      updatePublicState();
+      showWalletError(err);
+    }
+  }
+
+  async function maybeAutoSign() {
+    // A new connection should request the signature immediately. If the
+    // wallet/browser delays or blocks it, the same button remains as "Sign".
+    if (currentState.address && !currentState.verified) {
+      await new Promise(r => setTimeout(r, 120));
+      try { await signVerification(); } catch (e) {}
+    }
+  }
+
+  function showWalletError(err) {
+    const message = err?.message || String(err || "Wallet connection failed.");
+    if (/user rejected|user denied|rejected the request|denied/i.test(message)) {
+      alert("Wallet request was cancelled.");
+    } else {
+      alert("Wallet error: " + message);
+    }
+  }
+
+  async function disconnectWallet() {
+    if (currentState.connecting) return;
+
+    try {
+      if (currentState.providerType === "walletconnect" && wcProvider) {
+        try {
+          await wcProvider.disconnect();
+        } catch (e) {}
+      }
+    } finally {
+      resetState();
+      closeModal();
+      closeQrOverlay();
+    }
+  }
+
+  function bindEventsOnce() {
+    const buttons = [
+      ["genesisWalletConnectButton", () => openModal()],
+      ["miningWalletConnectButton", () => openModal()],
+      ["genesisWalletDisconnectButton", () => currentState.verified ? disconnectWallet() : signVerification()],
+      ["miningWalletDisconnectButton", () => currentState.verified ? disconnectWallet() : signVerification()]
+    ];
+
+    buttons.forEach(([id, handler]) => {
+      const btn = document.getElementById(id);
+      if (btn && !btn.dataset.walletBound) {
+        btn.dataset.walletBound = "1";
+        btn.addEventListener("click", handler);
+      }
+    });
+  }
+
+  async function restoreInjectedConnection() {
+    const saved = safeStorageGet(STORAGE_KEY);
+    if (!saved) return;
+
+    let parsed;
+    try { parsed = JSON.parse(saved); } catch (e) { return; }
+    if (!parsed || !parsed.address) return;
+
+    const found = detectInjectedWallets().find(x =>
+      x.wallet.id === parsed.walletId &&
+      x.provider
+    );
+    if (!found) return;
+
+    try {
+      const accounts = await found.provider.request({ method: "eth_accounts" });
+      if (!accounts || !accounts[0] || accounts[0].toLowerCase() !== parsed.address.toLowerCase()) {
+        safeStorageRemove(STORAGE_KEY);
+        return;
+      }
+      const chain = await found.provider.request({ method: "eth_chainId" });
+      if (parseInt(String(chain), 16) !== CHAIN_ID) return;
+
+      currentState.address = accounts[0];
+      currentState.walletId = parsed.walletId;
+      currentState.providerType = "injected";
+      currentState.chainId = CHAIN_ID;
+      // Never trust persisted "verified" status across a page reload.
+      currentState.verified = false;
+      updatePublicState();
+      await maybeAutoSign();
+    } catch (e) {}
+  }
+
+  async function restoreWalletConnectSession() {
+    try {
+      const provider = await loadWalletConnectProvider();
+      if (!provider.session || !provider.accounts || !provider.accounts[0]) return;
+
+      const address = provider.accounts[0];
+      currentState.address = address;
+      currentState.walletId = "walletconnect";
+      currentState.providerType = "walletconnect";
+      currentState.chainId = Number(provider.chainId || CHAIN_ID);
+      currentState.verified = false;
+      updatePublicState();
+      await maybeAutoSign();
+    } catch (e) {
+      // No persisted session is normal.
+    }
+  }
+
+  async function loadWalletModule() {
+    ensureStylesAndModal();
+    bindEventsOnce();
+    requestEip6963Discovery();
+
+    // Give extension providers a tick to announce, then restore if safe.
+    setTimeout(() => {
+      refreshWalletModal();
+      restoreInjectedConnection();
+    }, 250);
+
+    // WalletConnect restoration is intentionally lazy. It only initializes
+    // if a prior WC session exists in storage, avoiding unnecessary relay work.
+    let hasWalletConnectStorage = false;
+    try {
+      hasWalletConnectStorage = Object.keys(localStorage).some(k => k.indexOf("wc@2:") === 0);
+    } catch (e) {}
+    if (hasWalletConnectStorage) restoreWalletConnectSession();
+
+    updatePublicState();
+  }
+
   window.verunWallet = {
-    getState: () => ({ address: null, verified: false, connecting: false })
+    getState: () => Object.assign({}, currentState),
+    connect: openModal,
+    sign: signVerification,
+    disconnect: disconnectWallet
   };
   window.loadWalletModule = loadWalletModule;
 })();
+
 
 // ============================================================
 // VERUN MINING
