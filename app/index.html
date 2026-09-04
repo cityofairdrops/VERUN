@@ -6880,7 +6880,7 @@ async function loadVerunLeaderboard() {
   };
 
   function els() {
-    return {
+    const result = {
       genesisConnectBtn: document.getElementById("genesisWalletConnectButton"),
       genesisSignBtn: document.getElementById("genesisWalletSignButton"),
       genesisDisconnectBtn: document.getElementById("genesisWalletDisconnectButton"),
@@ -6896,6 +6896,14 @@ async function loadVerunLeaderboard() {
       miningAddress: document.getElementById("miningWalletAddressValue"),
       miningCopy: document.querySelector("#miningWalletCard .mining-wallet-copy")
     };
+    
+    // Log any missing elements
+    const missing = Object.entries(result).filter(([k, v]) => !v);
+    if (missing.length > 0) {
+      console.warn("Missing DOM elements:", missing.map(([k]) => k));
+    }
+    
+    return result;
   }
 
   function shortAddress(address) {
@@ -6935,12 +6943,35 @@ async function loadVerunLeaderboard() {
     const bscReady = connected && Number(walletState.chainId) === BSC_CHAIN_ID;
 
     console.log("updateUI called:", { connected, address: walletState.address, chainId: walletState.chainId, bscReady, BSC_CHAIN_ID });
-
-    [e.genesisConnectWrap, e.miningConnectWrap].forEach(el => {
-      if (el) el.style.display = connected ? "none" : "";
+    
+    // Debug: Check if elements exist
+    console.log("DOM elements found:", {
+      genesisConnectWrap: !!e.genesisConnectWrap,
+      genesisConnectedWrap: !!e.genesisConnectedWrap,
+      genesisConnectBtn: !!e.genesisConnectBtn,
+      genesisDisconnectBtn: !!e.genesisDisconnectBtn
     });
-    [e.genesisConnectedWrap, e.miningConnectedWrap].forEach(el => {
-      if (el) el.style.display = connected ? "" : "none";
+
+    [e.genesisConnectWrap, e.miningConnectWrap].forEach((el, idx) => {
+      if (el) {
+        const newDisplay = connected ? "none" : "block";
+        const oldDisplay = el.style.display;
+        el.style.display = newDisplay;
+        console.log(`Connect wrap ${idx}: changed display from "${oldDisplay}" to "${newDisplay}"`);
+      } else {
+        console.warn(`Connect wrap ${idx} is NULL!`);
+      }
+    });
+    
+    [e.genesisConnectedWrap, e.miningConnectedWrap].forEach((el, idx) => {
+      if (el) {
+        const newDisplay = connected ? "block" : "none";
+        const oldDisplay = el.style.display;
+        el.style.display = newDisplay;
+        console.log(`Connected wrap ${idx}: changed display from "${oldDisplay}" to "${newDisplay}"`);
+      } else {
+        console.warn(`Connected wrap ${idx} is NULL!`);
+      }
     });
 
     [e.genesisAddress, e.miningAddress].forEach(el => {
