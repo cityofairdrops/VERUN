@@ -4078,9 +4078,14 @@
         </span>
         <p class="genesis-wallet-copy">Ownership verified on BNB Chain.</p>
       </div>
-      <button type="button" class="genesis-wallet-btn genesis-wallet-disconnect-btn" id="genesisWalletDisconnectButton">
-        Disconnect
-      </button>
+      <div style="display: flex; gap: 12px;">
+        <button type="button" class="genesis-wallet-btn genesis-wallet-sign-btn" id="genesisWalletSignButton">
+          Sign
+        </button>
+        <button type="button" class="genesis-wallet-btn genesis-wallet-disconnect-btn" id="genesisWalletDisconnectButton">
+          Disconnect
+        </button>
+      </div>
     </div>
 
   </div>
@@ -4617,9 +4622,14 @@
         </span>
         <p class="mining-wallet-copy">Ownership verified on BNB Chain.</p>
       </div>
-      <button type="button" class="mining-wallet-btn mining-wallet-disconnect-btn" id="miningWalletDisconnectButton">
-        Disconnect
-      </button>
+      <div style="display: flex; gap: 12px;">
+        <button type="button" class="mining-wallet-btn mining-wallet-sign-btn" id="miningWalletSignButton">
+          Sign
+        </button>
+        <button type="button" class="mining-wallet-btn mining-wallet-disconnect-btn" id="miningWalletDisconnectButton">
+          Disconnect
+        </button>
+      </div>
     </div>
 
   </div>
@@ -6859,12 +6869,14 @@ async function loadVerunLeaderboard() {
   function els() {
     return {
       genesisConnectBtn: document.getElementById("genesisWalletConnectButton"),
+      genesisSignBtn: document.getElementById("genesisWalletSignButton"),
       genesisDisconnectBtn: document.getElementById("genesisWalletDisconnectButton"),
       genesisConnectWrap: document.getElementById("genesisWalletNotConnected"),
       genesisConnectedWrap: document.getElementById("genesisWalletConnected"),
       genesisAddress: document.getElementById("genesisWalletAddressValue"),
       genesisCopy: document.querySelector("#genesisWalletCard .genesis-wallet-copy"),
       miningConnectBtn: document.getElementById("miningWalletConnectButton"),
+      miningSignBtn: document.getElementById("miningWalletSignButton"),
       miningDisconnectBtn: document.getElementById("miningWalletDisconnectButton"),
       miningConnectWrap: document.getElementById("miningWalletNotConnected"),
       miningConnectedWrap: document.getElementById("miningWalletConnected"),
@@ -6924,6 +6936,12 @@ async function loadVerunLeaderboard() {
       if (!btn) return;
       btn.disabled = walletState.connecting;
       btn.textContent = walletState.connecting ? "Connecting…" : "Connect Wallet";
+    });
+
+    [e.genesisSignBtn, e.miningSignBtn].forEach(btn => {
+      if (!btn) return;
+      btn.disabled = walletState.connecting || !bscReady;
+      btn.textContent = walletState.connecting ? "Signing…" : "Sign";
     });
 
     [e.genesisDisconnectBtn, e.miningDisconnectBtn].forEach(btn => {
@@ -7056,6 +7074,69 @@ async function loadVerunLeaderboard() {
     }
   }
 
+  function generateNonce() {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  }
+
+  async function signWalletOwnership() {
+    try {
+      if (!appKit || !walletState.address) {
+        alert("Wallet is not connected.");
+        return;
+      }
+
+      setWalletState({ connecting: true });
+
+      const nonce = generateNonce();
+      const timestamp = Date.now();
+      const websiteUrl = window.location.origin;
+
+      // Create the message to sign with nonce, timestamp, and website URL
+      const message = `Verify wallet ownership\n\nNonce: ${nonce}\nTimestamp: ${timestamp}\nWebsite: ${websiteUrl}\nAddress: ${walletState.address}`;
+
+      // Get the wagmi client for signing
+      const wagmiConfig = appKit.getWagmiConfig?.();
+      if (!wagmiConfig) {
+        throw new Error("Wagmi config not available");
+      }
+
+      // Import necessary functions from wagmi
+      const { signMessage } = await import("https://cdn.jsdelivr.net/npm/@wagmi/core@latest/dist/index.js");
+
+      // Request wallet signature
+      const signature = await signMessage(wagmiConfig, {
+        account: walletState.address,
+        message: message
+      });
+
+      // Verify the signature
+      if (signature) {
+        // Store verification data for backend verification
+        const verificationData = {
+          address: walletState.address,
+          message: message,
+          signature: signature,
+          nonce: nonce,
+          timestamp: timestamp,
+          websiteUrl: websiteUrl
+        };
+
+        // Log success and store verification data
+        console.log("Wallet ownership verified", verificationData);
+        localStorage.setItem("walletVerification_" + walletState.address, JSON.stringify(verificationData));
+
+        // Show success message
+        alert("Wallet ownership verified successfully!");
+      }
+
+      setWalletState({ connecting: false });
+    } catch (err) {
+      setWalletState({ connecting: false });
+      console.error("VERUN wallet sign failed:", err);
+      alert("Failed to sign message: " + (err && err.message ? err.message : err));
+    }
+  }
+
   async function disconnectWallet() {
     try {
       if (!appKit) return;
@@ -7079,6 +7160,12 @@ async function loadVerunLeaderboard() {
       if (btn && !btn.dataset.walletBound) {
         btn.dataset.walletBound = "1";
         btn.addEventListener("click", connectWallet);
+      }
+    });
+    [e.genesisSignBtn, e.miningSignBtn].forEach(btn => {
+      if (btn && !btn.dataset.walletBound) {
+        btn.dataset.walletBound = "1";
+        btn.addEventListener("click", signWalletOwnership);
       }
     });
     [e.genesisDisconnectBtn, e.miningDisconnectBtn].forEach(btn => {
