@@ -1352,31 +1352,58 @@
 
 .token-chart-row {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: minmax(320px, 480px) 1fr;
   gap: 48px;
   align-items: center;
   margin-bottom: 44px;
 }
 
 .token-donut {
-  width: 240px;
-  height: 240px;
-  border-radius: 50%;
+  width: 100%;
+  max-width: 480px;
   position: relative;
   margin: auto;
-  box-shadow: 0 0 0 1px var(--border);
 }
 
-.token-donut-hole {
-  position: absolute;
-  inset: 34px;
-  border-radius: 50%;
-  background: var(--bg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+.token-pie-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.pie-label-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  font-weight: 700;
+  fill: var(--text);
+}
+
+.pie-label-pct {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  fill: var(--green);
+}
+
+.pie-label-qty {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  fill: var(--muted);
+}
+
+.pie-center-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 22px;
+  font-weight: 900;
+  fill: var(--text);
+  letter-spacing: -0.5px;
+}
+
+.pie-center-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 1px;
+  fill: var(--muted);
 }
 
 .token-donut-value {
@@ -1528,13 +1555,6 @@
   }
   .token-stat-card {
     padding: 16px;
-  }
-  .token-donut {
-    width: 200px;
-    height: 200px;
-  }
-  .token-donut-hole {
-    inset: 28px;
   }
 }
 
@@ -1826,17 +1846,42 @@
     <h3 class="token-sub-heading">Token Allocation Breakdown</h3>
 
     <div class="token-chart-row">
-      <div class="token-donut" style="background: conic-gradient(
-          var(--vc-1) 0% 50.00%,
-          var(--vc-2) 50.00% 77.90%,
-          var(--vc-3) 77.90% 79.70%,
-          var(--vc-4) 79.70% 90.49%,
-          var(--vc-5) 90.49% 100%
-        );">
-        <div class="token-donut-hole">
-          <span class="token-donut-value">11.11M</span>
-          <span class="token-donut-label">$VERUN Supply</span>
-        </div>
+      <div class="token-donut">
+        <svg class="token-pie-svg" viewBox="0 0 617 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Token allocation pie chart">
+          <path d="M 293.63 60.00 A 128 128 0 0 1 293.63 316.00 L 293.63 263.00 A 75 75 0 0 0 293.63 113.00 Z" fill="var(--vc-1)" stroke="var(--bg)" stroke-width="2"/>
+          <path d="M 293.63 316.00 A 128 128 0 0 1 167.75 164.81 L 219.88 174.41 A 75 75 0 0 0 293.63 263.00 Z" fill="var(--vc-2)" stroke="var(--bg)" stroke-width="2"/>
+          <path d="M 167.75 164.81 A 128 128 0 0 1 171.17 150.75 L 221.88 166.17 A 75 75 0 0 0 219.88 174.41 Z" fill="var(--vc-3)" stroke="var(--bg)" stroke-width="2"/>
+          <path d="M 171.17 150.75 A 128 128 0 0 1 221.62 82.18 L 251.44 126.00 A 75 75 0 0 0 221.88 166.17 Z" fill="var(--vc-4)" stroke="var(--bg)" stroke-width="2"/>
+          <path d="M 221.62 82.18 A 128 128 0 0 1 293.63 60.00 L 293.63 113.00 A 75 75 0 0 0 251.44 126.00 Z" fill="var(--vc-5)" stroke="var(--bg)" stroke-width="2"/>
+          <circle cx="293.6" cy="188.0" r="75" fill="var(--bg)"/>
+          <text x="293.6" y="182.0" text-anchor="middle" class="pie-center-value">11.11M</text>
+          <text x="293.6" y="201.0" text-anchor="middle" class="pie-center-label">$VERUN Supply</text>
+          <polyline points="427.63,188.00 451.63,188.00 481.63,188.00" fill="none" stroke="var(--muted2)" stroke-width="1.2"/>
+          <circle cx="427.63" cy="188.00" r="3" fill="var(--vc-1)" stroke="var(--muted2)" stroke-width="1"/>
+          <text x="488.63" y="175.00" text-anchor="start" class="pie-label-name">Liquidity Mining</text>
+          <text x="488.63" y="190.00" text-anchor="start" class="pie-label-pct">50.00%</text>
+          <text x="488.63" y="204.00" text-anchor="start" class="pie-label-qty">5,555,000 $VERUN</text>
+          <polyline points="190.65,273.74 172.21,289.10 142.21,289.10" fill="none" stroke="var(--muted2)" stroke-width="1.2"/>
+          <circle cx="190.65" cy="273.74" r="3" fill="var(--vc-2)" stroke="var(--muted2)" stroke-width="1"/>
+          <text x="135.21" y="276.10" text-anchor="end" class="pie-label-name">Community Airdrop</text>
+          <text x="135.21" y="291.10" text-anchor="end" class="pie-label-pct">27.90%</text>
+          <text x="135.21" y="305.10" text-anchor="end" class="pie-label-qty">3,100,000 $VERUN</text>
+          <polyline points="163.44,156.31 140.12,150.63 110.12,150.63" fill="none" stroke="var(--muted2)" stroke-width="1.2"/>
+          <circle cx="163.44" cy="156.31" r="3" fill="var(--vc-3)" stroke="var(--muted2)" stroke-width="1"/>
+          <text x="103.12" y="137.63" text-anchor="end" class="pie-label-name">Mining</text>
+          <text x="103.12" y="152.63" text-anchor="end" class="pie-label-pct">1.80%</text>
+          <text x="103.12" y="166.63" text-anchor="end" class="pie-label-qty">200,000 $VERUN</text>
+          <polyline points="185.70,108.59 166.37,94.37 136.37,94.37" fill="none" stroke="var(--muted2)" stroke-width="1.2"/>
+          <circle cx="185.70" cy="108.59" r="3" fill="var(--vc-4)" stroke="var(--muted2)" stroke-width="1"/>
+          <text x="129.37" y="81.37" text-anchor="end" class="pie-label-name">Marketing</text>
+          <text x="129.37" y="96.37" text-anchor="end" class="pie-label-pct">10.79%</text>
+          <text x="129.37" y="110.37" text-anchor="end" class="pie-label-qty">1,199,000 $VERUN</text>
+          <polyline points="254.19,59.94 247.13,37.00 217.13,37.00" fill="none" stroke="var(--muted2)" stroke-width="1.2"/>
+          <circle cx="254.19" cy="59.94" r="3" fill="var(--vc-5)" stroke="var(--muted2)" stroke-width="1"/>
+          <text x="210.13" y="24.00" text-anchor="end" class="pie-label-name">Liquidity</text>
+          <text x="210.13" y="39.00" text-anchor="end" class="pie-label-pct">9.50%</text>
+          <text x="210.13" y="53.00" text-anchor="end" class="pie-label-qty">1,056,000 $VERUN</text>
+        </svg>
       </div>
 
       <div class="token-legend">
