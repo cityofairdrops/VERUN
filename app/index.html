@@ -103,14 +103,26 @@
     }
 
     .topbar-inner {
-      max-width: 1180px;
-      width: calc(100% - 30px);
+      max-width: 100%;
+      width: calc(100% - 60px);
       height: 100%;
       margin: auto;
 
       display: flex;
       align-items: center;
       justify-content: space-between;
+    }
+
+    @media (max-width: 1200px) {
+      .topbar-inner {
+        width: calc(100% - 40px);
+      }
+    }
+
+    @media (max-width: 850px) {
+      .topbar-inner {
+        width: calc(100% - 30px);
+      }
     }
 
     .brand {
@@ -184,18 +196,33 @@
     /* ================= LAYOUT ================= */
 
     .layout {
-      max-width: 1180px;
-      width: calc(100% - 30px);
+      max-width: 100%;
+      width: calc(100% - 60px);
       margin: auto;
 
       display: grid;
-      grid-template-columns: 210px 1fr;
+      grid-template-columns: 240px 1fr;
 
-      gap: 28px;
+      gap: 40px;
 
       /* Reserves the space the fixed topbar used to occupy in normal
          flow, so nothing shifts now that it's taken out of flow. */
       padding-top: 68px;
+    }
+
+    @media (max-width: 1200px) {
+      .layout {
+        width: calc(100% - 40px);
+        grid-template-columns: 210px 1fr;
+        gap: 28px;
+      }
+    }
+
+    @media (max-width: 850px) {
+      .layout {
+        width: calc(100% - 30px);
+        grid-template-columns: 1fr;
+      }
     }
 
     /* ================= SIDEBAR ================= */
@@ -281,6 +308,12 @@
     main {
       padding: 35px 0 70px;
       min-width: 0;
+    }
+
+    @media (min-width: 2000px) {
+      main {
+        padding: 35px 60px 70px;
+      }
     }
 
     .welcome {
@@ -456,9 +489,16 @@
 
     .overview-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 15px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
       margin-bottom: 35px;
+    }
+
+    @media (max-width: 1400px) {
+      .overview-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+      }
     }
 
     .overview-card {
