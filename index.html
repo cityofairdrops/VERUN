@@ -19,6 +19,21 @@
       --green: #8dffb7;
       --green-soft: rgba(141,255,183,0.10);
       --green-border: rgba(141,255,183,0.25);
+      --topbar-bg: rgba(7,9,9,0.86);
+    }
+
+    html[data-theme="light"] {
+      --bg: #f4f6f5;
+      --panel: #ffffff;
+      --panel2: #eef1ef;
+      --border: rgba(10,20,14,0.10);
+      --text: #0b120e;
+      --muted: #5b665f;
+      --muted2: #7c877f;
+      --green: #0a9d5c;
+      --green-soft: rgba(10,157,92,0.08);
+      --green-border: rgba(10,157,92,0.28);
+      --topbar-bg: rgba(255,255,255,0.86);
     }
 
     * {
@@ -65,7 +80,7 @@
       position: sticky;
       top: 0;
       z-index: 50;
-      background: rgba(7,9,9,0.86);
+      background: var(--topbar-bg);
       backdrop-filter: blur(18px);
       border-bottom: 1px solid var(--border);
     }
@@ -1150,6 +1165,28 @@
   background:transparent; color:var(--muted); border:1px dashed var(--border-strong);
 }
 .home-button.secondary:hover { color:var(--text); border-color:var(--muted); }
+
+.verun-theme-toggle {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.025);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.2s ease;
+  margin-right: 8px;
+  color: var(--text);
+  padding: 0;
+}
+.verun-theme-toggle:hover {
+  border-color: var(--green-border);
+  background: var(--green-soft);
+  color: var(--green);
+}
+
 .home-grid {
   display:grid; grid-template-columns:repeat(2,1fr); gap:15px; padding:0 0 70px;
 }
@@ -1183,7 +1220,7 @@
   position: sticky;
   top: 68px;
   z-index: 40;
-  background: rgba(7,9,9,0.86);
+  background: var(--topbar-bg);
   backdrop-filter: blur(18px);
   border-bottom: 1px solid var(--border);
 }
@@ -1791,13 +1828,40 @@
   max-height: 400px;
 }
 </style>
+<script>
+  (function() {
+    let saved;
+    try { saved = localStorage.getItem("verun-theme"); } catch (e) {}
+    if (saved === "light") {
+      document.documentElement.setAttribute("data-theme", "light");
+    }
+  })();
+</script>
 </head>
 <body class="home-page">
 <div class="app">
 <header class="topbar">
   <div class="topbar-inner">
     <a href="/" class="brand"><span class="brand-mark"></span>VERUN</a>
-    <a class="home-button primary" href="/app/">Enter App</a>
+    <div style="display:flex; align-items:center;">
+      <button
+        id="verunThemeToggle"
+        class="verun-theme-toggle"
+        type="button"
+        aria-label="Toggle light and dark theme"
+      >
+        <svg id="verunThemeIconDark" width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a7 7 0 0 0 10.7 10.7Z"
+            fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+        <svg id="verunThemeIconLight" width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;">
+          <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M12 2.5v2.4M12 19.1v2.4M21.5 12h-2.4M4.9 12H2.5M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7M18.4 18.4l-1.7-1.7M7.3 7.3 5.6 5.6"
+            stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <a class="home-button primary" href="/app/">Enter App</a>
+    </div>
   </div>
 </header>
 
@@ -2281,6 +2345,44 @@ faqRows.forEach(function (row) {
     }
   });
 });
+
+// ============================================
+// Theme Toggle Handler
+// ============================================
+(function() {
+  const toggleButton = document.getElementById("verunThemeToggle");
+  const darkIcon = document.getElementById("verunThemeIconDark");
+  const lightIcon = document.getElementById("verunThemeIconLight");
+  const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+  if (!toggleButton) return;
+
+  function reflectIcons() {
+    const isLight = document.documentElement.getAttribute("data-theme") === "light";
+    if (darkIcon) darkIcon.style.display = isLight ? "none" : "block";
+    if (lightIcon) lightIcon.style.display = isLight ? "block" : "none";
+    toggleButton.setAttribute(
+      "aria-label",
+      isLight ? "Switch to dark theme" : "Switch to light theme"
+    );
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute("content", isLight ? "#f4f6f5" : "#070909");
+    }
+  }
+
+  reflectIcons();
+
+  toggleButton.addEventListener("click", () => {
+    const isLight = document.documentElement.getAttribute("data-theme") === "light";
+    if (isLight) {
+      document.documentElement.removeAttribute("data-theme");
+      try { localStorage.setItem("verun-theme", "dark"); } catch (e) {}
+    } else {
+      document.documentElement.setAttribute("data-theme", "light");
+      try { localStorage.setItem("verun-theme", "light"); } catch (e) {}
+    }
+    reflectIcons();
+  });
+})();
 </script>
 </body>
 </html>
