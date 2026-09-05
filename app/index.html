@@ -8398,71 +8398,40 @@ async function loadVerunLeaderboard() {
       if (e.mintButton) e.mintButton.textContent = "Confirming on-chain…";
       await tx.wait();
 
-            // Verify the confirmed blockchain transaction server-side
-      if (e.mintButton) e.mintButton.textContent = "Verifying ownership…";
-
-      const { data: verification, error: verificationError } =
-        await supabase.functions.invoke("verify-genesis-mint", {
-          body: {
-            tx_hash: tx.hash,
-            wallet_address: walletAddress
-          }
-        });
-
-      if (verificationError) {
-        console.error("Genesis mint verification error:", verificationError);
-
-        let message = verificationError.message || "Server verification failed.";
-
-        try {
-          if (verificationError.context) {
-            const body = await verificationError.context.json();
-            if (body?.error) message = body.error;
-          }
-        } catch (_) {}
-
-        throw new Error(
-          "Blockchain mint succeeded, but server verification failed: " + message
-        );
+      // Pull the freshly-minted tokenId back from the contract rather
+      // than guessing from a local counter.
+      let tokenNumber = null;
+      if (read && walletAddress) {
+        try { tokenNumber = Number(await read.getTokenId(walletAddress)); } catch (err) {}
       }
-
-      if (!verification?.success || !verification?.verified) {
-        throw new Error(
-          verification?.error ||
-          "Genesis Pass could not be verified by the server."
-        );
-      }
-
-      // Only update local state AFTER server verification succeeds.
-      const tokenNumber = Number(verification.token_id);
 
       state.owned = true;
       state.tokenNumber = tokenNumber;
       state.mintedAt = Date.now();
-      state.passName = verification.genesis_code;
+      state.passName = code;
       writeState(currentUserId, state);
 
+      // The contract only stores a hash of the genesis code, not the
+      // plaintext, so keep the same-device registry used elsewhere in
+      // this module for the discount-code lookup and referral-activity
+      // view to keep working for this browser.
       const registry = readNameRegistry();
-      registry[verification.genesis_code] = {
-        ownerUserId: currentUserId,
-        tokenNumber: tokenNumber
-      };
+      registry[code] = { ownerUserId: currentUserId, tokenNumber: tokenNumber };
       writeNameRegistry(registry);
 
-      // Referral activity is now recorded server-side.
-      // Do not create/credit a second local referral reward.
-
+      if (referralCode) {
+        const refEntry = registry[referralCode];
+        if (refEntry) {
+          creditReferralEarnings(refEntry.ownerUserId, REFERRER_SHARE_BNB);
+          addReferral(refEntry.ownerUserId, { tokenNumber: tokenNumber, mintedAt: state.mintedAt });
+        }
+      }
       appliedCode = null;
 
       chain.owned = true;
       chain.tokenId = tokenNumber;
 
       minting = false;
-
-      if (e.mintButton) {
-        e.mintButton.textContent = "Genesis Pass Minted ✓";
-      }
-
       await refreshChainState(); // re-reads pool/price and re-renders
     } catch (err) {
       minting = false;
