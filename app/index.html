@@ -5579,8 +5579,7 @@ async function markAllNotificationsRead() {
         .maybeSingle();
 
     if (profileError) {
-      console.error("Profile lookup error:", profileError);
-      alert("Profile lookup failed: " + profileError.message);
+      console.error("Profile lookup failed:", profileError);
       return;
     }
 
@@ -5623,9 +5622,9 @@ async function markAllNotificationsRead() {
       .maybeSingle();
 
   if (retryError || !existingProfile) {
-    alert(
-      "Profile could not be loaded: " +
-      (retryError?.message || insertError.message)
+    console.error(
+      "Profile could not be loaded:",
+      retryError?.message || insertError.message
     );
     return;
   }
@@ -5846,23 +5845,12 @@ async function markAllNotificationsRead() {
       if (error) {
         console.error("Bonus claim error:", error);
 
-        alert("Bonus could not be claimed.");
-
         button.disabled = false;
         button.textContent = "Claim Bonus";
         return;
       }
 
       popup.remove();
-
-      const result = data[0];
-
-      alert(
-        `${result.bonus_type === "early_user"
-          ? "Early User Bonus"
-          : "Welcome Bonus"} claimed!\n\n` +
-        `+${Number(result.bonus_xp).toLocaleString()} XP added to your account.`
-      );
 
       location.reload();
     });
@@ -5871,13 +5859,6 @@ async function markAllNotificationsRead() {
     .getElementById("verunBonusSkipButton")
     .addEventListener("click", async () => {
 
-      const confirmed = confirm(
-        "Are you sure you want to skip this bonus?\n\n" +
-        "You will permanently lose it."
-      );
-
-      if (!confirmed) return;
-
       const { error } =
         await supabaseClient.rpc(
           "skip_verun_early_bonus"
@@ -5885,13 +5866,10 @@ async function markAllNotificationsRead() {
 
       if (error) {
         console.error("Bonus skip error:", error);
-        alert("Bonus could not be skipped.");
         return;
       }
 
       popup.remove();
-
-      alert("Bonus skipped.");
     });
 }
 
@@ -5918,7 +5896,7 @@ if (copyReferralButton) {
         !referralLink ||
         referralLink.startsWith("Connect X")
       ) {
-        alert("Connect X first.");
+        console.warn("Referral link not ready yet — connect X first.");
         return;
       }
 
@@ -6214,15 +6192,14 @@ tasks.sort((a, b) => {
     );
 
   if (error) {
-    console.error(error);
-    alert("Unable to claim XP: " + error.message);
+    console.error("Unable to claim XP:", error);
     button.disabled = false;
     button.textContent = "Claim XP";
     return;
   }
 
   if (!data || !data.success) {
-    alert(data?.message || "Task cannot be claimed.");
+    console.warn(data?.message || "Task cannot be claimed.");
     button.disabled = false;
     button.textContent = "Claim XP";
     return;
@@ -6254,7 +6231,7 @@ async function startTaskVerification(event, button, taskId) {
     } = await supabaseClient.auth.getSession();
 
     if (!session) {
-      alert("Please connect your X account first.");
+      console.warn("Please connect your X account first.");
       button.textContent = originalText;
       button.style.pointerEvents = "auto";
       return;
@@ -6276,7 +6253,6 @@ async function startTaskVerification(event, button, taskId) {
 
     if (error) {
       console.error("Verification start error:", error);
-      alert("Unable to start verification. Please try again.");
       button.textContent = originalText;
       button.style.pointerEvents = "auto";
       return;
@@ -6291,7 +6267,6 @@ async function startTaskVerification(event, button, taskId) {
 
   } catch (error) {
     console.error("Verification error:", error);
-    alert("Something went wrong. Please try again.");
     button.textContent = originalText;
     button.style.pointerEvents = "auto";
   }
@@ -6328,15 +6303,10 @@ function escapeHtml(value) {
 
     if (error) {
 
-      console.error("X login error:", error);
+      console.error("Unable to connect X:", error);
 
       connectXButton.disabled = false;
       connectXButton.textContent = "Connect X";
-
-      alert(
-        "Unable to connect X: " +
-        error.message
-      );
     }
   });
 
@@ -6767,16 +6737,6 @@ startDailyCountdown();
 async function restoreStreak() {
 
   if (!restoreStreakButton) return;
-
-
-  const confirmed =
-    confirm(
-      "Restore your streak for 1,000 XP?\n\n" +
-      "1,000 XP will be deducted from your balance."
-    );
-
-
-  if (!confirmed) return;
 
 
   restoreStreakButton.disabled = true;
@@ -7380,7 +7340,7 @@ async function loadVerunLeaderboard() {
       }, 1200);
     } catch (err) {
       setWalletState({ connecting: false });
-      alert("Unable to open wallet connection: " + (err && err.message ? err.message : err));
+      console.error("Unable to open wallet connection:", err);
     }
   }
 
@@ -7407,7 +7367,7 @@ async function loadVerunLeaderboard() {
 
     const bscReady = Number(walletState.chainId) === BSC_CHAIN_ID;
     if (!bscReady) {
-      alert("Please switch to BNB Chain Testnet before signing.");
+      console.warn("Please switch to BNB Chain Testnet before signing.");
       return;
     }
 
@@ -7458,7 +7418,7 @@ async function loadVerunLeaderboard() {
       setWalletState({ signing: false });
       // Code 4001 = user rejected — silent, no alert needed
       if (err && err.code === 4001) return;
-      alert("Signing failed: " + (err && err.message ? err.message : String(err)));
+      console.error("Signing failed:", err);
     }
   }
 
@@ -7881,13 +7841,8 @@ async function loadVerunLeaderboard() {
 
     // TODO(genesis-pass + wallet): this is a local simulation until
     // real BNB payment + wallet connection ships. Replace this
-    // confirm() with the actual transaction flow, and only call
+    // with the actual transaction flow, and only call
     // writeState() after the chain confirms payment.
-    const confirmed = window.confirm(
-      "Purchase " + tier.label + " for " + tier.priceBnb + " BNB?\n" +
-      "(Wallet payment isn't wired up yet — this simulates the purchase for now.)"
-    );
-    if (!confirmed) return;
 
     // Any purchase — whether it's the same tier renewing or a switch
     // to the other paid tier — shifts the current tier to the one
@@ -8541,17 +8496,6 @@ async function loadVerunLeaderboard() {
     if (minted >= totalSupply) return; // sold out
 
     const price = computePrice();
-    const codeLine = appliedCode
-      ? "\nReferral code \"" + appliedCode + "\" applied — 50% off."
-      : "";
-
-    const confirmed = window.confirm(
-      "Mint your Genesis Pass for " + price + " tBNB on BNB Chain Testnet?" + codeLine + "\n" +
-      "Your genesis code will be \"" + code + "\" — this can't be changed later.\n" +
-      "This pass is soulbound and cannot be transferred once minted.\n" +
-      "Your wallet will ask you to confirm a real testnet transaction."
-    );
-    if (!confirmed) return;
 
     minting = true;
     if (e.mintButton) {
@@ -8632,11 +8576,10 @@ async function loadVerunLeaderboard() {
       await refreshChainState(); // re-reads pool/price and re-renders
     } catch (err) {
       minting = false;
-      console.error("VERUN Genesis Pass mint failed:", err);
       const message = (err && (err.code === "ACTION_REJECTED" || err.code === 4001))
         ? "Transaction rejected in wallet."
         : (err && err.reason) || (err && err.shortMessage) || (err && err.message) || "Mint failed. Please try again.";
-      alert(message);
+      console.error("VERUN Genesis Pass mint failed:", message);
       render();
     }
   }
@@ -8939,7 +8882,7 @@ async function loadVerunLeaderboard() {
         button.disabled = false;
         button.textContent = "Connect X";
       });
-      alert("Unable to connect X: " + error.message);
+      console.error("Unable to connect X:", error);
     }
   }
 
@@ -9104,7 +9047,7 @@ showSection(
     if (error) {
       disconnectButton.disabled = false;
       disconnectButton.textContent = "Disconnect";
-      alert("Unable to disconnect X: " + error.message);
+      console.error("Unable to disconnect X:", error);
       return;
     }
 
