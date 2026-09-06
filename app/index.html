@@ -8067,6 +8067,15 @@ async function loadVerunLeaderboard() {
       }
 
       console.error("Signing failed:", err);
+      // Surface whatever actually went wrong instead of silently
+      // reverting to the plain "Sign" button with no explanation —
+      // that's what made every unhandled failure here look identical
+      // to "nothing happened."
+      const e2 = els();
+      const shownMessage = serverMessage || (err && err.message) || "Something went wrong while signing.";
+      [e2.genesisPendingCopy, e2.miningPendingCopy].forEach(el => {
+        if (el) el.textContent = shownMessage + " Tap Sign to try again.";
+      });
     }
   }
 
