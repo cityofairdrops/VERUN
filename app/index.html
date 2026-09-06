@@ -4963,6 +4963,9 @@
     SUPABASE_URL,
     SUPABASE_PUBLISHABLE_KEY
   );
+  // Expose so other independently-scoped modules (e.g. the wallet
+  // verification module) can reach the same client / auth session.
+  window.supabaseClient = supabaseClient;
 
   // ============================================
   // VERUN REFERRAL TRACKING
@@ -7061,6 +7064,12 @@ async function loadVerunLeaderboard() {
     signing: false
   };
 
+  // The wallet an account is permanently bound to, once the user has
+  // minted a Genesis Pass. `undefined` = not fetched yet, `null` = no
+  // lock, a string = the locked (lowercased) address. Fetched from
+  // get_wallet_lock() and refreshed after a successful mint.
+  let lockedWalletAddress = undefined;
+
   function els() {
     return {
       genesisConnectBtn: document.getElementById("genesisWalletConnectButton"),
@@ -7088,11 +7097,12 @@ async function loadVerunLeaderboard() {
     return address ? address.slice(0, 6) + "…" + address.slice(-4) : "";
   }
 
-  function getCurrentUserId() {
+  async function getCurrentUserId() {
     try {
-      const user = window.supabaseClient && window.supabaseClient.auth;
-      if (!user) return null;
-      return null;
+      const auth = window.supabaseClient && window.supabaseClient.auth;
+      if (!auth || !auth.getSession) return null;
+      const { data } = await auth.getSession();
+      return (data && data.session && data.session.user && data.session.user.id) || null;
     } catch (e) {
       return null;
     }
@@ -7100,8 +7110,10 @@ async function loadVerunLeaderboard() {
 
   function persistWalletForCurrentUser(address) {
     // The Genesis Pass module already uses this key to display the wallet
-    // on an owned pass. Keep the storage write best-effort only; AppKit
-    // remains the source of truth for the live connection.
+    // on an owned pass. Keep the storage write best-effort only; the
+    // wallet_verifications table (via Supabase RPC) is now the source of
+    // truth for the verified connection — this local copy is just a fast
+    // read for other modules while the section is loading.
     try {
       const auth = window.supabaseClient && window.supabaseClient.auth;
       if (!auth || !auth.getSession) return;
@@ -7115,21 +7127,138 @@ async function loadVerunLeaderboard() {
     } catch (e) {}
   }
 
+  // ── Supabase-backed verification (wallet_verifications table) ──────
+  // These call the RPC functions defined in the wallet_verifications
+  // migration: start_wallet_verification / get_active_wallet_verification /
+  // end_wallet_verification. The signature itself is still produced
+  // client-side by the wallet (personal_sign); these calls persist that
+  // verified session server-side so it survives reloads and is tied to
+  // the authenticated Supabase user, not just localStorage.
+
+  async function fetchActiveServerVerification() {
+    try {
+      const client = window.supabaseClient;
+      if (!client) return null;
+      const { data, error } = await client.rpc("get_active_wallet_verification");
+      if (error) {
+        console.error("VERUN wallet: get_active_wallet_verification failed:", error);
+        return null;
+      }
+      return data && data.verified ? data : null;
+    } catch (err) {
+      console.error("VERUN wallet: get_active_wallet_verification error:", err);
+      return null;
+    }
+  }
+
+  async function persistServerVerification(address, chainId, nonce, message, signature) {
+    try {
+      const client = window.supabaseClient;
+      if (!client) throw new Error("Supabase client unavailable.");
+      const { data, error } = await client.rpc("start_wallet_verification", {
+        p_wallet_address: address,
+        p_chain_id: chainId,
+        p_nonce: nonce,
+        p_message: message,
+        p_signature: signature
+      });
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.error("VERUN wallet: start_wallet_verification failed:", err);
+      throw err;
+    }
+  }
+
+  async function endServerVerification(address) {
+    try {
+      const client = window.supabaseClient;
+      if (!client || !address) return;
+      const { error } = await client.rpc("end_wallet_verification", {
+        p_wallet_address: address
+      });
+      if (error) console.error("VERUN wallet: end_wallet_verification failed:", error);
+    } catch (err) {
+      console.error("VERUN wallet: end_wallet_verification error:", err);
+    }
+  }
+
+  // ── Permanent wallet lock (post-mint) ───────────────────────────────
+  // Once a user mints a Genesis Pass, their account is permanently bound
+  // to that wallet server-side (see lock_wallet_to_account /
+  // get_wallet_lock in the wallet-lock migration). From then on,
+  // start_wallet_verification itself will reject any other wallet for
+  // this account — these helpers let the UI recognize that case early
+  // and prompt for the right wallet instead of surfacing a raw error.
+
+  async function fetchWalletLock() {
+    try {
+      const client = window.supabaseClient;
+      if (!client) return null;
+      const { data, error } = await client.rpc("get_wallet_lock");
+      if (error) {
+        console.error("VERUN wallet: get_wallet_lock failed:", error);
+        return null;
+      }
+      lockedWalletAddress = (data && data.locked && data.locked_wallet_address)
+        ? data.locked_wallet_address.toLowerCase()
+        : null;
+      return lockedWalletAddress;
+    } catch (err) {
+      console.error("VERUN wallet: get_wallet_lock error:", err);
+      return null;
+    }
+  }
+
+  // Called once a mint transaction has confirmed on-chain, to
+  // permanently bind the account to the wallet that just minted.
+  async function lockWalletAfterMint(address) {
+    try {
+      const client = window.supabaseClient;
+      if (!client || !address) return;
+      const { data, error } = await client.rpc("lock_wallet_to_account", {
+        p_wallet_address: address
+      });
+      if (error) {
+        console.error("VERUN wallet: lock_wallet_to_account failed:", error);
+        return;
+      }
+      if (data && data.locked_wallet_address) {
+        lockedWalletAddress = data.locked_wallet_address.toLowerCase();
+        updateUI();
+      }
+    } catch (err) {
+      console.error("VERUN wallet: lock_wallet_to_account error:", err);
+    }
+  }
+
+  function isWrongWallet() {
+    return !!(
+      lockedWalletAddress &&
+      walletState.address &&
+      walletState.address.toLowerCase() !== lockedWalletAddress
+    );
+  }
+
   function updateUI() {
     const e = els();
     const connected = !!walletState.address;
     const bscReady = connected && Number(walletState.chainId) === BSC_CHAIN_ID;
     const signed = walletState.signed;
+    const wrongWallet = isWrongWallet();
 
-    // ── Three states ──────────────────────────────────────────────────
-    // 1. Not connected  → show connect wrap only
-    // 2. Connected, not signed → show pending-sign wrap only
-    // 3. Connected + signed   → show connected (verified) wrap only
-    const showPending = connected && !signed;
-    const showVerified = connected && signed;
+    // ── States ───────────────────────────────────────────────────────
+    // 1. Not connected              → show connect wrap only
+    // 2. Connected, wrong wallet    → show connect wrap with a locked-
+    //    wallet message (never proceed to pending-sign/verified)
+    // 3. Connected, not signed      → show pending-sign wrap only
+    // 4. Connected + signed         → show connected (verified) wrap only
+    const showConnect = !connected || wrongWallet;
+    const showPending = connected && !wrongWallet && !signed;
+    const showVerified = connected && !wrongWallet && signed;
 
     [e.genesisConnectWrap, e.miningConnectWrap].forEach(el => {
-      if (el) el.style.display = connected ? "none" : "";
+      if (el) el.style.display = showConnect ? "" : "none";
     });
     [e.genesisPendingWrap, e.miningPendingWrap].forEach(el => {
       if (el) el.style.display = showPending ? "" : "none";
@@ -7148,11 +7277,14 @@ async function loadVerunLeaderboard() {
       if (el) el.textContent = shortAddress(walletState.address);
     });
 
-    // Connect button
+    // Connect button — when the wrong wallet is connected, this button
+    // re-opens the wallet picker so the user can switch to the right one.
     [e.genesisConnectBtn, e.miningConnectBtn].forEach(btn => {
       if (!btn) return;
       btn.disabled = walletState.connecting;
-      btn.textContent = walletState.connecting ? "Connecting…" : "Connect Wallet";
+      btn.textContent = walletState.connecting
+        ? "Connecting…"
+        : (wrongWallet ? "Switch Wallet" : "Connect Wallet");
     });
 
     // Sign button — chain-aware copy and disabled state
@@ -7167,6 +7299,30 @@ async function loadVerunLeaderboard() {
     if (e.genesisPendingCopy) e.genesisPendingCopy.textContent = pendingCopy;
     if (e.miningPendingCopy) e.miningPendingCopy.textContent = pendingCopy;
 
+    // When the wrong wallet is connected, override the "not connected"
+    // copy to explain why, and name the locked wallet so the user knows
+    // which one to reconnect.
+    if (wrongWallet && lockedWalletAddress) {
+      const lockCopy =
+        "This VERUN account is permanently linked to wallet " +
+        shortAddress(lockedWalletAddress) +
+        ". Connect that wallet to continue.";
+      document.querySelectorAll(".genesis-wallet-copy, .mining-wallet-copy").forEach(el => {
+        if (el.closest("#genesisWalletNotConnected") || el.closest("#miningWalletNotConnected")) {
+          el.textContent = lockCopy;
+        }
+      });
+    } else {
+      // Restore the default copy so it doesn't stay stuck on the lock
+      // message after the user reconnects the correct wallet.
+      document.querySelectorAll("#genesisWalletNotConnected .genesis-wallet-copy").forEach(el => {
+        el.textContent = "Connect your wallet on BNB Chain Testnet to continue.";
+      });
+      document.querySelectorAll("#miningWalletNotConnected .mining-wallet-copy").forEach(el => {
+        el.textContent = "Connect your BNB Chain wallet to continue.";
+      });
+    }
+
     // Disconnect button
     [e.genesisDisconnectBtn, e.miningDisconnectBtn].forEach(btn => {
       if (btn) btn.disabled = walletState.connecting;
@@ -7174,8 +7330,9 @@ async function loadVerunLeaderboard() {
 
     persistWalletForCurrentUser(walletState.address);
 
-    // `verified` now requires wallet connected on BNB Chain AND ownership signed
-    walletState.verified = bscReady && signed;
+    // `verified` now requires wallet connected on BNB Chain, ownership
+    // signed, AND (if this account has a lock) matching the locked wallet.
+    walletState.verified = bscReady && signed && !wrongWallet;
 
     if (typeof window.verunRenderGenesisPass === "function") {
       try { window.verunRenderGenesisPass(); } catch (err) {}
@@ -7184,12 +7341,29 @@ async function loadVerunLeaderboard() {
 
   function setWalletState(next) {
     // If the wallet address changes (new connection or disconnect), reset signature
-    if ("address" in next && next.address !== walletState.address) {
+    const addressChanged = "address" in next && next.address !== walletState.address;
+    if (addressChanged) {
       next.signed = false;
       next.signing = false;
     }
     walletState = Object.assign({}, walletState, next);
     updateUI();
+
+    // A wallet can (re)connect asynchronously — after loadWalletModule's
+    // one-time check already ran, e.g. a WalletConnect session that takes
+    // 500–1500ms to confirm. Re-check the server record whenever the
+    // address changes so a previously-verified wallet is recognized as
+    // soon as it reconnects, without requiring another signature.
+    if (addressChanged && next.address) {
+      const addressAtCheckTime = next.address;
+      fetchActiveServerVerification().then(record => {
+        if (record && walletState.address === addressAtCheckTime &&
+            record.wallet_address &&
+            record.wallet_address.toLowerCase() === addressAtCheckTime.toLowerCase()) {
+          setWalletState({ signed: true });
+        }
+      }).catch(() => {});
+    }
   }
 
 
@@ -7345,6 +7519,7 @@ async function loadVerunLeaderboard() {
   }
 
   async function disconnectWallet() {
+    const addressBeingDisconnected = walletState.address;
     try {
       if (!appKit) return;
       setWalletState({ connecting: true });
@@ -7357,6 +7532,9 @@ async function loadVerunLeaderboard() {
     } catch (err) {
       console.error("VERUN wallet disconnect failed:", err);
     } finally {
+      if (addressBeingDisconnected) {
+        await endServerVerification(addressBeingDisconnected);
+      }
       setWalletState({ address: null, chainId: null, verified: false, connecting: false, signed: false, signing: false });
     }
   }
@@ -7364,6 +7542,15 @@ async function loadVerunLeaderboard() {
   async function signWallet() {
     const address = walletState.address;
     if (!address || !appKit) return;
+
+    // Defense in depth: never even prompt a signature for a wallet that
+    // isn't the one this account is permanently locked to. The server
+    // (start_wallet_verification) enforces this too, but there's no
+    // reason to bother the user's wallet for a doomed request.
+    if (isWrongWallet()) {
+      console.warn("Connect the wallet this account is locked to before signing.");
+      return;
+    }
 
     const bscReady = Number(walletState.chainId) === BSC_CHAIN_ID;
     if (!bscReady) {
@@ -7409,15 +7596,39 @@ async function loadVerunLeaderboard() {
 
       if (!signature) throw new Error("No signature returned.");
 
-      // Signature received — mark as verified client-side.
-      // For production: send { message, signature, address } to your
-      // backend and use ecrecover / ethers.verifyMessage() server-side.
+      // Signature received — persist it server-side via
+      // start_wallet_verification so the verified session is tied to the
+      // authenticated Supabase user and survives reloads. This also
+      // enforces (server-side) that the wallet isn't already actively
+      // verified on a different account.
+      await persistServerVerification(address, walletState.chainId, nonce, message, signature);
+
       setWalletState({ signed: true, signing: false });
 
     } catch (err) {
       setWalletState({ signing: false });
       // Code 4001 = user rejected — silent, no alert needed
       if (err && err.code === 4001) return;
+
+      // Surfaced from start_wallet_verification when this wallet is
+      // already actively verified on a different account.
+      const serverMessage = err && err.message ? String(err.message) : "";
+      if (serverMessage.includes("already connected to another account")) {
+        const e = els();
+        [e.genesisPendingCopy, e.miningPendingCopy].forEach(el => {
+          if (el) el.textContent = "This wallet is already verified on another VERUN account. Try a different wallet.";
+        });
+        return;
+      }
+
+      // Surfaced from start_wallet_verification when this account is
+      // already permanently locked to a different wallet.
+      if (serverMessage.includes("permanently linked to wallet")) {
+        await fetchWalletLock();
+        updateUI();
+        return;
+      }
+
       console.error("Signing failed:", err);
     }
   }
@@ -7455,6 +7666,34 @@ async function loadVerunLeaderboard() {
       // once the connection library becomes reachable again.
       console.error("VERUN wallet connector unavailable:", err);
     }
+
+    // Fetch whether this account is already permanently locked to a
+    // wallet from a prior mint. Needed before restoring the verified
+    // session below, so a wrong-wallet reconnect isn't briefly shown
+    // as verified.
+    try {
+      await fetchWalletLock();
+    } catch (err) {
+      console.error("VERUN wallet: failed to fetch wallet lock:", err);
+    }
+
+    // Restore a previously-verified session from the server. This only
+    // marks `signed` when the currently-connected wallet address matches
+    // the one on record — if the user reconnects a different wallet,
+    // they still have to sign again for that address (and, if the
+    // account is locked, updateUI will show the "wrong wallet" state
+    // instead regardless of `signed`).
+    try {
+      const record = await fetchActiveServerVerification();
+      if (record && walletState.address &&
+          record.wallet_address &&
+          record.wallet_address.toLowerCase() === walletState.address.toLowerCase()) {
+        setWalletState({ signed: true });
+      }
+    } catch (err) {
+      console.error("VERUN wallet: failed to restore server verification:", err);
+    }
+
     updateUI();
   }
 
@@ -7462,6 +7701,11 @@ async function loadVerunLeaderboard() {
     getState: () => Object.assign({}, walletState),
     open: connectWallet,
     disconnect: disconnectWallet,
+    // Permanently binds this account to `address` (the wallet that just
+    // minted). Called by the Genesis Pass module right after a mint
+    // transaction confirms on-chain.
+    lockToMintedWallet: lockWalletAfterMint,
+    getLockedWallet: () => lockedWalletAddress || null,
     // Raw EIP-1193 provider for the connected wallet, so other modules
     // (Genesis Pass mint) can build an ethers signer from it without
     // re-implementing AppKit's connection handling.
@@ -8544,6 +8788,18 @@ async function loadVerunLeaderboard() {
       let tokenNumber = null;
       if (read && walletAddress) {
         try { tokenNumber = Number(await read.getTokenId(walletAddress)); } catch (err) {}
+      }
+
+      // Permanently bind this VERUN account to the wallet that just
+      // minted. From here on, start_wallet_verification (server-side)
+      // will only accept this exact wallet for this account — connecting
+      // a different wallet will prompt the user to reconnect this one.
+      if (walletAddress && window.verunWallet && typeof window.verunWallet.lockToMintedWallet === "function") {
+        try {
+          await window.verunWallet.lockToMintedWallet(walletAddress);
+        } catch (lockErr) {
+          console.error("VERUN: failed to lock wallet after mint:", lockErr);
+        }
       }
 
       state.owned = true;
