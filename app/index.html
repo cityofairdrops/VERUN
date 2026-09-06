@@ -7183,15 +7183,27 @@ async function loadVerunLeaderboard() {
   }
 
   function setWalletState(next) {
-    // If the wallet address changes (new connection or disconnect), reset signature
-    if ("address" in next && next.address !== walletState.address) {
+  // Only reset the signature if the wallet address actually changed.
+  // Ethereum/BSC addresses are case-insensitive, so compare them
+  // without considering uppercase/lowercase differences.
+  if ("address" in next) {
+    const oldAddress = walletState.address;
+    const newAddress = next.address;
+
+    const addressChanged =
+      (oldAddress || "").toLowerCase() !==
+      (newAddress || "").toLowerCase();
+
+    if (addressChanged) {
       next.signed = false;
       next.signing = false;
     }
-    walletState = Object.assign({}, walletState, next);
-    updateUI();
   }
 
+  walletState = Object.assign({}, walletState, next);
+
+  updateUI();
+  }
 
   async function initializeAppKit() {
     if (appKit) return appKit;
