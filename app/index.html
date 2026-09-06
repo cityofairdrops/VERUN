@@ -7116,94 +7116,140 @@ async function loadVerunLeaderboard() {
   }
 
   function updateUI() {
-    const e = els();
-    const connected = !!walletState.address;
-    const bscReady = connected && Number(walletState.chainId) === BSC_CHAIN_ID;
-    const signed = walletState.signed;
+  const e = els();
 
-    // ── Three states ──────────────────────────────────────────────────
-    // 1. Not connected  → show connect wrap only
-    // 2. Connected, not signed → show pending-sign wrap only
-    // 3. Connected + signed   → show connected (verified) wrap only
-    const showPending = connected && !signed;
-    const showVerified = connected && signed;
+  const connected = !!walletState.address;
+  const bscReady =
+    connected && Number(walletState.chainId) === BSC_CHAIN_ID;
 
-    [e.genesisConnectWrap, e.miningConnectWrap].forEach(el => {
-      if (el) el.style.display = connected ? "none" : "";
-    });
-    [e.genesisPendingWrap, e.miningPendingWrap].forEach(el => {
-      if (el) el.style.display = showPending ? "" : "none";
-    });
-    [e.genesisConnectedWrap, e.miningConnectedWrap].forEach(el => {
-      if (el) el.style.display = showVerified ? "" : "none";
-    });
+  const signed = walletState.signed === true;
 
-    // Address in verified panel
-    [e.genesisAddress, e.miningAddress].forEach(el => {
-      if (el) el.textContent = shortAddress(walletState.address);
-    });
+  // ── Three wallet states ──────────────────────────────────────────
+  // 1. Not connected
+  // 2. Connected but not signed
+  // 3. Connected + signed
 
-    // Address in pending-sign panel
-    [e.genesisPendingAddress, e.miningPendingAddress].forEach(el => {
-      if (el) el.textContent = shortAddress(walletState.address);
-    });
+  const showPending = connected && !signed;
+  const showVerified = connected && signed;
 
-    // Connect button
-    [e.genesisConnectBtn, e.miningConnectBtn].forEach(btn => {
-      if (!btn) return;
-      btn.disabled = walletState.connecting;
-      btn.textContent = walletState.connecting ? "Connecting…" : "Connect Wallet";
-    });
-
-    // Sign button — chain-aware copy and disabled state
-    const pendingCopy = bscReady
-      ? "Sign the message in your wallet to verify ownership."
-      : "Switch to BNB Chain Testnet, then sign to verify ownership.";
-    [e.genesisSignBtn, e.miningSignBtn].forEach(btn => {
-      if (!btn) return;
-      btn.disabled = walletState.signing || !bscReady;
-      btn.textContent = walletState.signing ? "Signing…" : "Sign";
-    });
-    if (e.genesisPendingCopy) e.genesisPendingCopy.textContent = pendingCopy;
-    if (e.miningPendingCopy) e.miningPendingCopy.textContent = pendingCopy;
-
-    // Disconnect button
-    [e.genesisDisconnectBtn, e.miningDisconnectBtn].forEach(btn => {
-      if (btn) btn.disabled = walletState.connecting;
-    });
-
-    persistWalletForCurrentUser(walletState.address);
-
-    // `verified` now requires wallet connected on BNB Chain AND ownership signed
-    walletState.verified = bscReady && signed;
-
-    if (typeof window.verunRenderGenesisPass === "function") {
-      try { window.verunRenderGenesisPass(); } catch (err) {}
+  // ── Connect wallet panel ─────────────────────────────────────────
+  [e.genesisConnectWrap, e.miningConnectWrap].forEach(el => {
+    if (el) {
+      el.style.display = connected ? "none" : "";
     }
+  });
+
+  // ── Sign wallet panel ─────────────────────────────────────────────
+  [e.genesisPendingWrap, e.miningPendingWrap].forEach(el => {
+    if (el) {
+      el.style.display = showPending ? "" : "none";
+    }
+  });
+
+  // ── Verified / Disconnect panel ──────────────────────────────────
+  [e.genesisConnectedWrap, e.miningConnectedWrap].forEach(el => {
+    if (el) {
+      el.style.display = showVerified ? "" : "none";
+    }
+  });
+
+  // ── Address in verified panel ────────────────────────────────────
+  [e.genesisAddress, e.miningAddress].forEach(el => {
+    if (el && walletState.address) {
+      el.textContent = shortAddress(walletState.address);
+    }
+  });
+
+  // ── Address in pending-sign panel ────────────────────────────────
+  [e.genesisPendingAddress, e.miningPendingAddress].forEach(el => {
+    if (el && walletState.address) {
+      el.textContent = shortAddress(walletState.address);
+    }
+  });
+
+  // ── Connect button ───────────────────────────────────────────────
+  [e.genesisConnectBtn, e.miningConnectBtn].forEach(btn => {
+    if (!btn) return;
+
+    btn.disabled = walletState.connecting;
+
+    btn.textContent = walletState.connecting
+      ? "Connecting…"
+      : "Connect Wallet";
+  });
+
+  // ── Sign button ──────────────────────────────────────────────────
+  const pendingCopy = bscReady
+    ? "Sign the message in your wallet to verify ownership."
+    : "Switch to BNB Chain Testnet, then sign to verify ownership.";
+
+  [e.genesisSignBtn, e.miningSignBtn].forEach(btn => {
+    if (!btn) return;
+
+    btn.disabled = walletState.signing || !bscReady;
+
+    btn.textContent = walletState.signing
+      ? "Signing…"
+      : "Sign";
+  });
+
+  if (e.genesisPendingCopy) {
+    e.genesisPendingCopy.textContent = pendingCopy;
   }
 
+  if (e.miningPendingCopy) {
+    e.miningPendingCopy.textContent = pendingCopy;
+  }
+
+  // ── Disconnect button ────────────────────────────────────────────
+  [e.genesisDisconnectBtn, e.miningDisconnectBtn].forEach(btn => {
+    if (!btn) return;
+
+    btn.disabled = walletState.connecting;
+  });
+
+  // ── Verification state ───────────────────────────────────────────
+  // IMPORTANT: Do NOT overwrite walletState.signed here.
+  walletState.verified =
+    bscReady && walletState.signed === true;
+
+  // Save current wallet for the logged-in user
+  persistWalletForCurrentUser(walletState.address);
+
+  // Refresh Genesis Pass UI if available
+  if (typeof window.verunRenderGenesisPass === "function") {
+    try {
+      window.verunRenderGenesisPass();
+    } catch (err) {}
+  }
+}
+
   function setWalletState(next) {
-  // Only reset the signature if the wallet address actually changed.
-  // Ethereum/BSC addresses are case-insensitive, so compare them
-  // without considering uppercase/lowercase differences.
-  if ("address" in next) {
-    const oldAddress = walletState.address;
-    const newAddress = next.address;
+  const oldAddress = walletState.address;
+  const newAddress =
+    "address" in next ? next.address : walletState.address;
 
-    const addressChanged =
-      (oldAddress || "").toLowerCase() !==
-      (newAddress || "").toLowerCase();
+  const oldNormalized = oldAddress
+    ? oldAddress.toLowerCase()
+    : "";
 
-    if (addressChanged) {
-      next.signed = false;
-      next.signing = false;
-    }
+  const newNormalized = newAddress
+    ? newAddress.toLowerCase()
+    : "";
+
+  const addressChanged = oldNormalized !== newNormalized;
+
+  // Only reset the signature when the actual wallet changes.
+  // Chain/provider updates must not reset a successful signature.
+  if (addressChanged) {
+    next.signed = false;
+    next.signing = false;
   }
 
   walletState = Object.assign({}, walletState, next);
 
   updateUI();
-  }
+}
 
   async function initializeAppKit() {
     if (appKit) return appKit;
@@ -7460,10 +7506,11 @@ async function loadVerunLeaderboard() {
     /*
      * Wallet has now been verified by the backend.
      */
-    setWalletState({
-      signed: true,
-      signing: false
-    });
+    walletState.signed = true;
+walletState.signing = false;
+walletState.verified = true;
+
+updateUI();
 
     console.log("Wallet verified successfully:", address);
 
