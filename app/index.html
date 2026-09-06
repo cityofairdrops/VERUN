@@ -4528,7 +4528,7 @@
 
         <div class="milestone" data-threshold="100">
           <span>100 Referrals</span>
-          <span>Bonus Reward</span>
+          <span>+100 $VERUN</span>
         </div>
 
       </div>
@@ -5002,12 +5002,20 @@ async function processReferral() {
 // ============================================
 // Milestones mirror the "Referral Milestones" list rendered in the
 // markup above — keep the two in sync if those numbers ever change.
+//
+// Every referral is worth a flat 100 XP (matches the Supabase-side
+// per-referral award), and the milestone bonuses below are ADDITIONAL
+// XP on top of that base amount. The 100-referral milestone pays out
+// in $VERUN rather than XP, so its bonusXp stays 0 here — it's tracked
+// separately so it doesn't get folded into the XP total.
+const REFERRAL_XP_PER_REFERRAL = 100;
+
 const REFERRAL_MILESTONES = [
   { threshold: 10, bonusXp: 500 },
   { threshold: 25, bonusXp: 1500 },
   { threshold: 50, bonusXp: 3000 },
   { threshold: 75, bonusXp: 5000 },
-  { threshold: 100, bonusXp: 0 } // bonus reward, not XP
+  { threshold: 100, bonusXp: 0, bonusVerun: 100 } // paid in $VERUN, not XP
 ];
 
 // True while a call to loadReferralDashboard() is already in flight.
@@ -5072,10 +5080,14 @@ async function loadReferralDashboard() {
       `${window.location.origin}${window.location.pathname}?ref=${encodeURIComponent(profile.referral_code)}`;
   }
 
-  // XP earned so far from milestones already reached
-  const earnedXp = REFERRAL_MILESTONES
+  // XP earned so far: a flat 100 XP per referral, plus any
+  // milestone bonus XP already reached (the 100-referral milestone
+  // pays $VERUN, not XP, so it never adds to this total).
+  const milestoneBonusXp = REFERRAL_MILESTONES
     .filter(m => count >= m.threshold)
     .reduce((sum, m) => sum + m.bonusXp, 0);
+
+  const earnedXp = (count * REFERRAL_XP_PER_REFERRAL) + milestoneBonusXp;
 
   if (referralXpEl) {
     referralXpEl.textContent = `${earnedXp.toLocaleString()} XP`;
