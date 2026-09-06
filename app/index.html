@@ -7170,96 +7170,32 @@ async function loadVerunLeaderboard() {
     return currentUserId;
   }
 
-  // ── Permanent wallet lock (Supabase-backed) ─────────────────────────
-  // The first wallet used to mint a Genesis Pass is permanently bound to
-  // the logged-in X/Supabase account. localStorage remains only as a
-  // migration/offline fallback; the backend is the authoritative lock.
-  const WALLET_LOCK_TABLE = "genesis_wallet_locks";
-  let lockedWalletCache = Object.create(null);
-
+  // ── Permanent wallet lock ───────────────────────────────────────────
+  // The first wallet address a user mints a Genesis Pass with is locked
+  // to their account forever. Written once (lockWallet is a no-op if a
+  // lock already exists) and never overwritten, so it survives logout,
+  // disconnects, and connecting other wallets. There's no backend here,
+  // so this — like the rest of the app's per-user state — lives in
+  // localStorage, namespaced per Supabase user id.
   function lockedWalletKey(userId) {
     return "verunGenesisLockedWallet_" + userId;
   }
 
   function getLockedWallet(userId) {
-    if (!userId) return null;
-    if (lockedWalletCache[userId]) return lockedWalletCache[userId];
-    try { return localStorage.getItem(lockedWalletKey(userId)); } catch (e) { return null; }
-  }
-
-  function setLocalWalletLock(userId, address) {
-    if (!userId || !address) return;
-    const normalized = address.toLowerCase();
-    lockedWalletCache[userId] = normalized;
-    try { localStorage.setItem(lockedWalletKey(userId), normalized); } catch (e) {}
-  }
-
-  async function loadWalletLockFromSupabase(userId) {
-    if (!userId || !window.supabaseClient) return null;
     try {
-      const { data, error } = await window.supabaseClient
-        .from(WALLET_LOCK_TABLE)
-        .select("wallet_address,status")
-        .eq("user_id", userId)
-        .eq("status", "locked")
-        .maybeSingle();
-
-      if (error) throw error;
-      if (data?.wallet_address) {
-        setLocalWalletLock(userId, data.wallet_address);
-        return data.wallet_address.toLowerCase();
-      }
-    } catch (err) {
-      console.warn("VERUN wallet lock backend unavailable; using local fallback:", err);
-    }
-    return getLockedWallet(userId);
-  }
-
-  async function reserveWalletForMint(userId, address) {
-    if (!userId || !address || !window.supabaseClient) {
-      throw new Error("Wallet lock backend is unavailable. Please refresh and try again.");
-    }
-    const { data, error } = await window.supabaseClient.rpc("reserve_genesis_wallet", {
-      p_wallet_address: address.toLowerCase()
-    });
-    if (error) throw error;
-    if (!data?.success) {
-      throw new Error(data?.message || "This account is locked to another wallet.");
-    }
-    setLocalWalletLock(userId, address);
-    return data;
-  }
-
-  async function finalizeWalletLock(userId, address) {
-    if (!userId || !address || !window.supabaseClient) {
-      throw new Error("Wallet lock backend is unavailable.");
-    }
-    const { data, error } = await window.supabaseClient.rpc("finalize_genesis_wallet", {
-      p_wallet_address: address.toLowerCase()
-    });
-    if (error) throw error;
-    if (!data?.success) {
-      throw new Error(data?.message || "Unable to permanently save the wallet lock.");
-    }
-    setLocalWalletLock(userId, address);
-    return data;
-  }
-
-  async function releaseWalletReservation(address) {
-    if (!address || !window.supabaseClient) return;
-    try {
-      await window.supabaseClient.rpc("release_genesis_wallet", {
-        p_wallet_address: address.toLowerCase()
-      });
-    } catch (err) {
-      console.warn("VERUN wallet reservation release failed:", err);
+      return userId ? localStorage.getItem(lockedWalletKey(userId)) : null;
+    } catch (e) {
+      return null;
     }
   }
 
-  // Compatibility wrapper for older module calls. New mint flow uses
-  // reserve/finalize so a rejected transaction does not lock forever.
   function lockWallet(userId, address) {
-    setLocalWalletLock(userId, address);
+    try {
+      if (!userId || !address) return;
+      if (!localStorage.getItem(lockedWalletKey(userId))) {
+        localStorage.setItem(lockedWalletKey(userId), address.toLowerCase());
+      }
+    } catch (e) {}
   }
 
   function persistWalletForCurrentUser(address) {
@@ -7696,7 +7632,6 @@ async function loadVerunLeaderboard() {
     // initializeAppKit's synchronous snapshot + subscribeAccount), since
     // the wallet-lock check in setWalletState needs currentUserId.
     await resolveCurrentUserId();
-    if (currentUserId) await loadWalletLockFromSupabase(currentUserId);
     bindEventsOnce();
     try {
       await initializeAppKit();
@@ -7724,11 +7659,7 @@ async function loadVerunLeaderboard() {
     // on-chain ownership is confirmed) so a different wallet can never
     // be substituted in later. Idempotent: a no-op once a lock exists.
     lockWallet,
-    getLockedWallet,
-    loadWalletLockFromSupabase,
-    reserveWalletForMint,
-    finalizeWalletLock,
-    releaseWalletReservation
+    getLockedWallet
   };
   window.loadWalletModule = loadWalletModule;
 
@@ -8779,8 +8710,6 @@ async function loadVerunLeaderboard() {
       e.codeFeedback.className = "genesis-discount-feedback";
     }
 
-    let walletReserved = false;
-    let walletAddress = window.verunWallet.getState().address;
     try {
       const read = getReadContract();
 
@@ -8795,20 +8724,12 @@ async function loadVerunLeaderboard() {
       // Re-validate the applied referral code right before spending gas
       // on it — it must exist on-chain and belong to someone else.
       let referralCode = null;
-      walletAddress = window.verunWallet.getState().address;
+      const walletAddress = window.verunWallet.getState().address;
       if (appliedCode && read) {
         const [refExists, refOwner] = await read.checkGenesisCode(appliedCode);
         if (refExists && refOwner && refOwner.toLowerCase() !== (walletAddress || "").toLowerCase()) {
           referralCode = appliedCode;
         }
-      }
-
-      // Reserve the wallet server-side before opening the transaction.
-      // This prevents a different wallet from racing this account while
-      // the mint transaction is pending.
-      if (window.verunWallet && typeof window.verunWallet.reserveWalletForMint === "function") {
-        await window.verunWallet.reserveWalletForMint(currentUserId, walletAddress);
-        walletReserved = true;
       }
 
       const write = await getWriteContract();
@@ -8834,32 +8755,10 @@ async function loadVerunLeaderboard() {
       state.passName = code;
       writeState(currentUserId, state);
 
-      // The blockchain transaction has succeeded. Finalize the permanent
-      // server-side wallet lock. Retry briefly so a transient Supabase
-      // failure does not leave a minted pass without its backend binding.
-      if (window.verunWallet && typeof window.verunWallet.finalizeWalletLock === "function") {
-        let lockSaved = false;
-        let lastLockError = null;
-        for (let attempt = 1; attempt <= 3 && !lockSaved; attempt++) {
-          try {
-            await window.verunWallet.finalizeWalletLock(currentUserId, walletAddress);
-            lockSaved = true;
-          } catch (lockErr) {
-            lastLockError = lockErr;
-            await new Promise(resolve => setTimeout(resolve, 500 * attempt));
-          }
-        }
-        if (lockSaved) walletReserved = false;
-        if (!lockSaved) {
-          if (window.verunWallet.lockWallet) {
-            window.verunWallet.lockWallet(currentUserId, walletAddress);
-          }
-          throw new Error(
-            "Genesis Pass minted, but the permanent wallet lock could not be saved to Supabase. " +
-            "Please keep this wallet connected and retry after Supabase is available. " +
-            (lastLockError?.message || "")
-          );
-        }
+      // Lock this wallet to the account forever — from this point on,
+      // only this address may connect for this user.
+      if (window.verunWallet && typeof window.verunWallet.lockWallet === "function") {
+        window.verunWallet.lockWallet(currentUserId, walletAddress);
       }
 
       // The contract only stores a hash of the genesis code, not the
@@ -8885,9 +8784,6 @@ async function loadVerunLeaderboard() {
       minting = false;
       await refreshChainState(); // re-reads pool/price and re-renders
     } catch (err) {
-      if (walletReserved && window.verunWallet && typeof window.verunWallet.releaseWalletReservation === "function") {
-        await window.verunWallet.releaseWalletReservation(walletAddress);
-      }
       minting = false;
       const message = (err && (err.code === "ACTION_REJECTED" || err.code === 4001))
         ? "Transaction rejected in wallet."
