@@ -4895,6 +4895,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
 
   // ============================================
@@ -6048,7 +6049,22 @@ tasks.sort((a, b) => {
     if (!verification) {
 
       // No verification started yet
-      buttonHtml = `
+      buttonHtml = task.task_type === "share_progress" ? `
+        <button
+          class="task-button"
+          onclick="shareProgressToX(event, this, '${task.id}')"
+        >
+          Start
+        </button>
+
+        <button
+          class="claim-task-button"
+          data-task-id="${task.id}"
+          style="display: none;"
+        >
+          Claim XP
+        </button>
+      ` : `
         <a
           class="task-button"
           href="${task.target_url}"
@@ -6118,7 +6134,14 @@ tasks.sort((a, b) => {
 
       // Admin rejected the task — same one-button shape as every
       // other state, so the row stays the same size as the rest
-      buttonHtml = `
+      buttonHtml = task.task_type === "share_progress" ? `
+        <button
+          class="task-button"
+          onclick="shareProgressToX(event, this, '${task.id}')"
+        >
+          Try Again
+        </button>
+      ` : `
         <a
           class="task-button"
           href="${task.target_url}"
@@ -6221,6 +6244,104 @@ await insertSelfNotification(
 await loadUserProfile();
 await loadTasks();
 }
+// "Share your progress" task: X's tweet-compose intent has no way to
+// auto-attach an image from a URL (that's blocked platform-side for
+// everyone, not just us), so the closest honest UX is: snapshot the
+// balance card as a PNG, download it, then open the prefilled tweet
+// composer and tell the user to attach the file they just got.
+function buildShareProgressText() {
+  const xpEl = document.getElementById("xpBalance");
+  const xp = (xpEl?.textContent || "0").trim();
+
+  return (
+    `This is my progress in VERUN. 🚀\n\n` +
+    `I've earned ${xp} XP so far.\n\n` +
+    `Still building, still earning, still growing.\n\n` +
+    `Want to start your own journey with VERUN? 👇\n` +
+    `https://veruncrypto.xyz/ref\n\n` +
+    `@VerunCrypto #VERUN #Web3`
+  );
+}
+
+async function shareProgressToX(event, button, taskId) {
+  event.preventDefault();
+
+  const originalText = button.textContent;
+  button.textContent = "Preparing...";
+  button.style.pointerEvents = "none";
+
+  try {
+    const {
+      data: { session }
+    } = await supabaseClient.auth.getSession();
+
+    if (!session) {
+      console.warn("Please connect your X account first.");
+      button.textContent = originalText;
+      button.style.pointerEvents = "auto";
+      return;
+    }
+
+    // Snapshot the balance card and trigger a download so the user has
+    // a file ready to attach in the composer that's about to open.
+    const card = document.querySelector(".balance-card");
+    if (card && window.html2canvas) {
+      try {
+        const canvas = await html2canvas(card, {
+          backgroundColor: null,
+          useCORS: true,
+          scale: 2
+        });
+        const dataUrl = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.href = dataUrl;
+        link.download = "verun-balance-card.png";
+        link.click();
+      } catch (captureError) {
+        console.error("Balance card capture failed:", captureError);
+      }
+    }
+
+    const { error } = await supabaseClient
+      .from("task_verifications")
+      .upsert(
+        {
+          user_id: session.user.id,
+          task_id: Number(taskId),
+          status: "pending",
+          started_at: new Date().toISOString()
+        },
+        {
+          onConflict: "user_id,task_id"
+        }
+      );
+
+    if (error) {
+      console.error("Verification start error:", error);
+      button.textContent = originalText;
+      button.style.pointerEvents = "auto";
+      return;
+    }
+
+    const intentUrl =
+      "https://twitter.com/intent/tweet?text=" +
+      encodeURIComponent(buildShareProgressText());
+
+    window.open(intentUrl, "_blank");
+
+    button.textContent = "Attach the downloaded image & post";
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.style.pointerEvents = "auto";
+    }, 4000);
+
+  } catch (error) {
+    console.error("Share progress error:", error);
+    button.textContent = originalText;
+    button.style.pointerEvents = "auto";
+  }
+}
+
 async function startTaskVerification(event, button, taskId) {
   event.preventDefault();
 
