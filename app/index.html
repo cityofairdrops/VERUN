@@ -2356,32 +2356,12 @@
       box-shadow: 0 0 8px rgba(141,255,183,0.55);
     }
 
-    /* Wrong wallet connected — this account's Genesis Pass is locked to
-       a different address than the one currently connected. */
-    .genesis-wallet-chain-badge.is-mismatch,
-    .mining-wallet-chain-badge.is-mismatch {
-      color: #ff8a8a;
-      border-color: rgba(255,138,138,0.35);
-      background: rgba(255,138,138,0.10);
-    }
-
-    .genesis-wallet-chain-badge.is-mismatch .genesis-wallet-chain-dot,
-    .mining-wallet-chain-badge.is-mismatch .mining-wallet-chain-dot {
-      background: #ff8a8a;
-      box-shadow: 0 0 8px rgba(255,138,138,0.5);
-    }
-
     .genesis-wallet-copy,
     .mining-wallet-copy {
       color: var(--muted2);
       font-size: 10px;
       line-height: 1.5;
       max-width: 320px;
-    }
-
-    .genesis-wallet-copy.is-mismatch-copy,
-    .mining-wallet-copy.is-mismatch-copy {
-      color: #ff8a8a;
     }
 
     .genesis-wallet-btn,
@@ -4136,30 +4116,12 @@
           <span class="genesis-wallet-chain-dot"></span>
           BNB Chain Testnet · EVM wallet
         </span>
-        <p class="genesis-wallet-copy" id="genesisWalletNotConnectedCopy">
+        <p class="genesis-wallet-copy">
           Connect your wallet on BNB Chain Testnet to continue.
         </p>
       </div>
       <button type="button" class="genesis-wallet-btn genesis-wallet-connect-btn" id="genesisWalletConnectButton">
         Connect Wallet
-      </button>
-    </div>
-
-    <!-- Wrong wallet connected — this account's Genesis Pass is locked to a
-         different address. Shown instead of the states above/below until
-         the correct wallet is connected. -->
-    <div class="genesis-wallet-mismatch" id="genesisWalletMismatch" style="display:none;">
-      <div class="genesis-wallet-info">
-        <span class="genesis-wallet-chain-badge is-mismatch">
-          <span class="genesis-wallet-chain-dot"></span>
-          Wrong wallet
-        </span>
-        <p class="genesis-wallet-copy is-mismatch-copy">
-          Your Genesis Pass is locked to <span id="genesisWalletMismatchAddress"></span>. Connect that wallet to continue.
-        </p>
-      </div>
-      <button type="button" class="genesis-wallet-btn genesis-wallet-connect-btn" id="genesisWalletMismatchButton">
-        Reconnect Correct Wallet
       </button>
     </div>
 
@@ -4743,28 +4705,12 @@
           <span class="mining-wallet-chain-dot"></span>
           BNB Chain · EVM wallet
         </span>
-        <p class="mining-wallet-copy" id="miningWalletNotConnectedCopy">
+        <p class="mining-wallet-copy">
           Connect your BNB Chain wallet to continue.
         </p>
       </div>
       <button type="button" class="mining-wallet-btn mining-wallet-connect-btn" id="miningWalletConnectButton">
         Connect Wallet
-      </button>
-    </div>
-
-    <!-- Wrong wallet connected — mirrors the Genesis Pass mismatch state. -->
-    <div class="mining-wallet-mismatch" id="miningWalletMismatch" style="display:none;">
-      <div class="mining-wallet-info">
-        <span class="mining-wallet-chain-badge is-mismatch">
-          <span class="mining-wallet-chain-dot"></span>
-          Wrong wallet
-        </span>
-        <p class="mining-wallet-copy is-mismatch-copy">
-          Your Genesis Pass is locked to <span id="miningWalletMismatchAddress"></span>. Connect that wallet to continue.
-        </p>
-      </div>
-      <button type="button" class="mining-wallet-btn mining-wallet-connect-btn" id="miningWalletMismatchButton">
-        Reconnect Correct Wallet
       </button>
     </div>
 
@@ -7121,28 +7067,20 @@ async function loadVerunLeaderboard() {
       genesisSignBtn: document.getElementById("genesisWalletSignButton"),
       genesisDisconnectBtn: document.getElementById("genesisWalletDisconnectButton"),
       genesisConnectWrap: document.getElementById("genesisWalletNotConnected"),
-      genesisNotConnectedCopy: document.getElementById("genesisWalletNotConnectedCopy"),
       genesisPendingWrap: document.getElementById("genesisWalletPendingSign"),
       genesisConnectedWrap: document.getElementById("genesisWalletConnected"),
       genesisAddress: document.getElementById("genesisWalletAddressValue"),
       genesisPendingAddress: document.getElementById("genesisWalletPendingAddress"),
       genesisPendingCopy: document.getElementById("genesisWalletPendingCopy"),
-      genesisMismatchWrap: document.getElementById("genesisWalletMismatch"),
-      genesisMismatchAddress: document.getElementById("genesisWalletMismatchAddress"),
-      genesisMismatchBtn: document.getElementById("genesisWalletMismatchButton"),
       miningConnectBtn: document.getElementById("miningWalletConnectButton"),
       miningSignBtn: document.getElementById("miningWalletSignButton"),
       miningDisconnectBtn: document.getElementById("miningWalletDisconnectButton"),
       miningConnectWrap: document.getElementById("miningWalletNotConnected"),
-      miningNotConnectedCopy: document.getElementById("miningWalletNotConnectedCopy"),
       miningPendingWrap: document.getElementById("miningWalletPendingSign"),
       miningConnectedWrap: document.getElementById("miningWalletConnected"),
       miningAddress: document.getElementById("miningWalletAddressValue"),
       miningPendingAddress: document.getElementById("miningWalletPendingAddress"),
-      miningPendingCopy: document.getElementById("miningWalletPendingCopy"),
-      miningMismatchWrap: document.getElementById("miningWalletMismatch"),
-      miningMismatchAddress: document.getElementById("miningWalletMismatchAddress"),
-      miningMismatchBtn: document.getElementById("miningWalletMismatchButton")
+      miningPendingCopy: document.getElementById("miningWalletPendingCopy")
     };
   }
 
@@ -7150,52 +7088,14 @@ async function loadVerunLeaderboard() {
     return address ? address.slice(0, 6) + "…" + address.slice(-4) : "";
   }
 
-  // The logged-in Supabase user id, kept in sync so we know whose wallet
-  // lock to check/write. Resolved in loadWalletModule() (awaited before
-  // AppKit's own session-restore fires) and re-resolved on every login.
-  let currentUserId = null;
-
-  async function resolveCurrentUserId() {
+  function getCurrentUserId() {
     try {
-      const auth = window.supabaseClient && window.supabaseClient.auth;
-      if (!auth || typeof auth.getSession !== "function") {
-        currentUserId = null;
-        return currentUserId;
-      }
-      const { data } = await auth.getSession();
-      currentUserId = (data && data.session && data.session.user && data.session.user.id) || null;
-    } catch (e) {
-      currentUserId = null;
-    }
-    return currentUserId;
-  }
-
-  // ── Permanent wallet lock ───────────────────────────────────────────
-  // The first wallet address a user mints a Genesis Pass with is locked
-  // to their account forever. Written once (lockWallet is a no-op if a
-  // lock already exists) and never overwritten, so it survives logout,
-  // disconnects, and connecting other wallets. There's no backend here,
-  // so this — like the rest of the app's per-user state — lives in
-  // localStorage, namespaced per Supabase user id.
-  function lockedWalletKey(userId) {
-    return "verunGenesisLockedWallet_" + userId;
-  }
-
-  function getLockedWallet(userId) {
-    try {
-      return userId ? localStorage.getItem(lockedWalletKey(userId)) : null;
+      const user = window.supabaseClient && window.supabaseClient.auth;
+      if (!user) return null;
+      return null;
     } catch (e) {
       return null;
     }
-  }
-
-  function lockWallet(userId, address) {
-    try {
-      if (!userId || !address) return;
-      if (!localStorage.getItem(lockedWalletKey(userId))) {
-        localStorage.setItem(lockedWalletKey(userId), address.toLowerCase());
-      }
-    } catch (e) {}
   }
 
   function persistWalletForCurrentUser(address) {
@@ -7218,49 +7118,24 @@ async function loadVerunLeaderboard() {
   function updateUI() {
     const e = els();
     const connected = !!walletState.address;
-    const mismatch = !!walletState.mismatch;
     const bscReady = connected && Number(walletState.chainId) === BSC_CHAIN_ID;
     const signed = walletState.signed;
 
-    // ── Four states ───────────────────────────────────────────────────
-    // 1. Not connected            → show connect wrap only
-    // 2. Wrong wallet connected   → show mismatch wrap only (wallet is
-    //    force-disconnected as soon as this is detected, see
-    //    setWalletState, but the panel stays up until the correct
-    //    wallet connects)
-    // 3. Connected, not signed    → show pending-sign wrap only
-    // 4. Connected + signed       → show connected (verified) wrap only
-    const showConnect = !connected && !mismatch;
-    const showPending = connected && !signed && !mismatch;
-    const showVerified = connected && signed && !mismatch;
+    // ── Three states ──────────────────────────────────────────────────
+    // 1. Not connected  → show connect wrap only
+    // 2. Connected, not signed → show pending-sign wrap only
+    // 3. Connected + signed   → show connected (verified) wrap only
+    const showPending = connected && !signed;
+    const showVerified = connected && signed;
 
     [e.genesisConnectWrap, e.miningConnectWrap].forEach(el => {
-      if (el) el.style.display = showConnect ? "" : "none";
-    });
-    [e.genesisMismatchWrap, e.miningMismatchWrap].forEach(el => {
-      if (el) el.style.display = mismatch ? "" : "none";
+      if (el) el.style.display = connected ? "none" : "";
     });
     [e.genesisPendingWrap, e.miningPendingWrap].forEach(el => {
       if (el) el.style.display = showPending ? "" : "none";
     });
     [e.genesisConnectedWrap, e.miningConnectedWrap].forEach(el => {
       if (el) el.style.display = showVerified ? "" : "none";
-    });
-
-    // Locked-address hint on the plain "not connected" panel, so a user
-    // who already owns a pass knows which wallet to reconnect *before*
-    // they try the wrong one.
-    const lockedForUser = currentUserId ? getLockedWallet(currentUserId) : null;
-    const notConnectedCopy = lockedForUser
-      ? ("This account is locked to " + shortAddress(lockedForUser) + ". Connect that wallet to continue.")
-      : null;
-    [e.genesisNotConnectedCopy, e.miningNotConnectedCopy].forEach(el => {
-      if (el && notConnectedCopy) el.textContent = notConnectedCopy;
-    });
-
-    // Address shown in the mismatch panel
-    [e.genesisMismatchAddress, e.miningMismatchAddress].forEach(el => {
-      if (el) el.textContent = shortAddress(walletState.lockedAddress);
     });
 
     // Address in verified panel
@@ -7314,55 +7189,7 @@ async function loadVerunLeaderboard() {
       next.signing = false;
     }
     walletState = Object.assign({}, walletState, next);
-
-    // ── Permanent wallet lock enforcement ─────────────────────────────
-    // If this account already minted a Genesis Pass with a different
-    // address, the wallet that just connected is not allowed in. Flag
-    // it and kick it off immediately — it must never reach the sign or
-    // mint steps. `mismatch`/`lockedAddress` are sticky: they stay set
-    // (so the error panel keeps showing) even after the address below
-    // is nulled out by the forced disconnect, and are only cleared once
-    // the correct wallet connects or the user explicitly disconnects.
-    if (walletState.address && currentUserId) {
-      const locked = getLockedWallet(currentUserId);
-      if (locked && locked.toLowerCase() !== walletState.address.toLowerCase()) {
-        walletState.mismatch = true;
-        walletState.lockedAddress = locked;
-        updateUI();
-        forceDisconnectMismatchedWallet();
-        return;
-      }
-      if (walletState.mismatch) {
-        walletState.mismatch = false;
-        walletState.lockedAddress = null;
-      }
-    }
-
     updateUI();
-  }
-
-  // Disconnects a wallet that failed the lock check, without touching
-  // `mismatch`/`lockedAddress` so the "wrong wallet" panel stays visible
-  // until the correct wallet connects.
-  async function forceDisconnectMismatchedWallet() {
-    try {
-      if (appKit) {
-        if (appKit.adapter && appKit.adapter.connectionControllerClient &&
-            typeof appKit.adapter.connectionControllerClient.disconnect === "function") {
-          await appKit.adapter.connectionControllerClient.disconnect();
-        } else if (typeof appKit.disconnect === "function") {
-          await appKit.disconnect();
-        }
-      }
-    } catch (err) {
-      console.error("VERUN wallet: failed to auto-disconnect mismatched wallet", err);
-    } finally {
-      walletState = Object.assign({}, walletState, {
-        address: null, chainId: null, verified: false,
-        connecting: false, signed: false, signing: false
-      });
-      updateUI();
-    }
   }
 
 
@@ -7530,10 +7357,7 @@ async function loadVerunLeaderboard() {
     } catch (err) {
       console.error("VERUN wallet disconnect failed:", err);
     } finally {
-      setWalletState({
-        address: null, chainId: null, verified: false, connecting: false,
-        signed: false, signing: false, mismatch: false, lockedAddress: null
-      });
+      setWalletState({ address: null, chainId: null, verified: false, connecting: false, signed: false, signing: false });
     }
   }
 
@@ -7618,20 +7442,10 @@ async function loadVerunLeaderboard() {
         btn.addEventListener("click", disconnectWallet);
       }
     });
-    [e.genesisMismatchBtn, e.miningMismatchBtn].forEach(btn => {
-      if (btn && !btn.dataset.walletBound) {
-        btn.dataset.walletBound = "1";
-        btn.addEventListener("click", connectWallet);
-      }
-    });
     updateUI();
   }
 
   async function loadWalletModule() {
-    // Must resolve before AppKit's session-restore fires (see
-    // initializeAppKit's synchronous snapshot + subscribeAccount), since
-    // the wallet-lock check in setWalletState needs currentUserId.
-    await resolveCurrentUserId();
     bindEventsOnce();
     try {
       await initializeAppKit();
@@ -7653,13 +7467,7 @@ async function loadVerunLeaderboard() {
     // re-implementing AppKit's connection handling.
     getProvider: () => (appKit && typeof appKit.getWalletProvider === "function"
       ? appKit.getWalletProvider()
-      : null),
-    // Permanent per-account wallet lock — written once at mint time by
-    // the Genesis Pass module (and re-asserted as a safety net whenever
-    // on-chain ownership is confirmed) so a different wallet can never
-    // be substituted in later. Idempotent: a no-op once a lock exists.
-    lockWallet,
-    getLockedWallet
+      : null)
   };
   window.loadWalletModule = loadWalletModule;
 
@@ -8402,13 +8210,6 @@ async function loadVerunLeaderboard() {
         const owned = await read.hasPass(walletState.address);
         chain.owned = !!owned;
         chain.tokenId = chain.owned ? Number(await read.getTokenId(walletState.address)) : null;
-        // Safety net: if ownership is confirmed on-chain but this
-        // account somehow has no lock yet (e.g. state from before this
-        // feature existed), lock it now. lockWallet() is a no-op if a
-        // lock is already set, so this never overrides an existing one.
-        if (chain.owned && window.verunWallet && typeof window.verunWallet.lockWallet === "function") {
-          window.verunWallet.lockWallet(currentUserId, walletState.address);
-        }
       } catch (err) {
         console.error("VERUN Genesis Pass: failed to read on-chain ownership", err);
       }
@@ -8520,15 +8321,11 @@ async function loadVerunLeaderboard() {
     if (e.poolRemainingCaption) e.poolRemainingCaption.textContent = formatIndian(remaining) + " remaining";
   }
 
-  // The permanent, mint-time-locked wallet address is the source of
-  // truth for display once a user owns a pass — it never changes even
-  // if a different (or no) wallet is currently connected. Falls back to
-  // the older "last connected" key only for pre-lock local state.
+  // Reads a wallet address for this user if something (a future
+  // wallet-connect module) has stored one. TODO(wallet): replace
+  // this localStorage read with the real connected-wallet state once
+  // wallet connection ships.
   function readWalletAddress(userId) {
-    const locked = window.verunWallet && typeof window.verunWallet.getLockedWallet === "function"
-      ? window.verunWallet.getLockedWallet(userId)
-      : null;
-    if (locked) return locked;
     return localStorage.getItem("verunWalletAddress_" + userId) || null;
   }
 
@@ -8754,12 +8551,6 @@ async function loadVerunLeaderboard() {
       state.mintedAt = Date.now();
       state.passName = code;
       writeState(currentUserId, state);
-
-      // Lock this wallet to the account forever — from this point on,
-      // only this address may connect for this user.
-      if (window.verunWallet && typeof window.verunWallet.lockWallet === "function") {
-        window.verunWallet.lockWallet(currentUserId, walletAddress);
-      }
 
       // The contract only stores a hash of the genesis code, not the
       // plaintext, so keep the same-device registry used elsewhere in
