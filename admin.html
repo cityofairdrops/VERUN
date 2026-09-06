@@ -20,6 +20,11 @@
       margin-bottom: 20px;
     }
 
+    h2 {
+      margin-top: 40px;
+      margin-bottom: 12px;
+    }
+
     .verification-card {
       background: white;
       padding: 18px;
@@ -49,6 +54,69 @@
       background: #ef4444;
       color: white;
     }
+
+    .unlock-panel {
+      background: white;
+      padding: 18px;
+      border-radius: 12px;
+      max-width: 480px;
+    }
+
+    .unlock-panel input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-family: inherit;
+    }
+
+    .unlock-panel .lookup-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .unlock-panel .lookup-row input {
+      margin-bottom: 0;
+    }
+
+    .lookup-button {
+      background: #3b82f6;
+      color: white;
+      white-space: nowrap;
+    }
+
+    .lookup-match {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    .lookup-match.not-found {
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+
+    .unlock-button {
+      background: #f59e0b;
+      color: white;
+    }
+
+    .unlock-button:disabled {
+      background: #d1d5db;
+      cursor: not-allowed;
+    }
+
+    .unlock-result {
+      margin-top: 10px;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 
@@ -59,6 +127,48 @@
 <div id="message">Loading...</div>
 
 <div id="verification-list"></div>
+
+<h2>Unlock Wallet (admin only)</h2>
+
+<div class="unlock-panel">
+  <p>
+    Permanently clears a user's locked wallet (set after their
+    Genesis Pass mint), so they can re-verify with a different
+    wallet. This action is logged.
+  </p>
+
+  <div class="lookup-row">
+    <input
+      id="unlock-username"
+      type="text"
+      placeholder="X username (with or without @)"
+    >
+    <button
+      class="lookup-button"
+      onclick="lookupUser()"
+    >
+      Look up
+    </button>
+  </div>
+
+  <div id="lookup-match"></div>
+
+  <input
+    id="unlock-user-id"
+    type="text"
+    placeholder="User ID (uuid) — filled in automatically, or paste one directly"
+  >
+
+  <button
+    id="unlock-button"
+    class="unlock-button"
+    onclick="unlockWallet()"
+  >
+    Unlock Wallet
+  </button>
+
+  <div id="unlock-result" class="unlock-result"></div>
+</div>
 
 <script>
 
@@ -288,6 +398,176 @@ async function rejectVerification(id) {
   }
 
   loadVerifications();
+}
+
+
+// Resolves an X username to a user_id + current wallet-lock status by
+// querying public.profiles directly (RLS on profiles already lets any
+// authenticated user read x_username elsewhere in the app, e.g. the
+// leaderboard/referral views — this reuses that same read access, not
+// a new privilege). Populates the user-id field so the existing
+// unlock flow below works unchanged.
+let lookedUpUser = null;
+
+async function lookupUser() {
+
+  const matchEl =
+    document.getElementById("lookup-match");
+
+  const unlockBtn =
+    document.getElementById("unlock-button");
+
+  matchEl.className = "";
+  matchEl.textContent = "";
+  document.getElementById("unlock-user-id").value = "";
+  lookedUpUser = null;
+
+  const {
+    data: { session }
+  } = await supabaseClient.auth.getSession();
+
+  if (!session) {
+
+    alert("Please log in.");
+
+    return;
+  }
+
+  const rawInput =
+    document.getElementById("unlock-username").value.trim();
+
+  const username =
+    rawInput.replace(/^@/, "");
+
+  if (!username) {
+
+    matchEl.className = "lookup-match not-found";
+    matchEl.textContent = "Enter a username first.";
+
+    return;
+  }
+
+  const { data, error } =
+    await supabaseClient
+      .from("profiles")
+      .select("id, x_username, locked_wallet_address, wallet_locked_at")
+      .ilike("x_username", username)
+      .maybeSingle();
+
+  if (error) {
+
+    console.error(error);
+
+    matchEl.className = "lookup-match not-found";
+    matchEl.textContent = "Lookup failed: " + error.message;
+
+    return;
+  }
+
+  if (!data) {
+
+    matchEl.className = "lookup-match not-found";
+    matchEl.textContent = "No user found with that username.";
+
+    return;
+  }
+
+  lookedUpUser = data;
+
+  document.getElementById("unlock-user-id").value = data.id;
+
+  matchEl.className = "lookup-match";
+
+  matchEl.innerHTML =
+    "Found <strong>@" + escapeHtml(data.x_username) + "</strong><br>" +
+    "User ID: " + escapeHtml(data.id) + "<br>" +
+    (data.locked_wallet_address
+      ? "Currently locked to wallet: " + escapeHtml(data.locked_wallet_address) +
+        (data.wallet_locked_at
+          ? " (since " + new Date(data.wallet_locked_at).toLocaleString() + ")"
+          : "")
+      : "No wallet lock on this account — nothing to unlock.");
+}
+
+
+// Admin-only: clears a user's permanently locked wallet via the
+// admin_unlock_wallet RPC. The RPC itself re-checks is_admin() and
+// records an audit row (public.wallet_lock_audit), so this button is
+// a convenience — it grants no access beyond what the RPC already
+// enforces server-side.
+async function unlockWallet() {
+
+  const resultEl =
+    document.getElementById("unlock-result");
+
+  resultEl.textContent = "";
+
+  const {
+    data: { session }
+  } = await supabaseClient.auth.getSession();
+
+  if (!session) {
+
+    alert("Please log in.");
+
+    return;
+  }
+
+  const userId =
+    document.getElementById("unlock-user-id").value.trim();
+
+  if (!userId) {
+
+    resultEl.textContent =
+      "Enter a user ID first, or look up a username above.";
+
+    return;
+  }
+
+  const label =
+    (lookedUpUser && lookedUpUser.id === userId)
+      ? "@" + lookedUpUser.x_username + " (" + userId + ")"
+      : userId;
+
+  const confirmed = confirm(
+    "This will permanently clear the locked wallet for " +
+    label +
+    " so they can re-verify with a different wallet. Continue?"
+  );
+
+  if (!confirmed) return;
+
+  const { data, error } =
+    await supabaseClient.rpc("admin_unlock_wallet", {
+      p_user_id: userId
+    });
+
+  if (error) {
+
+    console.error(error);
+
+    resultEl.textContent =
+      "Unlock failed: " + error.message;
+
+    return;
+  }
+
+  if (!data.was_locked) {
+
+    resultEl.textContent =
+      "That user had no locked wallet — nothing to do.";
+
+    return;
+  }
+
+  resultEl.textContent =
+    "Unlocked " + label + ". Previously locked wallet: " +
+    data.previous_wallet_address;
+
+  // Clear the stale lookup card so a re-check reflects the new state.
+  document.getElementById("lookup-match").textContent = "";
+  document.getElementById("lookup-match").className = "";
+  lookedUpUser = null;
 }
 
 
