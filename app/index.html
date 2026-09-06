@@ -7226,21 +7226,14 @@ async function loadVerunLeaderboard() {
 
   function setWalletState(next) {
   const oldAddress = walletState.address;
-  const newAddress =
-    "address" in next ? next.address : walletState.address;
+  const newAddress = "address" in next ? next.address : oldAddress;
 
-  const oldNormalized = oldAddress
-    ? oldAddress.toLowerCase()
-    : "";
+  const addressChanged =
+    (oldAddress || "").toLowerCase() !==
+    (newAddress || "").toLowerCase();
 
-  const newNormalized = newAddress
-    ? newAddress.toLowerCase()
-    : "";
-
-  const addressChanged = oldNormalized !== newNormalized;
-
-  // Only reset the signature when the actual wallet changes.
-  // Chain/provider updates must not reset a successful signature.
+  // Only reset signature when a DIFFERENT wallet connects
+  // or the wallet is actually disconnected.
   if (addressChanged) {
     next.signed = false;
     next.signing = false;
@@ -7509,6 +7502,24 @@ async function loadVerunLeaderboard() {
     walletState.signed = true;
 walletState.signing = false;
 walletState.verified = true;
+
+const ui = els();
+
+if (ui.genesisPendingWrap) {
+  ui.genesisPendingWrap.style.display = "none";
+}
+
+if (ui.miningPendingWrap) {
+  ui.miningPendingWrap.style.display = "none";
+}
+
+if (ui.genesisConnectedWrap) {
+  ui.genesisConnectedWrap.style.display = "";
+}
+
+if (ui.miningConnectedWrap) {
+  ui.miningConnectedWrap.style.display = "";
+}
 
 updateUI();
 
