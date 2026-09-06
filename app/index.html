@@ -7742,6 +7742,16 @@ async function loadVerunLeaderboard() {
   }
 
   function setWalletState(next) {
+    // Normalize the address casing immediately. Different AppKit event
+    // paths (subscribeAccount vs subscribeProvider vs the delayed
+    // fallback) don't always agree on checksummed vs lowercase casing
+    // for the SAME wallet — without this, a harmless chain-switch event
+    // firing after a successful sign could look like "the address
+    // changed" below and incorrectly wipe out `signed`, making the
+    // Sign button reappear right after signing.
+    if ("address" in next && next.address) {
+      next.address = next.address.toLowerCase();
+    }
     // If the wallet address changes (new connection or disconnect), reset signature
     const addressChanged = "address" in next && next.address !== walletState.address;
     if (addressChanged) {
@@ -8861,6 +8871,19 @@ async function loadVerunLeaderboard() {
         const owned = await read.hasPass(walletState.address);
         chain.owned = !!owned;
         chain.tokenId = chain.owned ? Number(await read.getTokenId(walletState.address)) : null;
+
+        // Backfill safety net: an account that minted BEFORE the wallet
+        // lock existed server-side has no row in wallet_locks yet, which
+        // means (until now) it would silently accept a sign-in from any
+        // other wallet. The moment we see this wallet already owns a
+        // pass on-chain, lock it — same as a fresh mint would — so a
+        // different wallet can never verify for this account again.
+        if (chain.owned && window.verunWallet &&
+            typeof window.verunWallet.getLockedWallet === "function" &&
+            !window.verunWallet.getLockedWallet() &&
+            typeof window.verunWallet.lockToMintedWallet === "function") {
+          await window.verunWallet.lockToMintedWallet(walletState.address);
+        }
       } catch (err) {
         console.error("VERUN Genesis Pass: failed to read on-chain ownership", err);
       }
@@ -9251,18 +9274,84 @@ async function loadVerunLeaderboard() {
     }
   }
 
-  function setPassName() {
-    // The pass name is the genesis code chosen at mint time (see
-    // mintPass() / record_genesis_pass_mint) and is immutable — it's
-    // stored server-side the moment the mint confirms, so this legacy
-    // "set a name" UI path should never actually be reachable. Kept
-    // only as a safe guard in case the name display ever renders
-    // before cachedState finishes loading.
+  // Recovers the server-side record for a pass that was minted BEFORE
+  // the genesis_passes table existed. The contract only stores a HASH
+  // of the genesis code (see tokenGenesisCode/checkGenesisCode in the
+  // ABI), never the plaintext — so the one piece of information we
+  // cannot get back from the chain is the code itself. This asks for
+  // it once, verifies it against the chain (so nobody can claim a pass
+  // with a made-up code), and then backfills the database row so this
+  // never has to happen again for this wallet.
+  async function setPassName() {
     const e = cacheEls();
-    if (!e.nameFeedback) return;
-    e.nameFeedback.textContent =
-      "Your Genesis Pass name is set automatically at mint and can't be changed.";
-    e.nameFeedback.className = "genesis-discount-feedback is-error";
+    if (!e.nameInput || !e.nameFeedback || !currentUserId) return;
+
+    if (cachedState.passName) return; // already recorded — nothing to do
+
+    const name = e.nameInput.value.trim().toLowerCase();
+
+    if (!/^[a-z0-9-]{3,20}$/.test(name)) {
+      e.nameFeedback.textContent =
+        "Enter the exact genesis code you minted with — 3–20 lowercase letters, numbers or hyphens.";
+      e.nameFeedback.className = "genesis-discount-feedback is-error";
+      return;
+    }
+
+    const walletState = window.verunWallet ? window.verunWallet.getState() : null;
+    const walletAddress = walletState ? walletState.address : null;
+    if (!walletAddress || !chain.owned || chain.tokenId === null) {
+      e.nameFeedback.textContent = "Reconnect the wallet that minted this pass first.";
+      e.nameFeedback.className = "genesis-discount-feedback is-error";
+      return;
+    }
+
+    e.nameFeedback.textContent = "Checking…";
+    e.nameFeedback.className = "genesis-discount-feedback";
+
+    try {
+      const read = getReadContract();
+      if (!read) throw new Error("Chain reader unavailable — try again in a moment.");
+
+      // This is the actual proof: the contract already recorded (at
+      // mint time) which address owns this exact code. If what the
+      // user typed doesn't hash to a match owned by their own wallet,
+      // it's either the wrong code or someone guessing — reject either way.
+      const [codeExists, codeOwner] = await read.checkGenesisCode(name);
+      if (!codeExists || !codeOwner || codeOwner.toLowerCase() !== walletAddress.toLowerCase()) {
+        e.nameFeedback.textContent = "That code doesn't match this wallet's Genesis Pass. Double-check it and try again.";
+        e.nameFeedback.className = "genesis-discount-feedback is-error";
+        return;
+      }
+
+      const { data, error } = await supabaseClient.rpc("record_genesis_pass_mint", {
+        p_wallet_address: walletAddress,
+        p_genesis_code: name,
+        p_token_number: chain.tokenId,
+        p_tx_hash: null,
+        p_referral_code: null
+      });
+      if (error) throw error;
+
+      cachedState = {
+        owned: true,
+        tokenNumber: chain.tokenId,
+        mintedAt: cachedState.mintedAt || Date.now(),
+        passName: name,
+        walletAddress: walletAddress
+      };
+
+      e.nameFeedback.textContent = "";
+      e.nameFeedback.className = "genesis-discount-feedback";
+      await loadReferralStats();
+      render();
+    } catch (err) {
+      console.error("VERUN Genesis Pass: recovery record_genesis_pass_mint failed", err);
+      const msg = err && err.message ? String(err.message) : "";
+      e.nameFeedback.textContent = msg.includes("already taken")
+        ? "That code is already recorded under a different wallet."
+        : "Couldn't save that right now — please try again.";
+      e.nameFeedback.className = "genesis-discount-feedback is-error";
+    }
   }
 
   function copyPassName() {
