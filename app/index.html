@@ -7845,19 +7845,53 @@ async function loadVerunLeaderboard() {
       // 3. Delayed fallback — if WC's session verification takes longer
       //    than expected, a one-shot setTimeout re-reads live state.
 
-      if (typeof appKit.subscribeAccount === "function") {
+  // A wallet's underlying provider can report a brief, false
+  // "disconnected" blip — most commonly right after personal_sign,
+  // when a WalletConnect session momentarily re-verifies itself as
+  // control returns from the wallet app to the browser. subscribeAccount
+  // already filters its own "reconnecting" status for this, but
+  // subscribeProvider has no such field to filter on, so a disconnect
+  // signal from either one is debounced here: only treated as real if
+  // no reconnection follows within the grace window. Without this, that
+  // one blip resets `signed`, which is exactly what made the Sign
+  // button reappear right after a successful sign.
+  let _disconnectDebounceTimer = null;
+
+  function reportWalletConnection(address, chainId) {
+    if (_disconnectDebounceTimer) {
+      clearTimeout(_disconnectDebounceTimer);
+      _disconnectDebounceTimer = null;
+    }
+    setWalletState({ address: address || null, chainId: chainId || null, connecting: false });
+  }
+
+  function reportWalletDisconnection() {
+    if (_disconnectDebounceTimer) clearTimeout(_disconnectDebounceTimer);
+    _disconnectDebounceTimer = setTimeout(function () {
+      _disconnectDebounceTimer = null;
+      setWalletState({ address: null, chainId: null, connecting: false });
+    }, 900);
+  }
+
+  function handleProviderEvent(address, chainId, isConnected) {
+    if (isConnected && address) {
+      reportWalletConnection(address, chainId);
+    } else {
+      reportWalletDisconnection();
+    }
+  }
+
+  if (typeof appKit.subscribeAccount === "function") {
         appKit.subscribeAccount(function ({ address, isConnected, status }) {
           // "reconnecting" is the transient state while WalletConnect
           // re-verifies a persisted session.  Skip it to avoid a flash
           // of "not connected" that immediately corrects itself.
           if (status === "reconnecting") return;
-          setWalletState({
-            address: isConnected ? (address || null) : null,
-            chainId: isConnected
-              ? (typeof appKit.getChainId === "function" ? (appKit.getChainId() || null) : null)
-              : null,
-            connecting: false
-          });
+          handleProviderEvent(
+            address,
+            typeof appKit.getChainId === "function" ? appKit.getChainId() : null,
+            isConnected
+          );
         });
       }
 
@@ -7865,11 +7899,7 @@ async function loadVerunLeaderboard() {
       // after the wallet is already connected).
       if (typeof appKit.subscribeProvider === "function") {
         appKit.subscribeProvider(function ({ address, chainId, isConnected }) {
-          setWalletState({
-            address: isConnected ? (address || null) : null,
-            chainId: isConnected ? (chainId || null) : null,
-            connecting: false
-          });
+          handleProviderEvent(address, chainId, isConnected);
         });
       }
 
@@ -7877,11 +7907,7 @@ async function loadVerunLeaderboard() {
       // in memory (e.g. injected wallets that report instantly).
       try {
         if (appKit.getIsConnected()) {
-          setWalletState({
-            address: appKit.getAddress() || null,
-            chainId: appKit.getChainId() || null,
-            connecting: false
-          });
+          reportWalletConnection(appKit.getAddress(), appKit.getChainId());
         }
       } catch (e) {}
 
@@ -7893,11 +7919,10 @@ async function loadVerunLeaderboard() {
           if (typeof appKit.getIsConnected === "function" &&
               appKit.getIsConnected() &&
               !walletState.address) {
-            setWalletState({
-              address: (typeof appKit.getAddress === "function" ? appKit.getAddress() : null) || null,
-              chainId: (typeof appKit.getChainId === "function" ? appKit.getChainId() : null) || null,
-              connecting: false
-            });
+            reportWalletConnection(
+              typeof appKit.getAddress === "function" ? appKit.getAddress() : null,
+              typeof appKit.getChainId === "function" ? appKit.getChainId() : null
+            );
           }
         } catch (e) {}
       }, 1500);
