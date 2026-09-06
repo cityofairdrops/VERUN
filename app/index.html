@@ -1145,6 +1145,50 @@
       gap: 6px;
     }
 
+    .verun-pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 12px;
+      padding-top: 12px;
+    }
+
+    .verun-page-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.15s ease;
+    }
+
+    .verun-page-btn:hover:not(:disabled) {
+      border-color: var(--green-border);
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .verun-page-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    .verun-page-info {
+      color: var(--muted2);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
     #noReferralsMessage {
       color: var(--muted2);
       font-size: 11px;
@@ -5026,6 +5070,70 @@ const REFERRAL_MILESTONES = [
 // entirely removes that race instead of trying to out-guess timing.
 let verunReferralDashboardLoading = false;
 
+// Client-side pagination for "People You Referred" — 10 per page.
+// The full list is fetched once by loadReferralDashboard(); turning
+// the page below just re-slices and re-renders that same data, no
+// refetch involved.
+const REFERRED_USERS_PER_PAGE = 10;
+let verunReferredUsersData = [];
+let verunReferredUsersPage = 1;
+
+function renderReferredUsersPage() {
+
+  const referredUsersList = document.getElementById("referredUsersList");
+  if (!referredUsersList) return;
+
+  const total = verunReferredUsersData.length;
+  if (total === 0) return;
+
+  const totalPages = Math.max(1, Math.ceil(total / REFERRED_USERS_PER_PAGE));
+  verunReferredUsersPage = Math.min(Math.max(1, verunReferredUsersPage), totalPages);
+
+  const start = (verunReferredUsersPage - 1) * REFERRED_USERS_PER_PAGE;
+  const pageUsers = verunReferredUsersData.slice(start, start + REFERRED_USERS_PER_PAGE);
+
+  const rowsHtml = pageUsers.map(user => `
+    <div style="
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:10px 12px;
+      background:var(--panel2);
+      border:1px solid var(--border);
+      border-radius:8px;
+      font-size:11px;
+    ">
+      <span>@${escapeHtml(user.x_username || "verun_user")}</span>
+      <span style="color:var(--muted2);">${user.current_streak || 0} day streak</span>
+    </div>
+  `).join("");
+
+  const paginationHtml = totalPages > 1 ? `
+    <div class="verun-pagination">
+      <button type="button" class="verun-page-btn" data-page-action="prev" data-pagination-for="referredUsers" ${verunReferredUsersPage <= 1 ? "disabled" : ""}>‹ Prev</button>
+      <span class="verun-page-info">Page ${verunReferredUsersPage} of ${totalPages}</span>
+      <button type="button" class="verun-page-btn" data-page-action="next" data-pagination-for="referredUsers" ${verunReferredUsersPage >= totalPages ? "disabled" : ""}>Next ›</button>
+    </div>
+  ` : "";
+
+  referredUsersList.innerHTML = rowsHtml + paginationHtml;
+}
+
+document.addEventListener("click", event => {
+
+  const pageBtn = event.target.closest(
+    '.verun-page-btn[data-pagination-for="referredUsers"]'
+  );
+
+  if (!pageBtn || pageBtn.disabled) return;
+
+  verunReferredUsersPage +=
+    pageBtn.dataset.pageAction === "next" ? 1 : -1;
+
+  renderReferredUsersPage();
+
+});
+
 async function loadReferralDashboard() {
 
   if (verunReferralDashboardLoading) return;
@@ -5191,24 +5299,16 @@ async function loadReferralDashboard() {
 
       if (referredUsers && referredUsers.length > 0) {
 
-        referredUsersList.innerHTML = referredUsers.map(user => `
-          <div style="
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            padding:10px 12px;
-            background:var(--panel2);
-            border:1px solid var(--border);
-            border-radius:8px;
-            font-size:11px;
-          ">
-            <span>@${escapeHtml(user.x_username || "verun_user")}</span>
-            <span style="color:var(--muted2);">${user.current_streak || 0} day streak</span>
-          </div>
-        `).join("");
+        // Paginated client-side, 10 per page — see
+        // renderReferredUsersPage() below. Reset to page 1 on every
+        // fresh load of the dashboard.
+        verunReferredUsersData = referredUsers;
+        verunReferredUsersPage = 1;
+        renderReferredUsersPage();
 
       } else if (count === 0) {
 
+        verunReferredUsersData = [];
         referredUsersList.innerHTML =
           `<p id="noReferralsMessage">No referrals yet.</p>`;
 
@@ -5217,6 +5317,7 @@ async function loadReferralDashboard() {
         // count > 0 but no rows came back — don't claim "no referrals",
         // that's actively wrong and confusing when the stat above says
         // otherwise.
+        verunReferredUsersData = [];
         referredUsersList.innerHTML =
           `<p id="noReferralsMessage">Referral count is up to date, but the usernames aren't available to display yet.</p>`;
       }
@@ -5224,6 +5325,7 @@ async function loadReferralDashboard() {
     } catch (referredListError) {
       console.error("Referred users list error:", referredListError);
 
+      verunReferredUsersData = [];
       referredUsersList.innerHTML =
         `<p id="noReferralsMessage">Couldn't load your referred users right now.</p>`;
     }
@@ -6769,6 +6871,10 @@ loadDailyLoginStatus();
 
 let verunLeaderboardData = [];
 let verunLeaderboardSort = "xp";
+const VERUN_LEADERBOARD_PER_PAGE = 100;
+// Separate page number per tab, so switching tabs and switching back
+// doesn't lose your place on either one.
+let verunLeaderboardPage = { xp: 1, referrals: 1 };
 
 function renderVerunLeaderboardTabs() {
 
@@ -6814,7 +6920,19 @@ function renderVerunLeaderboardList() {
       (a, b) => Number(b[sortKey] || 0) - Number(a[sortKey] || 0)
     );
 
-  list.innerHTML = sorted.map((user, index) => {
+  const totalPages =
+    Math.max(1, Math.ceil(sorted.length / VERUN_LEADERBOARD_PER_PAGE));
+
+  const currentPage = Math.min(
+    Math.max(1, verunLeaderboardPage[verunLeaderboardSort] || 1),
+    totalPages
+  );
+  verunLeaderboardPage[verunLeaderboardSort] = currentPage;
+
+  const start = (currentPage - 1) * VERUN_LEADERBOARD_PER_PAGE;
+  const pageEntries = sorted.slice(start, start + VERUN_LEADERBOARD_PER_PAGE);
+
+  const rowsHtml = pageEntries.map((user, index) => {
 
     return `
       <div class="leaderboard-row"
@@ -6830,7 +6948,7 @@ function renderVerunLeaderboardList() {
 
         <div style="display:flex;align-items:center;gap:12px;">
           <strong style="min-width:35px;">
-            #${index + 1}
+            #${start + index + 1}
           </strong>
 
           <div>
@@ -6860,6 +6978,16 @@ function renderVerunLeaderboardList() {
     `;
   }).join("");
 
+  const paginationHtml = totalPages > 1 ? `
+    <div class="verun-pagination">
+      <button type="button" class="verun-page-btn" data-page-action="prev" data-pagination-for="leaderboard" ${currentPage <= 1 ? "disabled" : ""}>‹ Prev</button>
+      <span class="verun-page-info">Page ${currentPage} of ${totalPages}</span>
+      <button type="button" class="verun-page-btn" data-page-action="next" data-pagination-for="leaderboard" ${currentPage >= totalPages ? "disabled" : ""}>Next ›</button>
+    </div>
+  ` : "";
+
+  list.innerHTML = rowsHtml + paginationHtml;
+
 }
 
 function setVerunLeaderboardSort(sortKey) {
@@ -6878,6 +7006,21 @@ document.addEventListener("click", event => {
 
 });
 
+document.addEventListener("click", event => {
+
+  const pageBtn = event.target.closest(
+    '.verun-page-btn[data-pagination-for="leaderboard"]'
+  );
+
+  if (!pageBtn || pageBtn.disabled) return;
+
+  verunLeaderboardPage[verunLeaderboardSort] +=
+    pageBtn.dataset.pageAction === "next" ? 1 : -1;
+
+  renderVerunLeaderboardList();
+
+});
+
 async function loadVerunLeaderboard() {
   const loading = document.getElementById("leaderboardLoading");
   const error = document.getElementById("leaderboardError");
@@ -6890,10 +7033,13 @@ async function loadVerunLeaderboard() {
   list.innerHTML = "";
 
   try {
+    // Fetched once, up to 1,000 users — pagination below (100 per
+    // page) then slices this same in-memory list client-side, so
+    // turning the page never triggers another network request.
     const { data, error: dbError } = await supabaseClient.rpc(
       "get_verun_leaderboard",
       {
-        p_limit: 100,
+        p_limit: 1000,
         p_offset: 0
       }
     );
@@ -6903,6 +7049,7 @@ async function loadVerunLeaderboard() {
     loading.style.display = "none";
 
     verunLeaderboardData = data || [];
+    verunLeaderboardPage = { xp: 1, referrals: 1 };
 
     renderVerunLeaderboardTabs();
     renderVerunLeaderboardList();
