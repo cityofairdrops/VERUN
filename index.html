@@ -1131,11 +1131,15 @@
 .home-page .topbar { position:sticky; }
 .home-shell { max-width:1080px; width:calc(100% - 30px); margin:auto; }
 .home-hero {
-  min-height:calc(100vh - 68px);
-  display:grid;
-  place-items:center;
+  display:block;
   text-align:center;
-  padding:70px 0;
+  padding:48px 0 56px;
+}
+.home-guest-heading {
+  font-size: clamp(30px, 5vw, 46px);
+  line-height: 1.05;
+  letter-spacing: -1.5px;
+  margin-bottom: 28px;
 }
 .home-kicker {
   color:var(--green); font-size:10px; font-weight:900; letter-spacing:2px;
@@ -2035,7 +2039,10 @@
 <div class="home-shell">
 <section class="home-hero">
   <div>
-    <button id="homeConnectX" class="home-button primary" type="button" style="visibility:hidden;">Connect X</button>
+    <div id="homeGuestIntro" style="display:none;">
+      <h1 class="home-guest-heading">Enter The Verun Ecosystem</h1>
+      <button id="homeConnectX" class="home-button primary" type="button">Connect X</button>
+    </div>
 
     <div class="home-balance-wrap" id="homeBalanceWrap" style="display:none;">
       <div class="balance-card">
@@ -2487,16 +2494,18 @@ document.getElementById("homeConnectX").addEventListener("click", async function
 });
 
 // ============================================
-// Only show "Connect X" on Home when the user
-// is NOT already connected. If they're connected,
-// they can reach the app via "Enter App"/"Open
-// Community App", or disconnect from inside the app.
+// Only show the "Enter The Verun Ecosystem" intro
+// + "Connect X" button on Home when the user is
+// NOT already connected. If they're connected,
+// they see the balance card instead, and can reach
+// the app via "Enter App"/"Open Community App", or
+// disconnect from inside the app.
 // ============================================
-const homeConnectXButton = document.getElementById("homeConnectX");
+const homeGuestIntro = document.getElementById("homeGuestIntro");
 
 function setHomeConnectVisibility(session) {
-  if (!homeConnectXButton) return;
-  homeConnectXButton.style.visibility = session ? "hidden" : "visible";
+  if (!homeGuestIntro) return;
+  homeGuestIntro.style.display = session ? "none" : "block";
 }
 
 supabaseClient.auth.getSession().then(function (result) {
