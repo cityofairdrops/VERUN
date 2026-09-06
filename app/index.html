@@ -1236,6 +1236,20 @@
       text-align: center;
     }
 
+    /* Leaderboard's ".section-card" wrapper is itself a padded,
+       bordered box — so the footer above, sitting flush inside it,
+       reads as part of the rank list rather than a page footer.
+       Break it out to the full width/bottom edge of that box (using
+       negative margins to cancel the card's own padding) and give it
+       a distinct background, so it caps the card the same way the
+       footer note sits below the content in every other section. */
+    .section-card .leaderboard-footer-note {
+      margin: 40px -25px -25px;
+      padding: 16px 25px 20px;
+      background: var(--bg);
+      border-radius: 0 0 14px 14px;
+    }
+
     /* ================= LEADERBOARD ================= */
 
     .leaderboard-tabs {
@@ -4661,7 +4675,7 @@
   <div id="leaderboardList"></div>
 
   <!-- FOOTER NOTE -->
-  <div class="section-footer-note">
+  <div class="section-footer-note leaderboard-footer-note">
     © 2026 Verun Ecosystem. 100% community-driven with zero team or foundation allocations. All rights reserved.
   </div>
 
@@ -6940,23 +6954,24 @@ function renderVerunLeaderboardList() {
              display:flex;
              align-items:center;
              justify-content:space-between;
+             gap:12px;
              padding:12px;
              margin-bottom:8px;
              border-radius:10px;
              background:rgba(255,255,255,0.05);
            ">
 
-        <div style="display:flex;align-items:center;gap:12px;">
-          <strong style="min-width:35px;">
+        <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1;">
+          <strong style="min-width:35px;flex-shrink:0;">
             #${start + index + 1}
           </strong>
 
-          <div>
-            <div style="font-weight:600;">
+          <div style="min-width:0;overflow:hidden;">
+            <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
               @${escapeHtml(user.x_username)}
             </div>
 
-            <div style="font-size:12px;opacity:0.7;">
+            <div style="font-size:12px;opacity:0.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
               ${
                 verunLeaderboardSort === "referrals"
                   ? `${user.referral_count || 0} referrals`
@@ -6966,7 +6981,7 @@ function renderVerunLeaderboardList() {
           </div>
         </div>
 
-        <strong>
+        <strong style="flex-shrink:0;white-space:nowrap;">
           ${
             verunLeaderboardSort === "referrals"
               ? `${user.referral_count || 0} referrals`
