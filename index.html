@@ -1151,6 +1151,172 @@
   font-size:14px; line-height:1.8;
 }
 .home-actions { margin-top:28px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+
+/* ================= HOME BALANCE CARD (copied from app /tasks) ================= */
+
+.balance-card {
+  position: relative;
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 85% 15%,
+      rgba(141,255,183,0.10),
+      transparent 35%
+    ),
+    var(--panel);
+
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  padding: 30px;
+
+  margin-bottom: 15px;
+}
+
+.balance-card::after {
+  content: "";
+  position: absolute;
+
+  width: 180px;
+  height: 180px;
+
+  right: -80px;
+  bottom: -100px;
+
+  border: 1px solid rgba(141,255,183,0.08);
+  border-radius: 50%;
+}
+
+.balance-label {
+  color: var(--muted2);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.balance {
+  font-size: clamp(45px, 7vw, 70px);
+  line-height: 1;
+  letter-spacing: -4px;
+  font-weight: 900;
+
+  margin: 10px 0 4px;
+}
+
+.balance span {
+  color: var(--green);
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.bal-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.bal-top-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.balance-today-reward {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+
+  color: var(--muted);
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+}
+
+.balance-today-reward-label {
+  color: var(--muted2);
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
+.balance-today-reward #dailyRewardText {
+  color: var(--green);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bal-chip {
+  border: 1px solid var(--green-border);
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 9px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.bar-track {
+  height: 6px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 14px;
+}
+
+.bar-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--green);
+  border-radius: 3px;
+}
+
+.bar-caption {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted2);
+  font-size: 9px;
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.balance-note {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.home-balance-wrap {
+  width: 100%;
+  max-width: 480px;
+  margin: 28px auto 0;
+  text-align: left;
+}
+
+@media (max-width: 520px) {
+  .balance-card {
+    padding: 25px;
+  }
+
+  .bal-top {
+    gap: 8px;
+  }
+
+  .balance-today-reward {
+    font-size: 9px;
+  }
+}
+
 .home-button {
   display:inline-flex; align-items:center; justify-content:center;
   min-width:145px; padding:12px 20px; border-radius:4px;
@@ -1870,6 +2036,56 @@
 <section class="home-hero">
   <div>
     <button id="homeConnectX" class="home-button primary" type="button" style="visibility:hidden;">Connect X</button>
+
+    <div class="home-balance-wrap" id="homeBalanceWrap" style="display:none;">
+      <div class="balance-card">
+
+        <div class="bal-top">
+          <div class="balance-label">
+            Your Balance
+          </div>
+
+          <div class="bal-top-right">
+
+            <div class="balance-today-reward">
+              <span class="balance-today-reward-label">#Today's Reward</span>
+              <span id="dailyRewardText">Connect X to see your reward</span>
+            </div>
+
+            <!--
+              Weekly-change chip — hidden until real "XP earned in the
+              last 7 days" data exists. Set its text and remove
+              style="display:none" once that value is available.
+            -->
+            <div class="bal-chip" id="xpWeeklyChip" style="display:none;"></div>
+
+          </div>
+        </div>
+            <div class="balance">
+  <span id="xpBalance" style="visibility:hidden;">0</span> <span>XP</span>
+</div>
+
+<div class="balance-note">
+  Complete tasks to earn XP, which will later be convertible into $VERUN.
+</div>
+
+<!--
+  Tier-progress bar — hidden until an XP tier system exists.
+  Your current rank badges (Ambassador/Legend) are based on
+  referral count, not XP, so this isn't wired to real data yet.
+  Set --xp-progress and the two labels below, then remove
+  style="display:none" once XP tiers are defined.
+-->
+<div class="bar-track" id="xpBarTrack" style="display:none;">
+  <div class="bar-fill" id="xpBarFill"></div>
+</div>
+<div class="bar-caption" id="xpBarCaption" style="display:none;">
+  <span id="xpTierCurrent"></span>
+  <span id="xpTierNext"></span>
+</div>
+
+      </div>
+    </div>
   </div>
 </section>
 </div>
@@ -2291,6 +2507,115 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
   // Ignore background/no-op events; only react to real sign-in/out.
   if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") return;
   setHomeConnectVisibility(session);
+  loadHomeBalanceCard(session);
+});
+
+// ============================================
+// Home balance card — only shown once the user
+// has connected X. Mirrors the same balance card
+// from the /app Tasks page (same markup, same
+// data source), just read-only here.
+// ============================================
+const homeBalanceWrap = document.getElementById("homeBalanceWrap");
+const homeXpBalance = document.getElementById("xpBalance");
+const homeDailyRewardText = document.getElementById("dailyRewardText");
+
+let homeTodaysRewardRequestId = 0;
+
+async function refreshHomeTodaysReward(userId) {
+  if (!homeDailyRewardText || !userId) return;
+
+  const requestId = ++homeTodaysRewardRequestId;
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  try {
+    const [
+      { data: verifications },
+      { data: taskList },
+      { data: todayLogin }
+    ] = await Promise.all([
+      supabaseClient
+        .from("task_verifications")
+        .select("task_id,status,claimed_at")
+        .eq("user_id", userId)
+        .eq("status", "approved"),
+      supabaseClient
+        .from("tasks")
+        .select("id,xp_reward"),
+      supabaseClient
+        .from("daily_logins")
+        .select("xp_awarded,weekly_bonus")
+        .eq("user_id", userId)
+        .eq("login_date", todayStr)
+        .maybeSingle()
+    ]);
+
+    if (requestId !== homeTodaysRewardRequestId) return;
+
+    let total = 0;
+
+    if (verifications && taskList) {
+      const xpByTaskId = {};
+      taskList.forEach(task => {
+        xpByTaskId[task.id] = Number(task.xp_reward || 0);
+      });
+      verifications.forEach(verification => {
+        if (
+          verification.claimed_at &&
+          verification.claimed_at.slice(0, 10) === todayStr
+        ) {
+          total += xpByTaskId[verification.task_id] || 0;
+        }
+      });
+    }
+
+    if (todayLogin) {
+      total +=
+        Number(todayLogin.xp_awarded || 0) +
+        Number(todayLogin.weekly_bonus || 0);
+    }
+
+    homeDailyRewardText.textContent = `+${total.toLocaleString()} XP`;
+
+  } catch (rewardError) {
+    console.error("Today's reward calculation error:", rewardError);
+  }
+}
+
+async function loadHomeBalanceCard(session) {
+  if (!homeBalanceWrap) return;
+
+  const user = session?.user;
+
+  if (!user) {
+    homeBalanceWrap.style.display = "none";
+    return;
+  }
+
+  const { data: profile, error: profileError } =
+    await supabaseClient
+      .from("profiles")
+      .select("xp")
+      .eq("id", user.id)
+      .maybeSingle();
+
+  if (profileError || !profile) {
+    homeBalanceWrap.style.display = "none";
+    return;
+  }
+
+  if (homeXpBalance) {
+    homeXpBalance.textContent = profile.xp || 0;
+    homeXpBalance.style.visibility = "visible";
+  }
+
+  homeBalanceWrap.style.display = "block";
+
+  refreshHomeTodaysReward(user.id);
+}
+
+supabaseClient.auth.getSession().then(function (result) {
+  loadHomeBalanceCard(result.data.session);
 });
 
 // ============================================
