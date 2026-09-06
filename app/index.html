@@ -3333,6 +3333,150 @@
   pointer-events:auto;
 }
 
+/* ================= SHARE PROGRESS MODAL ================= */
+
+.share-modal-overlay {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.62);
+  backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);
+  z-index:9998;
+  opacity:0;
+  pointer-events:none;
+  transition:.25s ease;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.share-modal-overlay.open {
+  opacity:1;
+  pointer-events:auto;
+}
+
+.share-modal {
+  width:100%;
+  max-width:380px;
+  max-height:88vh;
+  overflow-y:auto;
+
+  background:var(--drawer-bg);
+  border:1px solid var(--border);
+  border-radius:16px;
+  box-shadow:0 24px 60px rgba(0,0,0,0.55);
+
+  padding:22px;
+  transform:translateY(16px) scale(.98);
+  transition:transform .28s cubic-bezier(.2,.8,.2,1);
+}
+
+.share-modal-overlay.open .share-modal {
+  transform:translateY(0) scale(1);
+}
+
+.share-modal-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:16px;
+}
+
+.share-modal-title {
+  font-size:13px;
+  font-weight:800;
+  letter-spacing:0.6px;
+  text-transform:uppercase;
+  color:var(--text);
+}
+
+.share-modal-close {
+  width:26px;
+  height:26px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:transparent;
+  color:var(--muted);
+  cursor:pointer;
+  font-size:14px;
+  line-height:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.share-modal-close:hover {
+  color:var(--text);
+  border-color:var(--green-border);
+}
+
+.share-modal-preview {
+  width:100%;
+  border-radius:12px;
+  border:1px solid var(--border);
+  overflow:hidden;
+  margin-bottom:14px;
+  background:var(--panel2);
+  min-height:120px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.share-modal-preview img {
+  width:100%;
+  display:block;
+}
+
+.share-modal-preview.loading {
+  color:var(--muted2);
+  font-size:11px;
+  letter-spacing:0.5px;
+  text-transform:uppercase;
+  padding:40px 0;
+}
+
+.share-modal-hint {
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.5;
+  margin-bottom:18px;
+}
+
+.share-modal-actions {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.share-modal-actions .task-button,
+.share-modal-actions .claim-task-button {
+  width:100%;
+  padding:12px 14px;
+  border-radius:10px;
+  font-size:11px;
+  text-align:center;
+}
+
+.share-modal-actions .claim-task-button::before {
+  content:"𝕏 ";
+}
+
+.share-saved-check {
+  color:var(--green);
+  font-size:10px;
+  text-align:center;
+  margin-top:2px;
+  opacity:0;
+  transition:opacity .2s ease;
+}
+
+.share-saved-check.visible {
+  opacity:1;
+}
+
 .verun-drawer {
   position:fixed;
   top:0;
@@ -3697,6 +3841,37 @@
       </svg>
       No notifications yet.
     </div>
+  </div>
+</div>
+
+<!-- SHARE PROGRESS MODAL -->
+<div id="shareProgressOverlay" class="share-modal-overlay">
+  <div class="share-modal" role="dialog" aria-modal="true" aria-label="Share your progress on X">
+
+    <div class="share-modal-head">
+      <div class="share-modal-title">Share your progress</div>
+      <button type="button" class="share-modal-close" id="shareProgressClose" aria-label="Close">✕</button>
+    </div>
+
+    <div class="share-modal-preview loading" id="shareProgressPreview">
+      Rendering your balance card...
+    </div>
+
+    <div class="share-modal-hint">
+      Save the image, then hit Post — it'll open X with your progress
+      pre-written. Just attach the saved image before you post.
+    </div>
+
+    <div class="share-modal-actions">
+      <button type="button" class="task-button" id="shareProgressSave" disabled>
+        Save Image
+      </button>
+      <div class="share-saved-check" id="shareProgressSavedCheck">✓ Saved — now attach it on X</div>
+      <button type="button" class="claim-task-button" id="shareProgressPost" disabled>
+        Post on X
+      </button>
+    </div>
+
   </div>
 </div>
 
@@ -6245,10 +6420,11 @@ await loadUserProfile();
 await loadTasks();
 }
 // "Share your progress" task: X's tweet-compose intent has no way to
-// auto-attach an image from a URL (that's blocked platform-side for
-// everyone, not just us), so the closest honest UX is: snapshot the
-// balance card as a PNG, download it, then open the prefilled tweet
-// composer and tell the user to attach the file they just got.
+// auto-attach an image from a URL — that's blocked platform-side for
+// every app, not something we can code around. So the flow is: show
+// the balance card in an in-page modal, let the user save it with one
+// tap, then let them post to X with another. No page reload either
+// step — the modal is just DOM, and X only opens when they choose to.
 function buildShareProgressText(xp, referralCode) {
   const referralLink = referralCode
     ? `${window.location.origin}${window.location.pathname}?ref=${encodeURIComponent(referralCode)}`
@@ -6264,20 +6440,48 @@ function buildShareProgressText(xp, referralCode) {
   );
 }
 
+const shareProgressState = {
+  taskId: null,
+  dataUrl: null,
+  tweetText: ""
+};
+
+function openShareProgressModal() {
+  document.getElementById("shareProgressOverlay")
+    ?.classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeShareProgressModal() {
+  document.getElementById("shareProgressOverlay")
+    ?.classList.remove("open");
+  document.body.style.overflow = "";
+
+  const preview = document.getElementById("shareProgressPreview");
+  if (preview) {
+    preview.className = "share-modal-preview loading";
+    preview.textContent = "Rendering your balance card...";
+  }
+
+  const saveBtn = document.getElementById("shareProgressSave");
+  const postBtn = document.getElementById("shareProgressPost");
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "Save Image"; }
+  if (postBtn) { postBtn.disabled = true; postBtn.textContent = "Post on X"; }
+
+  document.getElementById("shareProgressSavedCheck")
+    ?.classList.remove("visible");
+}
+
 async function shareProgressToX(event, button, taskId) {
   event.preventDefault();
 
   const originalText = button.textContent;
   button.textContent = "Preparing...";
   button.style.pointerEvents = "none";
+  shareProgressState.taskId = taskId;
+  shareProgressState.dataUrl = null;
 
-  // Reserve both tabs *synchronously*, while we're still inside the
-  // trusted click handler. Once we start awaiting (session lookup,
-  // profile lookup, screenshot rendering), most mobile browsers will
-  // silently block any window.open()/download that fires after the
-  // gap — this is very likely why nothing appeared to happen before.
-  const imageWindow = window.open("", "_blank");
-  const composeWindow = window.open("", "_blank");
+  openShareProgressModal();
 
   try {
     const {
@@ -6286,17 +6490,16 @@ async function shareProgressToX(event, button, taskId) {
 
     if (!session) {
       console.warn("Please connect your X account first.");
+      closeShareProgressModal();
       button.textContent = originalText;
       button.style.pointerEvents = "auto";
-      imageWindow?.close();
-      composeWindow?.close();
       return;
     }
 
     // Pull the user's own live XP and unique referral code straight
-    // from their profile row — this is the source of truth, since the
-    // on-page balance display can be mid-render or already gone by
-    // the time this fires.
+    // from their profile row — the source of truth, since the on-page
+    // balance display can be mid-render or already gone by the time
+    // this fires.
     const { data: profile, error: profileError } =
       await supabaseClient
         .from("profiles")
@@ -6308,93 +6511,108 @@ async function shareProgressToX(event, button, taskId) {
       console.error("Profile lookup for share failed:", profileError);
     }
 
-    // Snapshot the balance card into a data URL. We show it in the
-    // reserved imageWindow with save instructions rather than relying
-    // on a simulated <a download> click, which mobile browsers (and
-    // especially in-app browsers) frequently ignore.
+    shareProgressState.tweetText =
+      buildShareProgressText(profile?.xp, profile?.referral_code);
+
     const card = document.querySelector(".balance-card");
-    let dataUrl = null;
+    const preview = document.getElementById("shareProgressPreview");
 
     if (card && window.html2canvas) {
-      try {
-        const canvas = await html2canvas(card, {
-          backgroundColor: null,
-          useCORS: true,
-          scale: 2
-        });
-        dataUrl = canvas.toDataURL("image/png");
-      } catch (captureError) {
-        console.error("Balance card capture failed:", captureError);
-      }
+      const canvas = await html2canvas(card, {
+        backgroundColor: null,
+        useCORS: true,
+        scale: 2
+      });
+      shareProgressState.dataUrl = canvas.toDataURL("image/png");
     }
 
-    if (dataUrl && imageWindow) {
-      imageWindow.document.write(`
-        <!DOCTYPE html>
-        <html><head><title>Your VERUN balance card</title></head>
-        <body style="margin:0;padding:24px;background:#070909;color:#f4f7f5;
-          font-family:sans-serif;display:flex;flex-direction:column;
-          align-items:center;text-align:center;">
-          <p style="max-width:420px;">Press and hold the image below, then
-          choose <b>"Save Image"</b> (or "Download image"). Then switch to
-          the other tab that just opened, attach the saved image to the
-          tweet, and post.</p>
-          <img src="${dataUrl}" style="max-width:100%;border-radius:12px;margin-top:16px;" />
-        </body></html>
-      `);
-      imageWindow.document.close();
-    } else {
-      imageWindow?.close();
+    if (shareProgressState.dataUrl && preview) {
+      preview.className = "share-modal-preview";
+      preview.innerHTML = `<img src="${shareProgressState.dataUrl}" alt="Your VERUN balance card" />`;
+    } else if (preview) {
+      preview.className = "share-modal-preview";
+      preview.textContent = "Couldn't render the balance card — you can still post without it.";
     }
 
-    const { error } = await supabaseClient
-      .from("task_verifications")
-      .upsert(
-        {
-          user_id: session.user.id,
-          task_id: Number(taskId),
-          status: "pending",
-          started_at: new Date().toISOString()
-        },
-        {
-          onConflict: "user_id,task_id"
-        }
-      );
+    const saveBtn = document.getElementById("shareProgressSave");
+    const postBtn = document.getElementById("shareProgressPost");
+    if (saveBtn) saveBtn.disabled = !shareProgressState.dataUrl;
+    if (postBtn) postBtn.disabled = false;
 
-    if (error) {
-      console.error("Verification start error:", error);
-      button.textContent = originalText;
-      button.style.pointerEvents = "auto";
-      composeWindow?.close();
-      return;
-    }
-
-    const intentUrl =
-      "https://twitter.com/intent/tweet?text=" +
-      encodeURIComponent(
-        buildShareProgressText(profile?.xp, profile?.referral_code)
-      );
-
-    if (composeWindow) {
-      composeWindow.location.href = intentUrl;
-    } else {
-      window.open(intentUrl, "_blank");
-    }
-
-    button.textContent = "Save the image, then attach & post";
-    setTimeout(() => {
-      button.textContent = originalText;
-      button.style.pointerEvents = "auto";
-    }, 5000);
+    button.textContent = originalText;
+    button.style.pointerEvents = "auto";
 
   } catch (error) {
     console.error("Share progress error:", error);
+    closeShareProgressModal();
     button.textContent = originalText;
     button.style.pointerEvents = "auto";
-    imageWindow?.close();
-    composeWindow?.close();
   }
 }
+
+(function setupShareProgressModal() {
+  const overlay = document.getElementById("shareProgressOverlay");
+  const closeBtn = document.getElementById("shareProgressClose");
+  const saveBtn = document.getElementById("shareProgressSave");
+  const postBtn = document.getElementById("shareProgressPost");
+  const savedCheck = document.getElementById("shareProgressSavedCheck");
+
+  closeBtn?.addEventListener("click", closeShareProgressModal);
+  overlay?.addEventListener("click", (event) => {
+    if (event.target === overlay) closeShareProgressModal();
+  });
+
+  saveBtn?.addEventListener("click", () => {
+    if (!shareProgressState.dataUrl) return;
+    const link = document.createElement("a");
+    link.href = shareProgressState.dataUrl;
+    link.download = "verun-balance-card.png";
+    link.click();
+    savedCheck?.classList.add("visible");
+  });
+
+  postBtn?.addEventListener("click", async () => {
+    const taskId = shareProgressState.taskId;
+    if (!taskId) return;
+
+    postBtn.disabled = true;
+    postBtn.textContent = "Opening X...";
+
+    try {
+      const {
+        data: { session }
+      } = await supabaseClient.auth.getSession();
+
+      if (session) {
+        const { error } = await supabaseClient
+          .from("task_verifications")
+          .upsert(
+            {
+              user_id: session.user.id,
+              task_id: Number(taskId),
+              status: "pending",
+              started_at: new Date().toISOString()
+            },
+            { onConflict: "user_id,task_id" }
+          );
+
+        if (error) console.error("Verification start error:", error);
+      }
+    } catch (error) {
+      console.error("Verification start error:", error);
+    }
+
+    // Fires on a direct click — no async gap before it — so it's
+    // treated as a trusted user gesture and won't get popup-blocked.
+    const intentUrl =
+      "https://twitter.com/intent/tweet?text=" +
+      encodeURIComponent(shareProgressState.tweetText);
+    window.open(intentUrl, "_blank");
+
+    postBtn.textContent = "Posted — nice!";
+    setTimeout(closeShareProgressModal, 1200);
+  });
+})();
 
 async function startTaskVerification(event, button, taskId) {
   event.preventDefault();
