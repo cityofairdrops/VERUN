@@ -1236,20 +1236,6 @@
       text-align: center;
     }
 
-    /* Leaderboard's ".section-card" wrapper is itself a padded,
-       bordered box — so the footer above, sitting flush inside it,
-       reads as part of the rank list rather than a page footer.
-       Break it out to the full width/bottom edge of that box (using
-       negative margins to cancel the card's own padding) and give it
-       a distinct background, so it caps the card the same way the
-       footer note sits below the content in every other section. */
-    .section-card .leaderboard-footer-note {
-      margin: 40px -25px -25px;
-      padding: 16px 25px 20px;
-      background: var(--bg);
-      border-radius: 0 0 14px 14px;
-    }
-
     /* ================= LEADERBOARD ================= */
 
     .leaderboard-tabs {
@@ -4656,26 +4642,31 @@
 <!-- END REFERRALS -->
 
 
-  <section id="leaderboardSection" class="section-card app-section">
-  <h2>Leaderboard</h2>
+  <section id="leaderboardSection" class="section app-section">
 
-  <div id="leaderboardTabs" class="leaderboard-tabs">
-    <button type="button" class="leaderboard-tab active" data-sort="xp">XP Leaderboard</button>
-    <button type="button" class="leaderboard-tab" data-sort="referrals">Referral Leaderboard</button>
+  <div class="section-card">
+
+    <h2>Leaderboard</h2>
+
+    <div id="leaderboardTabs" class="leaderboard-tabs">
+      <button type="button" class="leaderboard-tab active" data-sort="xp">XP Leaderboard</button>
+      <button type="button" class="leaderboard-tab" data-sort="referrals">Referral Leaderboard</button>
+    </div>
+
+    <div id="leaderboardLoading" style="text-align:center;padding:15px;">
+      Loading leaderboard...
+    </div>
+
+    <div id="leaderboardError"
+         style="display:none;color:#ff6b6b;text-align:center;padding:15px;">
+    </div>
+
+    <div id="leaderboardList"></div>
+
   </div>
-
-  <div id="leaderboardLoading" style="text-align:center;padding:15px;">
-    Loading leaderboard...
-  </div>
-
-  <div id="leaderboardError"
-       style="display:none;color:#ff6b6b;text-align:center;padding:15px;">
-  </div>
-
-  <div id="leaderboardList"></div>
 
   <!-- FOOTER NOTE -->
-  <div class="section-footer-note leaderboard-footer-note">
+  <div class="section-footer-note">
     © 2026 Verun Ecosystem. 100% community-driven with zero team or foundation allocations. All rights reserved.
   </div>
 
