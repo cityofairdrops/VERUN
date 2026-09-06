@@ -8679,35 +8679,65 @@ async function loadVerunLeaderboard() {
     return els;
   }
 
-  function storageKey(userId) {
-    return "verunGenesis_" + userId;
-  }
-
   function defaultState() {
     return {
       owned: false,
       tokenNumber: null,
       mintedAt: null,
-      passName: null
+      passName: null,
+      walletAddress: null
     };
   }
 
-  function readState(userId) {
-    try {
-      const raw = localStorage.getItem(storageKey(userId));
-      if (!raw) return defaultState();
-      return Object.assign(defaultState(), JSON.parse(raw));
-    } catch (err) {
-      return defaultState();
+  // ── Supabase-backed Genesis Pass record ─────────────────────────────
+  // Per-user mint history (owned/tokenNumber/mintedAt/passName/wallet)
+  // now lives server-side in the genesis_passes table (see the
+  // genesis-pass-backend SQL migration), keyed by the wallet address
+  // that minted — so it survives a cleared browser and is only visible
+  // by reconnecting that same wallet (enforced by the wallet lock).
+  // cachedState is just an in-memory mirror so render() can stay
+  // synchronous between loads.
+  let cachedState = defaultState();
+
+  async function loadServerGenesisState(userId) {
+    if (!userId) {
+      cachedState = defaultState();
+      return cachedState;
     }
+    try {
+      const { data, error } = await supabaseClient.rpc("get_my_genesis_pass");
+      if (error) throw error;
+      cachedState = data && data.owned
+        ? {
+            owned: true,
+            tokenNumber: data.token_number,
+            mintedAt: data.minted_at ? new Date(data.minted_at).getTime() : null,
+            passName: data.genesis_code,
+            walletAddress: data.wallet_address
+          }
+        : defaultState();
+    } catch (err) {
+      console.error("VERUN Genesis Pass: failed to load server state", err);
+      cachedState = defaultState();
+    }
+    return cachedState;
   }
 
-  function writeState(userId, state) {
+  // Server-side genesis-code availability check — backs up the
+  // contract's own checkGenesisCode() (which remains the source of
+  // truth the mint transaction itself enforces) for the moments a
+  // testnet RPC read is unavailable.
+  async function isGenesisCodeAvailable(code) {
     try {
-      localStorage.setItem(storageKey(userId), JSON.stringify(state));
+      const { data, error } = await supabaseClient.rpc("check_genesis_code_available", {
+        p_code: code
+      });
+      if (error) throw error;
+      return !!data;
     } catch (err) {
-      // localStorage unavailable — mint still works for this
-      // session, it just won't persist across reloads.
+      console.error("VERUN Genesis Pass: check_genesis_code_available failed", err);
+      return true; // never block minting on a backend hiccup alone —
+                   // the on-chain check is authoritative.
     }
   }
 
@@ -8724,56 +8754,31 @@ async function loadVerunLeaderboard() {
     localStorage.setItem("verunGenesisMintedCount", String(Math.min(value, TOTAL_SUPPLY)));
   }
 
-  // Global pass-name registry (name -> owner) — this is what makes
-  // names unique and lets a discount code be looked up back to its
-  // owner for the referral payout. TODO(genesis-pass): replace with
-  // a real uniqueness check + lookup against the backend once one
-  // exists; this is a same-device simulation only.
-  function readNameRegistry() {
-    try {
-      const raw = localStorage.getItem("verunGenesisNames");
-      return raw ? JSON.parse(raw) : {};
-    } catch (err) {
-      return {};
+  // ── Referral stats (server-side) ────────────────────────────────────
+  // Every mint that used this owner's genesis code as a referral is
+  // logged server-side in genesis_referrals (populated by
+  // record_genesis_pass_mint) — read the aggregate for the signed-in
+  // owner instead of a same-device-only local log.
+  let cachedReferralStats = { count: 0, earnings: 0, recent: [] };
+
+  async function loadReferralStats() {
+    if (!currentUserId || !cachedState.owned) {
+      cachedReferralStats = { count: 0, earnings: 0, recent: [] };
+      return cachedReferralStats;
     }
-  }
-
-  function writeNameRegistry(registry) {
-    localStorage.setItem("verunGenesisNames", JSON.stringify(registry));
-  }
-
-  // Local, same-browser approximation of referral earnings for display
-  // only — the actual REFERRER_REWARD payout now happens automatically
-  // on-chain inside the mint transaction itself (see GenesisPassMinted's
-  // referrer/price fields). There's no on-chain "earnings owed" query in
-  // the ABI, so this counter only reflects mints made from this browser.
-  function creditReferralEarnings(ownerUserId, amount) {
-    const key = "verunGenesisReferralEarnings_" + ownerUserId;
-    const current = parseFloat(localStorage.getItem(key) || "0") || 0;
-    localStorage.setItem(key, String(Math.round((current + amount) * 1e6) / 1e6));
-  }
-
-  function readReferralEarnings(ownerUserId) {
-    return parseFloat(localStorage.getItem("verunGenesisReferralEarnings_" + ownerUserId) || "0") || 0;
-  }
-
-  // Log of every mint that used this owner's name — what powers the
-  // "how many / which users" activity view on their card. Each entry
-  // only stores the buyer's token number (not their identity) to
-  // keep this from doubling as a user directory.
-  function readReferrals(ownerUserId) {
     try {
-      const raw = localStorage.getItem("verunGenesisReferrals_" + ownerUserId);
-      return raw ? JSON.parse(raw) : [];
+      const { data, error } = await supabaseClient.rpc("get_my_genesis_referral_stats");
+      if (error) throw error;
+      cachedReferralStats = {
+        count: (data && data.count) || 0,
+        earnings: (data && data.earnings_bnb) || 0,
+        recent: (data && data.recent) || []
+      };
     } catch (err) {
-      return [];
+      console.error("VERUN Genesis Pass: failed to load referral stats", err);
+      cachedReferralStats = { count: 0, earnings: 0, recent: [] };
     }
-  }
-
-  function addReferral(ownerUserId, entry) {
-    const list = readReferrals(ownerUserId);
-    list.push(entry);
-    localStorage.setItem("verunGenesisReferrals_" + ownerUserId, JSON.stringify(list));
+    return cachedReferralStats;
   }
 
   // Indian digit grouping (11,000 instead of 11000).
@@ -8910,8 +8915,7 @@ async function loadVerunLeaderboard() {
         console.error("VERUN Genesis Pass: checkGenesisCode failed", err);
       }
     } else {
-      const registry = readNameRegistry();
-      exists = !!registry[code];
+      exists = !(await isGenesisCodeAvailable(code));
     }
 
     if (!exists) {
@@ -8967,20 +8971,16 @@ async function loadVerunLeaderboard() {
     if (e.poolRemainingCaption) e.poolRemainingCaption.textContent = formatIndian(remaining) + " remaining";
   }
 
-  // Reads a wallet address for this user if something (a future
-  // wallet-connect module) has stored one. TODO(wallet): replace
-  // this localStorage read with the real connected-wallet state once
-  // wallet connection ships.
-  function readWalletAddress(userId) {
-    return localStorage.getItem("verunWalletAddress_" + userId) || null;
-  }
-
   function renderOwnedCard(state) {
     const e = cacheEls();
     if (e.ownedId) e.ownedId.textContent = "#" + formatPadded(state.tokenNumber, 5);
 
     if (e.ownedWalletValue) {
-      const wallet = readWalletAddress(currentUserId);
+      // The wallet that minted is stored server-side with the pass
+      // itself (genesis_passes.wallet_address) — fall back to whatever
+      // wallet is currently connected only if that hasn't loaded yet.
+      const wallet = state.walletAddress ||
+        (window.verunWallet ? window.verunWallet.getState().address : null);
       e.ownedWalletValue.textContent = wallet
         ? wallet.slice(0, 6) + "…" + wallet.slice(-4)
         : "Not connected";
@@ -9011,38 +9011,36 @@ async function loadVerunLeaderboard() {
 
   function renderReferralPanel() {
     const e = cacheEls();
-    const referrals = readReferrals(currentUserId);
+    const stats = cachedReferralStats;
 
-    if (e.referralCount) e.referralCount.textContent = formatIndian(referrals.length);
+    if (e.referralCount) e.referralCount.textContent = formatIndian(stats.count);
 
     if (e.referralList) {
-      if (referrals.length === 0) {
+      if (!stats.recent || stats.recent.length === 0) {
         e.referralList.innerHTML =
           '<p class="genesis-referral-empty">No mints yet — share your name to start earning.</p>';
       } else {
-        const recent = referrals.slice(-5).reverse();
-        let html = recent.map(r => {
-          const d = new Date(r.mintedAt);
+        let html = stats.recent.map(r => {
+          const d = new Date(r.minted_at);
           const dateStr = d.toLocaleDateString(undefined, {
             year: "numeric", month: "short", day: "numeric"
           });
           return '<div class="genesis-referral-item">Genesis Pass #' +
-            formatPadded(r.tokenNumber, 5) + " · " + dateStr + "</div>";
+            formatPadded(r.token_number, 5) + " · " + dateStr + "</div>";
         }).join("");
-        if (referrals.length > 5) {
-          html += '<div class="genesis-referral-more">+' + (referrals.length - 5) + " more</div>";
+        if (stats.count > stats.recent.length) {
+          html += '<div class="genesis-referral-more">+' + (stats.count - stats.recent.length) + " more</div>";
         }
         e.referralList.innerHTML = html;
       }
     }
 
-    const earnings = readReferralEarnings(currentUserId);
-    if (e.earningsAmount) e.earningsAmount.textContent = formatBnb(earnings);
+    if (e.earningsAmount) e.earningsAmount.textContent = formatBnb(stats.earnings);
     if (e.earningsNote) {
       e.earningsNote.textContent =
         "Referral rewards (" + formatBnb(REFERRER_SHARE_BNB) + " per mint) are paid " +
         "directly to your wallet on-chain the moment someone mints using your code — " +
-        "there's nothing to claim. This total only reflects mints made from this browser.";
+        "there's nothing to claim.";
     }
     if (e.claimButton) {
       // Rewards are paid out automatically by the mint transaction
@@ -9055,7 +9053,7 @@ async function loadVerunLeaderboard() {
   function render() {
     if (!currentUserId) return;
     const e = cacheEls();
-    const state = readState(currentUserId);
+    const state = cachedState;
     const totalSupply = chain.ready && chain.maxSupply !== null ? chain.maxSupply : TOTAL_SUPPLY;
     const minted = chain.ready && chain.totalMinted !== null ? chain.totalMinted : readMintedCount();
     const soldOut = minted >= totalSupply;
@@ -9124,8 +9122,7 @@ async function loadVerunLeaderboard() {
     // only gate on an action that moves real testnet funds.
     const walletVerified = !!(window.verunWallet && window.verunWallet.getState().verified);
     if (!walletVerified) return;
-    const state = readState(currentUserId);
-    if (state.owned || chain.owned) return;
+    if (cachedState.owned || chain.owned) return;
 
     const e = cacheEls();
     const code = e.codeInput ? e.codeInput.value.trim().toLowerCase() : "";
@@ -9204,27 +9201,39 @@ async function loadVerunLeaderboard() {
         }
       }
 
-      state.owned = true;
-      state.tokenNumber = tokenNumber;
-      state.mintedAt = Date.now();
-      state.passName = code;
-      writeState(currentUserId, state);
+      const mintedAt = Date.now();
 
-      // The contract only stores a hash of the genesis code, not the
-      // plaintext, so keep the same-device registry used elsewhere in
-      // this module for the discount-code lookup and referral-activity
-      // view to keep working for this browser.
-      const registry = readNameRegistry();
-      registry[code] = { ownerUserId: currentUserId, tokenNumber: tokenNumber };
-      writeNameRegistry(registry);
-
-      if (referralCode) {
-        const refEntry = registry[referralCode];
-        if (refEntry) {
-          creditReferralEarnings(refEntry.ownerUserId, REFERRER_SHARE_BNB);
-          addReferral(refEntry.ownerUserId, { tokenNumber: tokenNumber, mintedAt: state.mintedAt });
-        }
+      // Persist the mint server-side — this is what makes the pass
+      // (and its referral credit) survive a cleared browser and show
+      // up the moment the minting wallet is reconnected on any device.
+      try {
+        const { error: recordError } = await supabaseClient.rpc(
+          "record_genesis_pass_mint",
+          {
+            p_wallet_address: walletAddress,
+            p_genesis_code: code,
+            p_token_number: tokenNumber,
+            p_tx_hash: tx.hash,
+            p_referral_code: referralCode
+          }
+        );
+        if (recordError) throw recordError;
+      } catch (recordErr) {
+        // The mint itself already succeeded on-chain — a backend
+        // hiccup here must never be shown to the user as a failed
+        // mint. On-chain ownership (chain.owned below) already
+        // reflects it; the name/referral record will catch up next
+        // time this RPC succeeds.
+        console.error("VERUN Genesis Pass: record_genesis_pass_mint failed", recordErr);
       }
+
+      cachedState = {
+        owned: true,
+        tokenNumber: tokenNumber,
+        mintedAt: mintedAt,
+        passName: code,
+        walletAddress: walletAddress
+      };
       appliedCode = null;
 
       chain.owned = true;
@@ -9243,37 +9252,17 @@ async function loadVerunLeaderboard() {
   }
 
   function setPassName() {
+    // The pass name is the genesis code chosen at mint time (see
+    // mintPass() / record_genesis_pass_mint) and is immutable — it's
+    // stored server-side the moment the mint confirms, so this legacy
+    // "set a name" UI path should never actually be reachable. Kept
+    // only as a safe guard in case the name display ever renders
+    // before cachedState finishes loading.
     const e = cacheEls();
-    if (!e.nameInput || !e.nameFeedback || !currentUserId) return;
-
-    const state = readState(currentUserId);
-    if (state.passName) return; // already set, permanent
-
-    const name = e.nameInput.value.trim().toLowerCase();
-
-    if (!/^[a-z0-9-]{3,20}$/.test(name)) {
-      e.nameFeedback.textContent =
-        "Use 3–20 lowercase letters, numbers or hyphens only.";
-      e.nameFeedback.className = "genesis-discount-feedback is-error";
-      return;
-    }
-
-    const registry = readNameRegistry();
-    if (registry[name]) {
-      e.nameFeedback.textContent = "That name is already taken.";
-      e.nameFeedback.className = "genesis-discount-feedback is-error";
-      return;
-    }
-
-    registry[name] = { ownerUserId: currentUserId, tokenNumber: state.tokenNumber };
-    writeNameRegistry(registry);
-
-    state.passName = name;
-    writeState(currentUserId, state);
-
-    e.nameFeedback.textContent = "";
-    e.nameFeedback.className = "genesis-discount-feedback";
-    render();
+    if (!e.nameFeedback) return;
+    e.nameFeedback.textContent =
+      "Your Genesis Pass name is set automatically at mint and can't be changed.";
+    e.nameFeedback.className = "genesis-discount-feedback is-error";
   }
 
   function copyPassName() {
@@ -9398,6 +9387,12 @@ async function loadVerunLeaderboard() {
     currentUserId = userId;
     if (!currentUserId) return;
 
+    // Pull this user's mint record (if any) from the server first, so
+    // a returning user on a fresh browser sees their pass immediately
+    // instead of only after reconnecting the wallet that minted it.
+    await loadServerGenesisState(currentUserId);
+    await loadReferralStats();
+
     const saved = localStorage.getItem(discountCodeStorageKey(currentUserId));
     if (saved && !appliedCode) {
       const e = cacheEls();
@@ -9419,8 +9414,8 @@ async function loadVerunLeaderboard() {
   // Public hook the Mining module reads to decide lock state.
   window.verunHasGenesisPass = function (userId) {
     if (!userId) return false;
-    if (userId === currentUserId && chain.owned) return true;
-    return !!readState(userId).owned;
+    if (userId !== currentUserId) return false; // no cached record for any other user
+    return !!(chain.owned || cachedState.owned);
   };
 
   // Lets the Wallet module refresh mint-button eligibility the moment
