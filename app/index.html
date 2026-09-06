@@ -388,6 +388,15 @@
       letter-spacing: 0;
     }
 
+    /* #xpBalance carries the actual number and needs the big balance
+       font — .balance span above is meant only for the small green
+       "XP" unit label next to it, not the figure itself. */
+    .balance #xpBalance {
+      color: inherit;
+      font-size: inherit;
+      letter-spacing: inherit;
+    }
+
     .bal-top {
       display: flex;
       justify-content: space-between;
