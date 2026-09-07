@@ -1,0 +1,23 @@
+{
+  "name": "VERUN Genesis Pass",
+  "description": "The VERUN Genesis Pass is a soulbound pass that grants access to the VERUN mining system.",
+  "image": "https://cityofairdrops.github.io/VERUN/genesis-metadata/genesis-pass.png",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "VERUN Genesis Pass"
+    },
+    {
+      "trait_type": "Type",
+      "value": "Genesis Pass"
+    },
+    {
+      "trait_type": "Supply",
+      "value": "11,111"
+    },
+    {
+      "trait_type": "Transferable",
+      "value": "No"
+    }
+  ]
+}
