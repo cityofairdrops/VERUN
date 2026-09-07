@@ -7824,6 +7824,14 @@ async function loadVerunLeaderboard() {
           description: "VERUN Genesis Pass & Mining",
           url: window.location.origin
         },
+        // Pin the most-requested wallets to the modal's main view so
+        // people don't have to search for them — MetaMask, Bitget
+        // Wallet, then Trust Wallet, in that order.
+        featuredWalletIds: [
+          "c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96", // MetaMask
+          "38f5d18bd8522c244bdd70cb4a68e0e718865155811c043f052fb9f1c51de662", // Bitget Wallet
+          "4622a2b2d6af1c9844944291e5e7351a6aa24cd7b23099efac1b2fd875da31a0"  // Trust Wallet
+        ],
         features: {
           analytics: false,
           email: false,
@@ -7940,6 +7948,15 @@ async function loadVerunLeaderboard() {
 
   async function connectWallet() {
     try {
+      // "Switch Wallet" and "Connect Wallet" are the same button — when
+      // a wrong wallet is already connected, AppKit's modal won't offer
+      // a wallet picker at all (it just shows the existing session's
+      // account view), which is why clicking it appeared to do nothing.
+      // Disconnecting first guarantees the modal opens straight to the
+      // wallet list.
+      if (isWrongWallet()) {
+        await disconnectWallet();
+      }
       setWalletState({ connecting: true });
       const modal = await initializeAppKit();
       if (!modal) throw new Error("Wallet connector is unavailable.");
