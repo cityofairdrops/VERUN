@@ -4291,17 +4291,17 @@
 
   </div>
 
-  <!-- Wallet connection: EVM / BNB Chain — required before minting -->
+  <!-- Wallet connection: EVM / Robinhood Chain — required before minting -->
   <div class="genesis-wallet-card" id="genesisWalletCard">
 
     <div class="genesis-wallet-not-connected" id="genesisWalletNotConnected">
       <div class="genesis-wallet-info">
         <span class="genesis-wallet-chain-badge">
           <span class="genesis-wallet-chain-dot"></span>
-          BNB Chain Testnet · EVM wallet
+          Robinhood Chain Testnet · EVM wallet
         </span>
         <p class="genesis-wallet-copy">
-          Connect your wallet on BNB Chain Testnet to continue.
+          Connect your wallet on Robinhood Chain Testnet to continue.
         </p>
       </div>
       <button type="button" class="genesis-wallet-btn genesis-wallet-connect-btn" id="genesisWalletConnectButton">
@@ -4328,7 +4328,7 @@
           <span class="genesis-wallet-chain-dot"></span>
           <span id="genesisWalletAddressValue"></span>
         </span>
-        <p class="genesis-wallet-copy">Ownership verified on BNB Chain Testnet.</p>
+        <p class="genesis-wallet-copy">Ownership verified on Robinhood Chain Testnet.</p>
       </div>
       <button type="button" class="genesis-wallet-btn genesis-wallet-disconnect-btn" id="genesisWalletDisconnectButton">
         Disconnect Wallet
@@ -4396,7 +4396,7 @@
 
     <div class="genesis-price-block">
       <span class="genesis-price-original" id="genesisPriceOriginal" style="display:none;"></span>
-      <span class="genesis-price-current" id="genesisPriceCurrent">0.005 BNB</span>
+      <span class="genesis-price-current" id="genesisPriceCurrent">0.005 ETH</span>
     </div>
 
     <!-- Discount code preview: always shown, independent of whether
@@ -4444,7 +4444,7 @@
       </button>
 
       <p class="genesis-mint-note" id="genesisMintNote">
-        Connect and verify your BNB Chain Testnet wallet above, then choose a genesis code to enable minting.
+        Connect and verify your Robinhood Chain Testnet wallet above, then choose a genesis code to enable minting.
       </p>
 
     </div>
@@ -4569,7 +4569,7 @@
           <button type="button" class="copy-button" id="genesisNameCopy">Copy</button>
         </div>
         <p class="genesis-name-display-hint">
-          Share it — earn 0.0005 BNB every time someone mints using it.
+          Share it — earn 0.0005 ETH every time someone mints using it.
         </p>
       </div>
 
@@ -4586,7 +4586,7 @@
         <div class="genesis-stat-divider"></div>
         <div class="genesis-stat">
           <span class="genesis-stat-label">Earnings</span>
-          <strong class="genesis-stat-value" id="genesisEarningsAmount">0 BNB</strong>
+          <strong class="genesis-stat-value" id="genesisEarningsAmount">0 ETH</strong>
         </div>
       </div>
 
@@ -4596,7 +4596,7 @@
         Claim
       </button>
       <p class="genesis-earnings-note" id="genesisEarningsNote">
-        Claiming opens once the payment gateway is live. Minimum withdrawal: 0.001 BNB.
+        Claiming opens once the payment gateway is live. Minimum withdrawal: 0.001 ETH.
       </p>
 
     </div>
@@ -4880,17 +4880,17 @@
 
   </div>
 
-  <!-- Wallet connection: EVM / BNB Chain — mirrors the Genesis Pass wallet state -->
+  <!-- Wallet connection: EVM / Robinhood Chain — mirrors the Genesis Pass wallet state -->
   <div class="mining-wallet-card" id="miningWalletCard">
 
     <div class="mining-wallet-not-connected" id="miningWalletNotConnected">
       <div class="mining-wallet-info">
         <span class="mining-wallet-chain-badge">
           <span class="mining-wallet-chain-dot"></span>
-          BNB Chain · EVM wallet
+          Robinhood Chain · EVM wallet
         </span>
         <p class="mining-wallet-copy">
-          Connect your BNB Chain wallet to continue.
+          Connect your Robinhood Chain wallet to continue.
         </p>
       </div>
       <button type="button" class="mining-wallet-btn mining-wallet-connect-btn" id="miningWalletConnectButton">
@@ -4917,7 +4917,7 @@
           <span class="mining-wallet-chain-dot"></span>
           <span id="miningWalletAddressValue"></span>
         </span>
-        <p class="mining-wallet-copy">Ownership verified on BNB Chain.</p>
+        <p class="mining-wallet-copy">Ownership verified on Robinhood Chain.</p>
       </div>
       <button type="button" class="mining-wallet-btn mining-wallet-disconnect-btn" id="miningWalletDisconnectButton">
         Disconnect Wallet
@@ -5010,7 +5010,7 @@
       <div class="mining-tier" data-tier="pro">
         <div class="mining-tier-top">
           <span class="mining-tier-name">Pro</span>
-          <span class="mining-tier-tag">0.01 BNB</span>
+          <span class="mining-tier-tag">0.01 ETH</span>
         </div>
         <div class="mining-tier-speed">3<small>$VERUN / 24h</small></div>
         <p class="mining-tier-desc">6x the mining speed of Basic. Active for 30 days, then falls back to Basic.</p>
@@ -5021,7 +5021,7 @@
       <div class="mining-tier" data-tier="ultra">
         <div class="mining-tier-top">
           <span class="mining-tier-name">Ultra</span>
-          <span class="mining-tier-tag">0.025 BNB</span>
+          <span class="mining-tier-tag">0.025 ETH</span>
         </div>
         <div class="mining-tier-speed">5<small>$VERUN / 24h</small></div>
         <p class="mining-tier-desc">10x the mining speed of Basic. Active for 30 days, then falls back to Basic.</p>
@@ -7449,13 +7449,13 @@ async function loadVerunLeaderboard() {
 (function () {
   const REOWN_PROJECT_ID = "ad97eac1a3dd4ed30daa99ad5932e2d8";
   const REOWN_CDN = "https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.8.23/dist/appkit.min.js";
-  // VERUN Genesis Pass mint is currently wired to BSC TESTNET while the
-  // contract is being tested — swap to 56 / mainnet RPC + explorer when
+  // VERUN Genesis Pass mint is currently wired to ROBINHOOD CHAIN TESTNET while the
+  // contract is being tested — swap to 4663 / mainnet RPC + explorer when
   // moving to production.
-  const BSC_CHAIN_ID = 97;
+  const ROBINHOOD_CHAIN_ID = 46630;
 
   let appKit = null;
-  let bscNetwork = null;
+  let robinhoodNetwork = null;
   let initPromise = null;
   let walletState = {
     address: null,
@@ -7645,7 +7645,7 @@ async function loadVerunLeaderboard() {
   function updateUI() {
     const e = els();
     const connected = !!walletState.address;
-    const bscReady = connected && Number(walletState.chainId) === BSC_CHAIN_ID;
+    const robinhoodReady = connected && Number(walletState.chainId) === ROBINHOOD_CHAIN_ID;
     const signed = walletState.signed;
     const wrongWallet = isWrongWallet();
 
@@ -7690,12 +7690,12 @@ async function loadVerunLeaderboard() {
     });
 
     // Sign button — chain-aware copy and disabled state
-    const pendingCopy = bscReady
+    const pendingCopy = robinhoodReady
       ? "Sign the message in your wallet to verify ownership."
-      : "Switch to BNB Chain Testnet, then sign to verify ownership.";
+      : "Switch to Robinhood Chain Testnet, then sign to verify ownership.";
     [e.genesisSignBtn, e.miningSignBtn].forEach(btn => {
       if (!btn) return;
-      btn.disabled = walletState.signing || !bscReady;
+      btn.disabled = walletState.signing || !robinhoodReady;
       btn.textContent = walletState.signing ? "Signing…" : "Sign";
     });
     if (e.genesisPendingCopy) e.genesisPendingCopy.textContent = pendingCopy;
@@ -7718,10 +7718,10 @@ async function loadVerunLeaderboard() {
       // Restore the default copy so it doesn't stay stuck on the lock
       // message after the user reconnects the correct wallet.
       document.querySelectorAll("#genesisWalletNotConnected .genesis-wallet-copy").forEach(el => {
-        el.textContent = "Connect your wallet on BNB Chain Testnet to continue.";
+        el.textContent = "Connect your wallet on Robinhood Chain Testnet to continue.";
       });
       document.querySelectorAll("#miningWalletNotConnected .mining-wallet-copy").forEach(el => {
-        el.textContent = "Connect your BNB Chain wallet to continue.";
+        el.textContent = "Connect your Robinhood Chain wallet to continue.";
       });
     }
 
@@ -7732,9 +7732,9 @@ async function loadVerunLeaderboard() {
 
     persistWalletForCurrentUser(walletState.address);
 
-    // `verified` now requires wallet connected on BNB Chain, ownership
+    // `verified` now requires wallet connected on Robinhood Chain, ownership
     // signed, AND (if this account has a lock) matching the locked wallet.
-    walletState.verified = bscReady && signed && !wrongWallet;
+    walletState.verified = robinhoodReady && signed && !wrongWallet;
 
     if (typeof window.verunRenderGenesisPass === "function") {
       try { window.verunRenderGenesisPass(); } catch (err) {}
@@ -7786,21 +7786,21 @@ async function loadVerunLeaderboard() {
     initPromise = (async function () {
       const lib = await import(REOWN_CDN);
 
-      // Use an explicit BNB Chain definition instead of relying on a
+      // Use an explicit Robinhood Chain definition instead of relying on a
       // network re-export from the CDN bundle. This is important for a
       // single-file GitHub Pages deployment because the CDN bundle does
       // not have to expose every Viem network as a top-level export.
-      bscNetwork = {
-        id: 97,
-        caipNetworkId: "eip155:97",
+      robinhoodNetwork = {
+        id: 46630,
+        caipNetworkId: "eip155:46630",
         chainNamespace: "eip155",
-        name: "BNB Smart Chain Testnet",
-        nativeCurrency: { name: "tBNB", symbol: "tBNB", decimals: 18 },
+        name: "Robinhood Chain Testnet",
+        nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
         rpcUrls: {
-          default: { http: ["https://data-seed-prebsc-1-s1.binance.org:8545"] }
+          default: { http: ["https://rpc.testnet.chain.robinhood.com/rpc"] }
         },
         blockExplorers: {
-          default: { name: "BscScan Testnet", url: "https://testnet.bscscan.com" }
+          default: { name: "Robinhood Chain Testnet Explorer", url: "https://explorer.testnet.chain.robinhood.com" }
         },
         testnet: true
       };
@@ -7811,13 +7811,13 @@ async function loadVerunLeaderboard() {
 
       const wagmiAdapter = new lib.WagmiAdapter({
         projectId: REOWN_PROJECT_ID,
-        networks: [bscNetwork]
+        networks: [robinhoodNetwork]
       });
 
       appKit = lib.createAppKit({
         adapters: [wagmiAdapter],
-        networks: [bscNetwork],
-        defaultNetwork: bscNetwork,
+        networks: [robinhoodNetwork],
+        defaultNetwork: robinhoodNetwork,
         projectId: REOWN_PROJECT_ID,
         metadata: {
           name: "VERUN",
@@ -8006,9 +8006,9 @@ async function loadVerunLeaderboard() {
       return;
     }
 
-    const bscReady = Number(walletState.chainId) === BSC_CHAIN_ID;
-    if (!bscReady) {
-      console.warn("Please switch to BNB Chain Testnet before signing.");
+    const robinhoodReady = Number(walletState.chainId) === ROBINHOOD_CHAIN_ID;
+    if (!robinhoodReady) {
+      console.warn("Please switch to Robinhood Chain Testnet before signing.");
       return;
     }
 
@@ -8186,7 +8186,7 @@ async function loadVerunLeaderboard() {
 // ============================================================
 // VERUN MINING
 // ============================================================
-// No mining backend exists yet (no Supabase table, no BNB wallet
+// No mining backend exists yet (no Supabase table, no ETH wallet
 // wiring), so this whole module runs client-side against
 // localStorage, namespaced per logged-in user id. The public shape
 // (state object, TIERS map, awardSession/buyTier functions) is
@@ -8200,9 +8200,9 @@ async function loadVerunLeaderboard() {
   const RING_CIRCUMFERENCE = 578.05; // 2 * PI * r(92), matches the SVG ring
 
   const TIERS = {
-    basic: { label: "Basic Hashrate", speed: 0.5, priceBnb: 0, days: null },
-    pro: { label: "Pro Hashrate", speed: 3, priceBnb: 0.01, days: 30 },
-    ultra: { label: "Ultra Hashrate", speed: 5, priceBnb: 0.025, days: 30 }
+    basic: { label: "Basic Hashrate", speed: 0.5, priceEth: 0, days: null },
+    pro: { label: "Pro Hashrate", speed: 3, priceEth: 0.01, days: 30 },
+    ultra: { label: "Ultra Hashrate", speed: 5, priceEth: 0.025, days: 30 }
   };
 
   // Reads real Genesis Pass ownership from the Genesis Pass module
@@ -8244,7 +8244,7 @@ async function loadVerunLeaderboard() {
     };
 
     // Snapshot each tier tag's original label (its "not currently
-    // active" state — "Included" for Basic, the BNB price for Pro/
+    // active" state — "Included" for Basic, the ETH price for Pro/
     // Ultra) once, straight from the untouched HTML, so render can
     // always revert to it when that tier isn't the active one.
     if (els.tiersGrid) {
@@ -8547,7 +8547,7 @@ async function loadVerunLeaderboard() {
     if (isPurchaseLocked(state)) return; // purchase system is locked until the active plan expires
 
     // TODO(genesis-pass + wallet): this is a local simulation until
-    // real BNB payment + wallet connection ships. Replace this
+    // real ETH payment + wallet connection ships. Replace this
     // with the actual transaction flow, and only call
     // writeState() after the chain confirms payment.
 
@@ -8618,7 +8618,7 @@ async function loadVerunLeaderboard() {
 // ============================================================
 // VERUN GENESIS PASS
 // ============================================================
-// Genesis Pass minting is wired to a real contract on BSC Testnet (see
+// Genesis Pass minting is wired to a real contract on Robinhood Chain Testnet (see
 // GENESIS_CONTRACT_ADDRESS below) — connecting a wallet, choosing a
 // genesis code, and minting all send real transactions. Ownership and
 // pool/price data are read live from the chain (refreshChainState());
@@ -8629,15 +8629,15 @@ async function loadVerunLeaderboard() {
 (function () {
 
   const TOTAL_SUPPLY = 11000;
-  const BASE_PRICE_BNB = 0.005;
-  const DISCOUNTED_PRICE_BNB = 0.0025; // 50% off when a valid code is applied
-  const REFERRER_SHARE_BNB = 0.0005;   // paid to the code owner
-  const PROJECT_SHARE_BNB = 0.002;     // paid to the project (0.0005 + 0.002 = 0.0025)
-  const MIN_WITHDRAWAL_BNB = 0.001;    // minimum claimable referral balance
+  const BASE_PRICE_ETH = 0.005;
+  const DISCOUNTED_PRICE_ETH = 0.0025; // 50% off when a valid code is applied
+  const REFERRER_SHARE_ETH = 0.0005;   // paid to the code owner
+  const PROJECT_SHARE_ETH = 0.002;     // paid to the project (0.0005 + 0.002 = 0.0025)
+  const MIN_WITHDRAWAL_ETH = 0.001;    // minimum claimable referral balance
 
-  // Live on BSC Testnet — real transactions against this contract.
+  // Live on Robinhood Chain Testnet — real transactions against this contract.
   const GENESIS_CONTRACT_ADDRESS = "0x43a75ecd5e54ed8b9482c805aef9e3472ebb1087";
-  const BSC_TESTNET_RPC = "https://data-seed-prebsc-1-s1.binance.org:8545";
+  const ROBINHOOD_TESTNET_RPC = "https://rpc.testnet.chain.robinhood.com/rpc";
   const GENESIS_CONTRACT_ABI = [{"inputs":[{"internalType":"address","name":"initialOwner","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"name":"ERC721IncorrectOwner","type":"error"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ERC721InsufficientApproval","type":"error"},{"inputs":[{"internalType":"address","name":"approver","type":"address"}],"name":"ERC721InvalidApprover","type":"error"},{"inputs":[{"internalType":"address","name":"operator","type":"address"}],"name":"ERC721InvalidOperator","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"ERC721InvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"receiver","type":"address"}],"name":"ERC721InvalidReceiver","type":"error"},{"inputs":[{"internalType":"address","name":"sender","type":"address"}],"name":"ERC721InvalidSender","type":"error"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ERC721NonexistentToken","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"OwnableInvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"OwnableUnauthorizedAccount","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"approved","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":false,"internalType":"bool","name":"approved","type":"bool"}],"name":"ApprovalForAll","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"bytes32","name":"genesisCodeHash","type":"bytes32"}],"name":"FreeGenesisPassMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"genesisCodeHash","type":"bytes32"},{"indexed":true,"internalType":"address","name":"owner","type":"address"}],"name":"GenesisCodeRegistered","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"bytes32","name":"genesisCodeHash","type":"bytes32"},{"indexed":false,"internalType":"address","name":"referrer","type":"address"},{"indexed":false,"internalType":"uint256","name":"price","type":"uint256"}],"name":"GenesisPassMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"bool","name":"enabled","type":"bool"}],"name":"MintStatusChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Transfer","type":"event"},{"inputs":[],"name":"DISCOUNTED_PRICE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"FREE_SUPPLY","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MAX_SUPPLY","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"NORMAL_PRICE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PROJECT_AMOUNT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PROJECT_NORMAL_AMOUNT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"pure","type":"function"},{"inputs":[],"name":"REFERRER_REWARD","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"approve","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"string","name":"genesisCode","type":"string"}],"name":"checkGenesisCode","outputs":[{"internalType":"bool","name":"exists","type":"bool"},{"internalType":"address","name":"codeOwner","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"freeMinted","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"name":"genesisCodeOwner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"getApproved","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"wallet","type":"address"}],"name":"getTokenId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"hasPass","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"operator","type":"address"}],"name":"isApprovedForAll","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"mintEnabled","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"recipient","type":"address"},{"internalType":"string","name":"genesisCode","type":"string"}],"name":"mintFree","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"genesisCode","type":"string"},{"internalType":"string","name":"referralCode","type":"string"}],"name":"mintWithReferral","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"string","name":"genesisCode","type":"string"}],"name":"mintWithoutReferral","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ownerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"bool","name":"approved","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bool","name":"enabled","type":"bool"}],"name":"setMintEnabled","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes4","name":"interfaceId","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"tokenGenesisCode","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tokenURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalMinted","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"transferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"walletTokenId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}];
 
   // Kill switch for the whole mint UI, independent of the contract's
@@ -8649,7 +8649,7 @@ async function loadVerunLeaderboard() {
   let appliedCode = null; // lowercase pass-name currently applied as a discount code
   let els = null;
 
-  // ── On-chain state (BSC Testnet) ───────────────────────────────────
+  // ── On-chain state (Robinhood Chain Testnet) ───────────────────────────────────
   // Cached here and refreshed by refreshChainState(); render() reads
   // these synchronously so the UI doesn't have to await a network call
   // on every keystroke/re-render. Falls back to the constants above
@@ -8676,14 +8676,14 @@ async function loadVerunLeaderboard() {
     const ethers = getEthers();
     if (!ethers) return null;
     if (!getReadContract._provider) {
-      getReadContract._provider = new ethers.JsonRpcProvider(BSC_TESTNET_RPC);
+      getReadContract._provider = new ethers.JsonRpcProvider(ROBINHOOD_TESTNET_RPC);
     }
     return new ethers.Contract(GENESIS_CONTRACT_ADDRESS, GENESIS_CONTRACT_ABI, getReadContract._provider);
   }
 
   // Signer-backed contract instance for the actual mint transaction —
   // built from the wallet provider the Wallet module already verified
-  // is connected to BNB Chain Testnet.
+  // is connected to Robinhood Chain Testnet.
   async function getWriteContract() {
     const ethers = getEthers();
     if (!ethers) throw new Error("Wallet library failed to load — refresh and try again.");
@@ -8853,8 +8853,8 @@ async function loadVerunLeaderboard() {
     return (isNegative ? "-" : "") + grouped;
   }
 
-  function formatBnb(amount) {
-    return (Math.round(amount * 1e6) / 1e6) + " BNB";
+  function formatEth(amount) {
+    return (Math.round(amount * 1e6) / 1e6) + " ETH";
   }
 
   function formatPadded(num, width) {
@@ -8869,7 +8869,7 @@ async function loadVerunLeaderboard() {
         return parseFloat(ethers.formatEther(wei));
       }
     }
-    return appliedCode ? DISCOUNTED_PRICE_BNB : BASE_PRICE_BNB;
+    return appliedCode ? DISCOUNTED_PRICE_ETH : BASE_PRICE_ETH;
   }
 
   // The BigInt wei value actually sent as msg.value with the mint tx —
@@ -8882,7 +8882,7 @@ async function loadVerunLeaderboard() {
       if (wei !== null && wei !== undefined) return wei;
     }
     if (!ethers) throw new Error("Wallet library failed to load — refresh and try again.");
-    return ethers.parseEther(String(appliedCode ? DISCOUNTED_PRICE_BNB : BASE_PRICE_BNB));
+    return ethers.parseEther(String(appliedCode ? DISCOUNTED_PRICE_ETH : BASE_PRICE_ETH));
   }
 
   // Pulls live pool/price/eligibility state from the contract. Never
@@ -9017,10 +9017,10 @@ async function loadVerunLeaderboard() {
     const e = cacheEls();
     const price = computePrice();
 
-    if (e.priceCurrent) e.priceCurrent.textContent = formatBnb(price);
+    if (e.priceCurrent) e.priceCurrent.textContent = formatEth(price);
     if (e.priceOriginal) {
       if (appliedCode) {
-        e.priceOriginal.textContent = formatBnb(BASE_PRICE_BNB);
+        e.priceOriginal.textContent = formatEth(BASE_PRICE_ETH);
         e.priceOriginal.style.display = "";
       } else {
         e.priceOriginal.style.display = "none";
@@ -9109,10 +9109,10 @@ async function loadVerunLeaderboard() {
       }
     }
 
-    if (e.earningsAmount) e.earningsAmount.textContent = formatBnb(stats.earnings);
+    if (e.earningsAmount) e.earningsAmount.textContent = formatEth(stats.earnings);
     if (e.earningsNote) {
       e.earningsNote.textContent =
-        "Referral rewards (" + formatBnb(REFERRER_SHARE_BNB) + " per mint) are paid " +
+        "Referral rewards (" + formatEth(REFERRER_SHARE_ETH) + " per mint) are paid " +
         "directly to your wallet on-chain the moment someone mints using your code — " +
         "there's nothing to claim.";
     }
@@ -9176,9 +9176,9 @@ async function loadVerunLeaderboard() {
           : contractMintOff
             ? "Minting is currently paused on the contract."
             : (!walletVerified
-                ? "Connect and verify your BNB Chain Testnet wallet above to enable minting."
+                ? "Connect and verify your Robinhood Chain Testnet wallet above to enable minting."
                 : (codeValid
-                    ? "This sends a real transaction on BNB Chain Testnet — confirm the price shown in your wallet."
+                    ? "This sends a real transaction on Robinhood Chain Testnet — confirm the price shown in your wallet."
                     : "Choose a genesis code (3–20 lowercase letters, numbers or hyphens) to enable minting."));
       }
     }
@@ -9547,7 +9547,7 @@ async function loadVerunLeaderboard() {
 
     // Fire-and-forget: paints instantly with cached/fallback data above,
     // then re-renders once live pool/price/ownership data comes back
-    // from BSC Testnet.
+    // from Robinhood Chain Testnet.
     refreshChainState();
   }
 
