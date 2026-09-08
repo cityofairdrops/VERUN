@@ -4405,15 +4405,16 @@
 
     <div class="genesis-price-block">
       <span class="genesis-price-original" id="genesisPriceOriginal" style="display:none;"></span>
-      <span class="genesis-price-current" id="genesisPriceCurrent">0.005 ETH</span>
+      <span class="genesis-price-current" id="genesisPriceCurrent">0.0015 ETH</span>
     </div>
 
     <!-- Discount code preview: always shown, independent of whether
-         minting itself is live yet. Letting people see and apply a
-         code now (and see the resulting price) doesn't move any
-         funds — applyDiscountCode()/renderPrice() are pure local
-         calculations — so there's no reason to hide it behind the
-         same gate as the actual mint transaction below. -->
+         minting itself is live yet. Applying a code here calls the
+         genesis-sign backend to resolve and pre-authorize it (no funds
+         move — it only returns a signature), so there's no reason to
+         hide it behind the same gate as the actual mint transaction
+         below. Requires a connected + verified wallet, since the
+         authorization is bound to your minter address. -->
     <div class="genesis-discount-row">
       <input
         type="text"
@@ -4432,10 +4433,10 @@
     <!-- Shown once minting is live -->
     <div id="genesisMintLiveArea" style="display:none;">
 
-      <!-- The contract requires each mint to register its own unique
-           genesis code on-chain in the same transaction — this becomes
-           the code others apply above for a discount (and pays you a
-           referral reward automatically). -->
+      <!-- Your own genesis code is no longer stored on-chain by this
+           contract — it's saved server-side (record_genesis_pass_mint)
+           right after your mint transaction confirms, and becomes the
+           code others apply above for a discount. -->
       <div class="genesis-discount-row">
         <input
           type="text"
@@ -4605,7 +4606,7 @@
         Claim
       </button>
       <p class="genesis-earnings-note" id="genesisEarningsNote">
-        Claiming opens once the payment gateway is live. Minimum withdrawal: 0.001 ETH.
+        Loading your claimable balance…
       </p>
 
     </div>
@@ -8719,16 +8720,28 @@ async function loadVerunLeaderboard() {
 (function () {
 
   const TOTAL_SUPPLY = 11000;
-  const BASE_PRICE_ETH = 0.005;
-  const DISCOUNTED_PRICE_ETH = 0.0025; // 50% off when a valid code is applied
-  const REFERRER_SHARE_ETH = 0.0005;   // paid to the code owner
-  const PROJECT_SHARE_ETH = 0.002;     // paid to the project (0.0005 + 0.002 = 0.0025)
-  const MIN_WITHDRAWAL_ETH = 0.001;    // minimum claimable referral balance
+  const BASE_PRICE_ETH = 0.0015;        // NORMAL_PRICE fallback — live value is read from the contract
+  const DISCOUNTED_PRICE_ETH = 0.00075; // DISCOUNTED_PRICE fallback (50% off) — live value is read from the contract
+
+  // Backend authorization service for the discount ("genesis code") mint
+  // path. This contract requires an EIP-712 signature from its own
+  // backendSigner over genesisMintDigest(minter, referrer, nonce, deadline)
+  // before mintWithGenesisCode() will accept it — that signature can only
+  // be produced server-side (the private key never touches the browser).
+  const GENESIS_SIGN_FUNCTION = "genesis-sign";
+  const GENESIS_AUTH_VALIDITY_SECONDS = 600; // 10-minute signature validity window
 
   // Live on Robinhood Chain Testnet — real transactions against this contract.
-  const GENESIS_CONTRACT_ADDRESS = "0x43a75ecd5e54ed8b9482c805aef9e3472ebb1087";
+  const GENESIS_CONTRACT_ADDRESS = "0xe936578257AdFdf220c2e3415be8E4f9FDD15062";
   const ROBINHOOD_TESTNET_RPC = "https://rpc.testnet.chain.robinhood.com/rpc";
-  const GENESIS_CONTRACT_ABI = [{"inputs":[{"internalType":"address","name":"initialOwner","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"name":"ERC721IncorrectOwner","type":"error"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ERC721InsufficientApproval","type":"error"},{"inputs":[{"internalType":"address","name":"approver","type":"address"}],"name":"ERC721InvalidApprover","type":"error"},{"inputs":[{"internalType":"address","name":"operator","type":"address"}],"name":"ERC721InvalidOperator","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"ERC721InvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"receiver","type":"address"}],"name":"ERC721InvalidReceiver","type":"error"},{"inputs":[{"internalType":"address","name":"sender","type":"address"}],"name":"ERC721InvalidSender","type":"error"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ERC721NonexistentToken","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"OwnableInvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"OwnableUnauthorizedAccount","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"approved","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":false,"internalType":"bool","name":"approved","type":"bool"}],"name":"ApprovalForAll","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"bytes32","name":"genesisCodeHash","type":"bytes32"}],"name":"FreeGenesisPassMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"genesisCodeHash","type":"bytes32"},{"indexed":true,"internalType":"address","name":"owner","type":"address"}],"name":"GenesisCodeRegistered","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"bytes32","name":"genesisCodeHash","type":"bytes32"},{"indexed":false,"internalType":"address","name":"referrer","type":"address"},{"indexed":false,"internalType":"uint256","name":"price","type":"uint256"}],"name":"GenesisPassMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"bool","name":"enabled","type":"bool"}],"name":"MintStatusChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Transfer","type":"event"},{"inputs":[],"name":"DISCOUNTED_PRICE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"FREE_SUPPLY","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MAX_SUPPLY","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"NORMAL_PRICE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PROJECT_AMOUNT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PROJECT_NORMAL_AMOUNT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"pure","type":"function"},{"inputs":[],"name":"REFERRER_REWARD","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"approve","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"string","name":"genesisCode","type":"string"}],"name":"checkGenesisCode","outputs":[{"internalType":"bool","name":"exists","type":"bool"},{"internalType":"address","name":"codeOwner","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"freeMinted","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"name":"genesisCodeOwner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"getApproved","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"wallet","type":"address"}],"name":"getTokenId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"hasPass","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"operator","type":"address"}],"name":"isApprovedForAll","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"mintEnabled","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"recipient","type":"address"},{"internalType":"string","name":"genesisCode","type":"string"}],"name":"mintFree","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"genesisCode","type":"string"},{"internalType":"string","name":"referralCode","type":"string"}],"name":"mintWithReferral","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"string","name":"genesisCode","type":"string"}],"name":"mintWithoutReferral","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ownerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"bool","name":"approved","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bool","name":"enabled","type":"bool"}],"name":"setMintEnabled","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes4","name":"interfaceId","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"tokenGenesisCode","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tokenURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalMinted","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"transferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"walletTokenId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}];
+
+  // Separate contract the Genesis Pass mint forwards referral rewards
+  // into (see referralClaim() on the Genesis Pass contract) — referrers
+  // claim their earned ETH here rather than it being paid out inside
+  // the mint transaction itself.
+  const REFERRAL_CLAIM_CONTRACT_ADDRESS = "0x89A30B65CDB0441F665af10fA81ddE1E5E50CAda";
+  const GENESIS_CONTRACT_ABI = [{"inputs":[{"internalType":"address[]","name":"wallets","type":"address[]"}],"name":"addToWhitelist","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"initialOwner","type":"address"},{"internalType":"address","name":"projectWallet_","type":"address"},{"internalType":"address","name":"backendSigner_","type":"address"},{"internalType":"address","name":"referralClaim_","type":"address"},{"internalType":"string","name":"baseURI_","type":"string"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"AlreadyHasGenesisPass","type":"error"},{"inputs":[],"name":"AlreadyUsedWhitelistMint","type":"error"},{"inputs":[],"name":"AuthorizationAlreadyUsed","type":"error"},{"inputs":[],"name":"AuthorizationExpired","type":"error"},{"inputs":[],"name":"DirectETHNotAccepted","type":"error"},{"inputs":[],"name":"ECDSAInvalidSignature","type":"error"},{"inputs":[{"internalType":"uint256","name":"length","type":"uint256"}],"name":"ECDSAInvalidSignatureLength","type":"error"},{"inputs":[{"internalType":"bytes32","name":"s","type":"bytes32"}],"name":"ECDSAInvalidSignatureS","type":"error"},{"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"name":"ERC721IncorrectOwner","type":"error"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ERC721InsufficientApproval","type":"error"},{"inputs":[{"internalType":"address","name":"approver","type":"address"}],"name":"ERC721InvalidApprover","type":"error"},{"inputs":[{"internalType":"address","name":"operator","type":"address"}],"name":"ERC721InvalidOperator","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"ERC721InvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"receiver","type":"address"}],"name":"ERC721InvalidReceiver","type":"error"},{"inputs":[{"internalType":"address","name":"sender","type":"address"}],"name":"ERC721InvalidSender","type":"error"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ERC721NonexistentToken","type":"error"},{"inputs":[],"name":"IncorrectPayment","type":"error"},{"inputs":[],"name":"InvalidAuthorization","type":"error"},{"inputs":[],"name":"InvalidBackendSigner","type":"error"},{"inputs":[],"name":"InvalidProjectWallet","type":"error"},{"inputs":[],"name":"InvalidReferralClaimContract","type":"error"},{"inputs":[],"name":"InvalidReferrer","type":"error"},{"inputs":[],"name":"InvalidShortString","type":"error"},{"inputs":[],"name":"MaxSupplyReached","type":"error"},{"inputs":[],"name":"MintDisabled","type":"error"},{"inputs":[],"name":"NotWhitelisted","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"OwnableInvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"OwnableUnauthorizedAccount","type":"error"},{"inputs":[],"name":"ReentrancyGuardReentrantCall","type":"error"},{"inputs":[],"name":"ReferrerHasNoGenesisPass","type":"error"},{"inputs":[],"name":"Soulbound","type":"error"},{"inputs":[{"internalType":"string","name":"str","type":"string"}],"name":"StringTooLong","type":"error"},{"inputs":[],"name":"WhitelistAddressLimitReached","type":"error"},{"inputs":[],"name":"WhitelistAllocationReached","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"approved","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":false,"internalType":"bool","name":"approved","type":"bool"}],"name":"ApprovalForAll","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldSigner","type":"address"},{"indexed":true,"internalType":"address","name":"newSigner","type":"address"}],"name":"BackendSignerUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"newBaseURI","type":"string"}],"name":"BaseURIUpdated","type":"event"},{"anonymous":false,"inputs":[],"name":"EIP712DomainChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"minter","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":false,"internalType":"bool","name":"discounted","type":"bool"},{"indexed":true,"internalType":"address","name":"referrer","type":"address"}],"name":"GenesisPassMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"bool","name":"enabled","type":"bool"}],"name":"MintStatusUpdated","type":"event"},{"inputs":[],"name":"mintWhitelist","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"referrer","type":"address"},{"internalType":"uint256","name":"nonce","type":"uint256"},{"internalType":"uint256","name":"deadline","type":"uint256"},{"internalType":"bytes","name":"signature","type":"bytes"}],"name":"mintWithGenesisCode","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"mintWithoutGenesisCode","outputs":[],"stateMutability":"payable","type":"function"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldWallet","type":"address"},{"indexed":true,"internalType":"address","name":"newWallet","type":"address"}],"name":"ProjectWalletUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldContract","type":"address"},{"indexed":true,"internalType":"address","name":"newContract","type":"address"}],"name":"ReferralClaimContractUpdated","type":"event"},{"inputs":[{"internalType":"address","name":"wallet","type":"address"}],"name":"removeFromWhitelist","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newSigner","type":"address"}],"name":"setBackendSigner","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"newBaseURI","type":"string"}],"name":"setBaseURI","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bool","name":"enabled","type":"bool"}],"name":"setMintEnabled","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newWallet","type":"address"}],"name":"setProjectWallet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newContract","type":"address"}],"name":"setReferralClaimContract","outputs":[],"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Transfer","type":"event"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"transferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"wallet","type":"address"}],"name":"WhitelistAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"minter","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"WhitelistMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"wallet","type":"address"}],"name":"WhitelistRemoved","type":"event"},{"stateMutability":"payable","type":"fallback"},{"stateMutability":"payable","type":"receive"},{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"}],"name":"approve","outputs":[],"stateMutability":"pure","type":"function"},{"inputs":[],"name":"backendSigner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"baseURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"DISCOUNTED_PRICE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"eip712Domain","outputs":[{"internalType":"bytes1","name":"fields","type":"bytes1"},{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"version","type":"string"},{"internalType":"uint256","name":"chainId","type":"uint256"},{"internalType":"address","name":"verifyingContract","type":"address"},{"internalType":"bytes32","name":"salt","type":"bytes32"},{"internalType":"uint256[]","name":"extensions","type":"uint256[]"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"minter","type":"address"},{"internalType":"address","name":"referrer","type":"address"},{"internalType":"uint256","name":"nonce","type":"uint256"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"genesisMintDigest","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"getApproved","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"hasPass","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"operator","type":"address"}],"name":"isApprovedForAll","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"wallet","type":"address"},{"internalType":"uint256","name":"nonce","type":"uint256"}],"name":"isAuthorizationUsed","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"wallet","type":"address"}],"name":"isWhitelisted","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MAX_SUPPLY","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"mintEnabled","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"NORMAL_PRICE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ownerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PROJECT_DISCOUNTED_AMOUNT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PROJECT_NORMAL_AMOUNT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"projectWallet","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"REFERRAL_REWARD","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"referralClaim","outputs":[{"internalType":"contract IGenesisReferralClaim","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"bool","name":"","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"bytes4","name":"interfaceId","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"wallet","type":"address"}],"name":"tokenIdOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tokenURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalMinted","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"}],"name":"usedGenesisMintNonces","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"walletTokenId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"WHITELIST_ALLOCATION","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"whitelistAddressCount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"whitelisted","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"whitelistMinted","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"whitelistMintedFor","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}];
+  const REFERRAL_CLAIM_ABI = [{"inputs":[],"name":"claim","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"initialOwner","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"DirectETHNotAccepted","type":"error"},{"inputs":[],"name":"ETHTransferFailed","type":"error"},{"inputs":[],"name":"IncorrectReferralPayment","type":"error"},{"inputs":[],"name":"InvalidGenesisPassContract","type":"error"},{"inputs":[],"name":"InvalidReferee","type":"error"},{"inputs":[],"name":"InvalidReferrer","type":"error"},{"inputs":[],"name":"MinimumClaimNotReached","type":"error"},{"inputs":[],"name":"NothingToClaim","type":"error"},{"inputs":[],"name":"OnlyGenesisPassContract","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"OwnableInvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"OwnableUnauthorizedAccount","type":"error"},{"inputs":[{"internalType":"address","name":"referrer","type":"address"},{"internalType":"address","name":"referee","type":"address"}],"name":"recordReferral","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"ReentrancyGuardReentrantCall","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldContract","type":"address"},{"indexed":true,"internalType":"address","name":"newContract","type":"address"}],"name":"GenesisPassContractSet","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"referrer","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"ReferralClaimed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"referrer","type":"address"},{"indexed":true,"internalType":"address","name":"referee","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"referralNumber","type":"uint256"}],"name":"ReferralRecorded","type":"event"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"genesisPass","type":"address"}],"name":"setGenesisPassContract","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"stateMutability":"payable","type":"fallback"},{"stateMutability":"payable","type":"receive"},{"inputs":[{"internalType":"address","name":"referrer","type":"address"}],"name":"canClaim","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"referrer","type":"address"}],"name":"claimableBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"contractBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"genesisPassContract","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MINIMUM_CLAIM","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"REFERRAL_REWARD","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"referralBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"referralCount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"referrer","type":"address"}],"name":"referrals","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalReferralClaimed","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalReferralPaid","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}];
 
   // Kill switch for the whole mint UI, independent of the contract's
   // own mintEnabled() — flip to false to hide the live mint area again
@@ -8737,6 +8750,11 @@ async function loadVerunLeaderboard() {
 
   let currentUserId = null;
   let appliedCode = null; // lowercase pass-name currently applied as a discount code
+  // Backend-signed mint authorization for appliedCode, from the genesis-sign
+  // function: { code, referrer, nonce, deadline, signature, obtainedAt }.
+  // Cleared whenever appliedCode changes and re-fetched right before minting
+  // if its 10-minute deadline has since passed.
+  let appliedGenesisAuth = null;
   let els = null;
 
   // ── On-chain state (Robinhood Chain Testnet) ───────────────────────────────────
@@ -8752,7 +8770,25 @@ async function loadVerunLeaderboard() {
     normalPriceWei: null,
     discountedPriceWei: null,
     owned: false,
-    tokenId: null
+    tokenId: null,
+    walletWhitelisted: false,
+    walletWhitelistUsed: false
+  };
+
+  // True only once we've confirmed on-chain that the connected wallet is
+  // whitelisted and hasn't already used its free mintWhitelist() slot.
+  function isWhitelistEligible() {
+    return !!(chain.walletWhitelisted && !chain.walletWhitelistUsed && !chain.owned);
+  }
+
+  // Cached state from the Referral Claim contract for the connected
+  // wallet — refreshed alongside chain/refreshChainState() below.
+  let claimChain = {
+    ready: false,
+    minimumClaimWei: null,
+    claimableWei: null,
+    canClaim: false,
+    referralCount: null
   };
 
   function getEthers() {
@@ -8784,6 +8820,29 @@ async function loadVerunLeaderboard() {
     const browserProvider = new ethers.BrowserProvider(rawProvider);
     const signer = await browserProvider.getSigner();
     return new ethers.Contract(GENESIS_CONTRACT_ADDRESS, GENESIS_CONTRACT_ABI, signer);
+  }
+
+  // Same pattern as getReadContract()/getWriteContract() above, but
+  // against the separate Referral Claim contract.
+  function getReadClaimContract() {
+    const ethers = getEthers();
+    if (!ethers) return null;
+    if (!getReadContract._provider) {
+      getReadContract._provider = new ethers.JsonRpcProvider(ROBINHOOD_TESTNET_RPC);
+    }
+    return new ethers.Contract(REFERRAL_CLAIM_CONTRACT_ADDRESS, REFERRAL_CLAIM_ABI, getReadContract._provider);
+  }
+
+  async function getWriteClaimContract() {
+    const ethers = getEthers();
+    if (!ethers) throw new Error("Wallet library failed to load — refresh and try again.");
+    const rawProvider = window.verunWallet && typeof window.verunWallet.getProvider === "function"
+      ? window.verunWallet.getProvider()
+      : null;
+    if (!rawProvider) throw new Error("Wallet provider unavailable. Try reconnecting your wallet.");
+    const browserProvider = new ethers.BrowserProvider(rawProvider);
+    const signer = await browserProvider.getSigner();
+    return new ethers.Contract(REFERRAL_CLAIM_CONTRACT_ADDRESS, REFERRAL_CLAIM_ABI, signer);
   }
 
   function cacheEls() {
@@ -8874,10 +8933,10 @@ async function loadVerunLeaderboard() {
     return cachedState;
   }
 
-  // Server-side genesis-code availability check — backs up the
-  // contract's own checkGenesisCode() (which remains the source of
-  // truth the mint transaction itself enforces) for the moments a
-  // testnet RPC read is unavailable.
+  // Server-side genesis-code availability check. This contract has no
+  // on-chain code registry at all (codes are never stored on-chain by
+  // this design), so this RPC — backed by genesis_passes.genesis_code —
+  // is the sole source of truth for "is this code already taken".
   async function isGenesisCodeAvailable(code) {
     try {
       const { data, error } = await supabaseClient.rpc("check_genesis_code_available", {
@@ -8888,7 +8947,8 @@ async function loadVerunLeaderboard() {
     } catch (err) {
       console.error("VERUN Genesis Pass: check_genesis_code_available failed", err);
       return true; // never block minting on a backend hiccup alone —
-                   // the on-chain check is authoritative.
+                   // record_genesis_pass_mint still rejects a duplicate
+                   // code server-side as a final backstop.
     }
   }
 
@@ -8952,27 +9012,29 @@ async function loadVerunLeaderboard() {
   }
 
   function computePrice() {
+    const discountActive = !!(appliedCode && appliedGenesisAuth);
     const ethers = getEthers();
     if (ethers && chain.ready) {
-      const wei = appliedCode ? chain.discountedPriceWei : chain.normalPriceWei;
+      const wei = discountActive ? chain.discountedPriceWei : chain.normalPriceWei;
       if (wei !== null && wei !== undefined) {
         return parseFloat(ethers.formatEther(wei));
       }
     }
-    return appliedCode ? DISCOUNTED_PRICE_ETH : BASE_PRICE_ETH;
+    return discountActive ? DISCOUNTED_PRICE_ETH : BASE_PRICE_ETH;
   }
 
   // The BigInt wei value actually sent as msg.value with the mint tx —
   // prefers the live on-chain price so it never drifts from what the
   // contract will actually charge.
   function computePriceWei() {
+    const discountActive = !!(appliedCode && appliedGenesisAuth);
     const ethers = getEthers();
     if (ethers && chain.ready) {
-      const wei = appliedCode ? chain.discountedPriceWei : chain.normalPriceWei;
+      const wei = discountActive ? chain.discountedPriceWei : chain.normalPriceWei;
       if (wei !== null && wei !== undefined) return wei;
     }
     if (!ethers) throw new Error("Wallet library failed to load — refresh and try again.");
-    return ethers.parseEther(String(appliedCode ? DISCOUNTED_PRICE_ETH : BASE_PRICE_ETH));
+    return ethers.parseEther(String(discountActive ? DISCOUNTED_PRICE_ETH : BASE_PRICE_ETH));
   }
 
   // Pulls live pool/price/eligibility state from the contract. Never
@@ -9009,9 +9071,15 @@ async function loadVerunLeaderboard() {
     const walletState = window.verunWallet ? window.verunWallet.getState() : null;
     if (walletState && walletState.verified && walletState.address) {
       try {
-        const owned = await read.hasPass(walletState.address);
+        const [owned, whitelisted, whitelistUsed] = await Promise.all([
+          read.hasPass(walletState.address),
+          read.isWhitelisted(walletState.address),
+          read.whitelistMintedFor(walletState.address)
+        ]);
         chain.owned = !!owned;
-        chain.tokenId = chain.owned ? Number(await read.getTokenId(walletState.address)) : null;
+        chain.tokenId = chain.owned ? Number(await read.tokenIdOf(walletState.address)) : null;
+        chain.walletWhitelisted = !!whitelisted;
+        chain.walletWhitelistUsed = !!whitelistUsed;
 
         // Backfill safety net: an account that minted BEFORE the wallet
         // lock existed server-side has no row in wallet_locks yet, which
@@ -9031,13 +9099,115 @@ async function loadVerunLeaderboard() {
     } else {
       chain.owned = false;
       chain.tokenId = null;
+      chain.walletWhitelisted = false;
+      chain.walletWhitelistUsed = false;
     }
 
+    await refreshClaimState(walletState);
     render();
+  }
+
+  // Pulls live claimable-balance/eligibility state from the Referral
+  // Claim contract for the connected wallet. Never throws — mirrors
+  // refreshChainState()'s fall-back-quietly behavior above.
+  async function refreshClaimState(walletState) {
+    const read = getReadClaimContract();
+    if (!read) return;
+
+    try {
+      const minimumClaimWei = await read.MINIMUM_CLAIM();
+      claimChain.minimumClaimWei = minimumClaimWei;
+      claimChain.ready = true;
+    } catch (err) {
+      console.error("VERUN Genesis Pass: failed to read referral claim contract state", err);
+    }
+
+    const ws = walletState !== undefined
+      ? walletState
+      : (window.verunWallet ? window.verunWallet.getState() : null);
+
+    if (ws && ws.verified && ws.address) {
+      try {
+        const [claimableWei, canClaim, referralCount] = await Promise.all([
+          read.claimableBalance(ws.address),
+          read.canClaim(ws.address),
+          read.referralCount(ws.address)
+        ]);
+        claimChain.claimableWei = claimableWei;
+        claimChain.canClaim = !!canClaim;
+        claimChain.referralCount = Number(referralCount);
+      } catch (err) {
+        console.error("VERUN Genesis Pass: failed to read wallet referral claim state", err);
+      }
+    } else {
+      claimChain.claimableWei = null;
+      claimChain.canClaim = false;
+      claimChain.referralCount = null;
+    }
   }
 
   function discountCodeStorageKey(userId) {
     return "verunGenesisDiscountCode_" + userId;
+  }
+
+  // Cryptographically random uint256 nonce (never Date.now() / sequential —
+  // the contract only requires it be unused for this minter, but a
+  // predictable nonce would let someone else guess/replay ahead of us).
+  function generateRandomNonce() {
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    let hex = "0x";
+    for (let i = 0; i < bytes.length; i++) {
+      hex += bytes[i].toString(16).padStart(2, "0");
+    }
+    return BigInt(hex);
+  }
+
+  // Calls the genesis-sign Edge Function to get an EIP-712 authorization
+  // (referrer + nonce + deadline + signature) for mintWithGenesisCode().
+  // The nonce/deadline are generated here and sent to the backend, which
+  // binds them into the signature along with the resolved referrer — the
+  // response is used exactly as returned, never modified before submitting.
+  async function requestGenesisAuthorization(minterAddress, genesisCode) {
+    const nonce = generateRandomNonce();
+    const deadline = Math.floor(Date.now() / 1000) + GENESIS_AUTH_VALIDITY_SECONDS;
+
+    const { data, error } = await supabaseClient.functions.invoke(GENESIS_SIGN_FUNCTION, {
+      body: {
+        minter: minterAddress,
+        genesisCode: genesisCode,
+        nonce: nonce.toString(),
+        deadline: deadline
+      }
+    });
+
+    if (error) {
+      // Supabase functions.invoke surfaces non-2xx responses as `error`
+      // with the parsed body (when JSON) on error.context — pull out a
+      // human-readable message if the function provided one.
+      let message = "That genesis code isn't valid.";
+      try {
+        const ctx = error.context;
+        const body = ctx && typeof ctx.json === "function" ? await ctx.json() : null;
+        if (body && (body.error || body.message)) message = body.error || body.message;
+      } catch (parseErr) {
+        // ignore — fall back to the generic message above
+      }
+      throw new Error(message);
+    }
+
+    if (!data || !data.referrer || !data.signature) {
+      throw new Error("Genesis code verification failed. Please try again.");
+    }
+
+    return {
+      code: genesisCode,
+      referrer: data.referrer,
+      nonce: data.nonce !== undefined && data.nonce !== null ? data.nonce : nonce.toString(),
+      deadline: data.deadline !== undefined && data.deadline !== null ? data.deadline : deadline,
+      signature: data.signature,
+      obtainedAt: Date.now()
+    };
   }
 
   async function applyDiscountCode() {
@@ -9049,6 +9219,7 @@ async function loadVerunLeaderboard() {
 
     if (!code) {
       appliedCode = null;
+      appliedGenesisAuth = null;
       if (currentUserId) localStorage.removeItem(discountCodeStorageKey(currentUserId));
       e.discountFeedback.textContent = "";
       e.discountFeedback.className = "genesis-discount-feedback";
@@ -9057,46 +9228,39 @@ async function loadVerunLeaderboard() {
       return;
     }
 
+    const walletState = window.verunWallet ? window.verunWallet.getState() : null;
+    const walletAddress = walletState ? walletState.address : null;
+    if (!walletState || !walletState.verified || !walletAddress) {
+      appliedCode = null;
+      appliedGenesisAuth = null;
+      e.discountFeedback.textContent = "Connect and verify your wallet above first, then apply the code.";
+      e.discountFeedback.className = "genesis-discount-feedback is-error";
+      renderPrice();
+      render();
+      return;
+    }
+
     e.discountFeedback.textContent = "Checking code…";
     e.discountFeedback.className = "genesis-discount-feedback";
 
-    // The real source of truth is now the contract's own genesis-code
-    // registry (checkGenesisCode), not the local same-device registry —
-    // a referral code is almost always shared from a different device
-    // than the one applying it. Only fall back to the local registry if
-    // the RPC read itself fails.
-    const read = getReadContract();
-    const walletAddress = window.verunWallet ? window.verunWallet.getState().address : null;
-    let exists = false;
-    let codeOwner = null;
-
-    if (read) {
-      try {
-        const result = await read.checkGenesisCode(code);
-        exists = !!result[0];
-        codeOwner = result[1];
-      } catch (err) {
-        console.error("VERUN Genesis Pass: checkGenesisCode failed", err);
-      }
-    } else {
-      exists = !(await isGenesisCodeAvailable(code));
-    }
-
-    if (!exists) {
-      appliedCode = null;
-      if (currentUserId) localStorage.removeItem(discountCodeStorageKey(currentUserId));
-      e.discountFeedback.textContent = "Invalid discount code.";
-      e.discountFeedback.className = "genesis-discount-feedback is-error";
-    } else if (codeOwner && walletAddress && codeOwner.toLowerCase() === walletAddress.toLowerCase()) {
-      appliedCode = null;
-      if (currentUserId) localStorage.removeItem(discountCodeStorageKey(currentUserId));
-      e.discountFeedback.textContent = "You can't use your own code.";
-      e.discountFeedback.className = "genesis-discount-feedback is-error";
-    } else {
+    // Resolution and eligibility (does the code exist, does its owner
+    // still hold a pass, is it your own code) all now happen server-side
+    // in genesis-sign, which only returns a signature for a code it
+    // considers valid — the contract itself re-checks the referrer holds
+    // a pass at mint time, so this is defense in depth, not the sole gate.
+    try {
+      const auth = await requestGenesisAuthorization(walletAddress, code);
       appliedCode = code;
+      appliedGenesisAuth = auth;
       if (currentUserId) localStorage.setItem(discountCodeStorageKey(currentUserId), code);
-      e.discountFeedback.textContent = "50% discount applied — verified on-chain.";
+      e.discountFeedback.textContent = "50% discount applied.";
       e.discountFeedback.className = "genesis-discount-feedback is-success";
+    } catch (err) {
+      appliedCode = null;
+      appliedGenesisAuth = null;
+      if (currentUserId) localStorage.removeItem(discountCodeStorageKey(currentUserId));
+      e.discountFeedback.textContent = (err && err.message) || "Invalid discount code.";
+      e.discountFeedback.className = "genesis-discount-feedback is-error";
     }
 
     renderPrice();
@@ -9105,11 +9269,20 @@ async function loadVerunLeaderboard() {
 
   function renderPrice() {
     const e = cacheEls();
-    const price = computePrice();
 
+    if (isWhitelistEligible()) {
+      if (e.priceCurrent) e.priceCurrent.textContent = "FREE";
+      if (e.priceOriginal) {
+        e.priceOriginal.textContent = formatEth(BASE_PRICE_ETH);
+        e.priceOriginal.style.display = "";
+      }
+      return;
+    }
+
+    const price = computePrice();
     if (e.priceCurrent) e.priceCurrent.textContent = formatEth(price);
     if (e.priceOriginal) {
-      if (appliedCode) {
+      if (appliedCode && appliedGenesisAuth) {
         e.priceOriginal.textContent = formatEth(BASE_PRICE_ETH);
         e.priceOriginal.style.display = "";
       } else {
@@ -9176,8 +9349,17 @@ async function loadVerunLeaderboard() {
   function renderReferralPanel() {
     const e = cacheEls();
     const stats = cachedReferralStats;
+    const ethers = getEthers();
 
-    if (e.referralCount) e.referralCount.textContent = formatIndian(stats.count);
+    // The Referral Claim contract's own referralCount(wallet) is the
+    // authoritative count of mints that used this wallet as a referrer —
+    // prefer it once loaded, falling back to the Supabase aggregate
+    // (which also seeds the "recent" list below, since the claim
+    // contract doesn't track individual mint details).
+    const displayCount = (claimChain.ready && claimChain.referralCount !== null)
+      ? claimChain.referralCount
+      : stats.count;
+    if (e.referralCount) e.referralCount.textContent = formatIndian(displayCount);
 
     if (e.referralList) {
       if (!stats.recent || stats.recent.length === 0) {
@@ -9199,18 +9381,38 @@ async function loadVerunLeaderboard() {
       }
     }
 
-    if (e.earningsAmount) e.earningsAmount.textContent = formatEth(stats.earnings);
+    // Claimable balance comes straight from the Referral Claim contract
+    // once it's loaded — that's real, spendable ETH, unlike the
+    // Supabase-side earnings estimate, which we only fall back to
+    // before the on-chain read resolves.
+    const claimableEth = (claimChain.ready && ethers && claimChain.claimableWei !== null)
+      ? parseFloat(ethers.formatEther(claimChain.claimableWei))
+      : stats.earnings;
+    if (e.earningsAmount) e.earningsAmount.textContent = formatEth(claimableEth);
+
+    const minimumEth = (claimChain.ready && ethers && claimChain.minimumClaimWei !== null)
+      ? parseFloat(ethers.formatEther(claimChain.minimumClaimWei))
+      : null;
+
     if (e.earningsNote) {
-      e.earningsNote.textContent =
-        "Referral rewards (" + formatEth(REFERRER_SHARE_ETH) + " per mint) are paid " +
-        "directly to your wallet on-chain the moment someone mints using your code — " +
-        "there's nothing to claim.";
+      if (!claimChain.ready) {
+        e.earningsNote.textContent = "Loading your claimable balance…";
+      } else if (claimChain.canClaim) {
+        e.earningsNote.textContent = "You have " + formatEth(claimableEth) + " ready to claim.";
+      } else if (minimumEth !== null) {
+        e.earningsNote.textContent = "Minimum claim is " + formatEth(minimumEth) +
+          " — keep earning referrals to unlock claiming.";
+      } else {
+        e.earningsNote.textContent = "Referral rewards are tracked on-chain for every mint that used your code.";
+      }
     }
+
     if (e.claimButton) {
-      // Rewards are paid out automatically by the mint transaction
-      // itself (see GenesisPassMinted's referrer/price fields) — there
-      // is no separate claim step, so this button stays disabled.
-      e.claimButton.disabled = true;
+      const walletVerified = !!(window.verunWallet && window.verunWallet.getState().verified);
+      e.claimButton.disabled = claiming || !walletVerified || !claimChain.ready || !claimChain.canClaim;
+      if (!claiming) {
+        e.claimButton.textContent = "Claim";
+      }
     }
   }
 
@@ -9245,12 +9447,22 @@ async function loadVerunLeaderboard() {
 
       // Minting requires a verified wallet connection (see the Wallet
       // module above), the contract's own mintEnabled() switch, and a
-      // valid genesis code — the mint call registers that code
-      // on-chain in the same transaction, so it can't be skipped.
+      // chosen genesis code — the code is no longer registered on-chain
+      // by the mint call itself, but we still collect it here and save
+      // it server-side right after the transaction confirms.
       const walletVerified = !!(window.verunWallet && window.verunWallet.getState().verified);
       const contractMintOff = chain.ready && chain.mintEnabled === false;
       const codeValue = e.codeInput ? e.codeInput.value.trim().toLowerCase() : "";
       const codeValid = /^[a-z0-9-]{3,20}$/.test(codeValue);
+      const whitelistEligible = isWhitelistEligible();
+
+      // Whitelist-eligible wallets get a free mint regardless of any
+      // discount code typed in above — hide that row so it doesn't
+      // suggest a price still applies.
+      if (e.discountInput && e.discountInput.closest(".genesis-discount-row")) {
+        e.discountInput.closest(".genesis-discount-row").style.display = whitelistEligible ? "none" : "";
+      }
+      if (e.discountFeedback) e.discountFeedback.style.display = whitelistEligible ? "none" : "";
 
       if (e.mintButton) {
         e.mintButton.disabled = soldOut || contractMintOff || !walletVerified || !codeValid;
@@ -9258,7 +9470,9 @@ async function loadVerunLeaderboard() {
           ? "Sold Out"
           : (contractMintOff
               ? "Minting Paused"
-              : (walletVerified ? "Mint Genesis Pass" : "Connect Wallet to Mint"));
+              : (!walletVerified
+                  ? "Connect Wallet to Mint"
+                  : (whitelistEligible ? "Mint Genesis Pass (Free)" : "Mint Genesis Pass")));
       }
       if (e.mintNote) {
         e.mintNote.textContent = soldOut
@@ -9268,7 +9482,9 @@ async function loadVerunLeaderboard() {
             : (!walletVerified
                 ? "Connect and verify your Robinhood Chain Testnet wallet above to enable minting."
                 : (codeValid
-                    ? "This sends a real transaction on Robinhood Chain Testnet — confirm the price shown in your wallet."
+                    ? (whitelistEligible
+                        ? "Your wallet is whitelisted for a free mint — confirm the transaction in your wallet (no ETH required)."
+                        : "This sends a real transaction on Robinhood Chain Testnet — confirm the price shown in your wallet.")
                     : "Choose a genesis code (3–20 lowercase letters, numbers or hyphens) to enable minting."));
       }
     }
@@ -9278,6 +9494,7 @@ async function loadVerunLeaderboard() {
   // the button is disabled during this too, but re-entrancy here would
   // fire a second transaction if a user manages to click twice fast.
   let minting = false;
+  let claiming = false;
 
   async function mintPass() {
     if (!MINTING_ENABLED || !currentUserId || minting) return;
@@ -9302,7 +9519,8 @@ async function loadVerunLeaderboard() {
     const minted = chain.ready && chain.totalMinted !== null ? chain.totalMinted : readMintedCount();
     if (minted >= totalSupply) return; // sold out
 
-    const price = computePrice();
+    const walletAddress = window.verunWallet.getState().address;
+    const whitelistEligible = isWhitelistEligible();
 
     minting = true;
     if (e.mintButton) {
@@ -9315,33 +9533,42 @@ async function loadVerunLeaderboard() {
     }
 
     try {
+      // This contract doesn't store genesis codes on-chain at all, so
+      // "already taken" is checked against the server-side registry
+      // (backed by genesis_passes.genesis_code) instead of a contract read.
+      const available = await isGenesisCodeAvailable(code);
+      if (!available) {
+        throw new Error("That genesis code is already taken. Choose another.");
+      }
+
       const read = getReadContract();
-
-      // Make sure the chosen genesis code isn't already taken on-chain.
-      if (read) {
-        const [codeExists] = await read.checkGenesisCode(code);
-        if (codeExists) {
-          throw new Error("That genesis code is already taken. Choose another.");
-        }
-      }
-
-      // Re-validate the applied referral code right before spending gas
-      // on it — it must exist on-chain and belong to someone else.
-      let referralCode = null;
-      const walletAddress = window.verunWallet.getState().address;
-      if (appliedCode && read) {
-        const [refExists, refOwner] = await read.checkGenesisCode(appliedCode);
-        if (refExists && refOwner && refOwner.toLowerCase() !== (walletAddress || "").toLowerCase()) {
-          referralCode = appliedCode;
-        }
-      }
-
       const write = await getWriteContract();
-      const valueWei = computePriceWei();
 
-      const tx = referralCode
-        ? await write.mintWithReferral(code, referralCode, { value: valueWei })
-        : await write.mintWithoutReferral(code, { value: valueWei });
+      let tx;
+      let usedReferralCode = null;
+
+      if (whitelistEligible) {
+        // Free mint — no msg.value, no discount code involved.
+        tx = await write.mintWhitelist();
+      } else if (appliedCode && appliedGenesisAuth) {
+        // Refresh the backend authorization if its 10-minute window has
+        // (or is about to) expire between Apply and this click — the
+        // response is used exactly as returned, never modified.
+        const nowSec = Math.floor(Date.now() / 1000);
+        let auth = appliedGenesisAuth;
+        if (Number(auth.deadline) <= nowSec + 10) {
+          auth = await requestGenesisAuthorization(walletAddress, appliedCode);
+          appliedGenesisAuth = auth;
+        }
+
+        const discountedWei = computePriceWei();
+        tx = await write.mintWithGenesisCode(auth.referrer, auth.nonce, auth.deadline, auth.signature, {
+          value: discountedWei
+        });
+        usedReferralCode = appliedCode;
+      } else {
+        tx = await write.mintWithoutGenesisCode({ value: computePriceWei() });
+      }
 
       if (e.mintButton) e.mintButton.textContent = "Confirming on-chain…";
       await tx.wait();
@@ -9350,7 +9577,7 @@ async function loadVerunLeaderboard() {
       // than guessing from a local counter.
       let tokenNumber = null;
       if (read && walletAddress) {
-        try { tokenNumber = Number(await read.getTokenId(walletAddress)); } catch (err) {}
+        try { tokenNumber = Number(await read.tokenIdOf(walletAddress)); } catch (err) {}
       }
 
       // Permanently bind this VERUN account to the wallet that just
@@ -9378,7 +9605,7 @@ async function loadVerunLeaderboard() {
             p_genesis_code: code,
             p_token_number: tokenNumber,
             p_tx_hash: tx.hash,
-            p_referral_code: referralCode
+            p_referral_code: usedReferralCode
           }
         );
         if (recordError) throw recordError;
@@ -9399,12 +9626,14 @@ async function loadVerunLeaderboard() {
         walletAddress: walletAddress
       };
       appliedCode = null;
+      appliedGenesisAuth = null;
+      if (currentUserId) localStorage.removeItem(discountCodeStorageKey(currentUserId));
 
       chain.owned = true;
       chain.tokenId = tokenNumber;
 
       minting = false;
-      await refreshChainState(); // re-reads pool/price and re-renders
+      await refreshChainState(); // re-reads pool/price/whitelist and re-renders
     } catch (err) {
       minting = false;
       const message = (err && (err.code === "ACTION_REJECTED" || err.code === 4001))
@@ -9415,14 +9644,56 @@ async function loadVerunLeaderboard() {
     }
   }
 
-  // Recovers the server-side record for a pass that was minted BEFORE
-  // the genesis_passes table existed. The contract only stores a HASH
-  // of the genesis code (see tokenGenesisCode/checkGenesisCode in the
-  // ABI), never the plaintext — so the one piece of information we
-  // cannot get back from the chain is the code itself. This asks for
-  // it once, verifies it against the chain (so nobody can claim a pass
-  // with a made-up code), and then backfills the database row so this
-  // never has to happen again for this wallet.
+  // Claims the connected wallet's accrued referral rewards from the
+  // Referral Claim contract. Defense in depth mirrors mintPass() above —
+  // the button is already gated on claimChain.canClaim, but re-check
+  // before spending gas on a call the contract would revert anyway
+  // (NothingToClaim / MinimumClaimNotReached).
+  async function claimReferralRewards() {
+    if (claiming || !currentUserId) return;
+    const walletVerified = !!(window.verunWallet && window.verunWallet.getState().verified);
+    if (!walletVerified) return;
+    if (!claimChain.ready || !claimChain.canClaim) return;
+
+    const e = cacheEls();
+    claiming = true;
+    if (e.claimButton) {
+      e.claimButton.disabled = true;
+      e.claimButton.textContent = "Confirm in wallet…";
+    }
+
+    try {
+      const write = await getWriteClaimContract();
+      const tx = await write.claim();
+      if (e.claimButton) e.claimButton.textContent = "Confirming on-chain…";
+      await tx.wait();
+
+      claiming = false;
+      await refreshClaimState(); // re-reads claimable balance and re-renders via caller
+      renderReferralPanel();
+    } catch (err) {
+      claiming = false;
+      const message = (err && (err.code === "ACTION_REJECTED" || err.code === 4001))
+        ? "Transaction rejected in wallet."
+        : (err && err.reason) || (err && err.shortMessage) || (err && err.message) || "Claim failed. Please try again.";
+      console.error("VERUN Genesis Pass claim failed:", message);
+      if (e.earningsNote) {
+        e.earningsNote.textContent = message;
+      }
+      renderReferralPanel();
+    }
+  }
+
+  // Recovers the server-side record for a pass that has no row in
+  // genesis_passes yet (e.g. minted before this flow existed, or a
+  // record_genesis_pass_mint call that failed after a successful mint).
+  // This contract never stores the genesis code on-chain at all — not
+  // even hashed — so there's no on-chain value left to check the typed
+  // code against. Proof instead rests on two things we CAN still verify:
+  // the wallet demonstrably owns a Genesis Pass on-chain (chain.owned,
+  // required below) and the code isn't already claimed by a different
+  // wallet in our own registry (checked server-side by record_genesis_pass_mint
+  // itself, which rejects a code already tied to another wallet).
   async function setPassName() {
     const e = cacheEls();
     if (!e.nameInput || !e.nameFeedback || !currentUserId) return;
@@ -9433,7 +9704,7 @@ async function loadVerunLeaderboard() {
 
     if (!/^[a-z0-9-]{3,20}$/.test(name)) {
       e.nameFeedback.textContent =
-        "Enter the exact genesis code you minted with — 3–20 lowercase letters, numbers or hyphens.";
+        "Enter 3–20 lowercase letters, numbers or hyphens.";
       e.nameFeedback.className = "genesis-discount-feedback is-error";
       return;
     }
@@ -9450,16 +9721,9 @@ async function loadVerunLeaderboard() {
     e.nameFeedback.className = "genesis-discount-feedback";
 
     try {
-      const read = getReadContract();
-      if (!read) throw new Error("Chain reader unavailable — try again in a moment.");
-
-      // This is the actual proof: the contract already recorded (at
-      // mint time) which address owns this exact code. If what the
-      // user typed doesn't hash to a match owned by their own wallet,
-      // it's either the wrong code or someone guessing — reject either way.
-      const [codeExists, codeOwner] = await read.checkGenesisCode(name);
-      if (!codeExists || !codeOwner || codeOwner.toLowerCase() !== walletAddress.toLowerCase()) {
-        e.nameFeedback.textContent = "That code doesn't match this wallet's Genesis Pass. Double-check it and try again.";
+      const available = await isGenesisCodeAvailable(name);
+      if (!available) {
+        e.nameFeedback.textContent = "That code is already taken. Choose another.";
         e.nameFeedback.className = "genesis-discount-feedback is-error";
         return;
       }
@@ -9593,6 +9857,10 @@ async function loadVerunLeaderboard() {
           await window.loadMiningSection();
         }
       });
+    }
+    if (e.claimButton && !e.claimButton.dataset.genesisBound) {
+      e.claimButton.dataset.genesisBound = "1";
+      e.claimButton.addEventListener("click", claimReferralRewards);
     }
   }
 
