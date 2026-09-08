@@ -7,6 +7,15 @@
 <meta name="theme-color" content="#070909">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNyIgZmlsbD0iIzA3MDkwOSIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE2IDE2KSByb3RhdGUoNDUpIHRyYW5zbGF0ZSgtOCAtOCkiPgogICAgPHJlY3QgeD0iMC41IiB5PSIwLjUiIHdpZHRoPSIxNSIgaGVpZ2h0PSIxNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGRmZmI3IiBzdHJva2Utd2lkdGg9IjEuNiIvPgogICAgPHJlY3QgeD0iNSIgeT0iNSIgd2lkdGg9IjUiIGhlaWdodD0iNSIgZmlsbD0iIzhkZmZiNyIvPgogIDwvZz4KPC9zdmc+Cg==">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<!-- Warm up the wallet connector CDN and Supabase connections as early
+     as possible instead of only starting them the moment the user
+     clicks Connect Wallet. preconnect does the DNS+TLS handshake now;
+     modulepreload additionally fetches and parses the AppKit bundle
+     itself, since it's the single biggest fixed cost in the wallet
+     connect/sign/disconnect flow. -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.8.23/dist/appkit.min.js">
+<link rel="preconnect" href="https://lhfgozlkeotxyzqowijz.supabase.co" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
     :root {
@@ -7689,14 +7698,19 @@ async function loadVerunLeaderboard() {
         : (wrongWallet ? "Switch Wallet" : "Connect Wallet");
     });
 
-    // Sign button — chain-aware copy and disabled state
+    // Sign button — chain-aware copy. The button stays enabled even on
+    // the wrong chain: clicking it now triggers a network add/switch
+    // prompt first (see signWallet/ensureRobinhoodNetwork) instead of
+    // just sitting there disabled with no way for the user to proceed.
     const pendingCopy = robinhoodReady
       ? "Sign the message in your wallet to verify ownership."
       : "Switch to Robinhood Chain Testnet, then sign to verify ownership.";
     [e.genesisSignBtn, e.miningSignBtn].forEach(btn => {
       if (!btn) return;
-      btn.disabled = walletState.signing || !robinhoodReady;
-      btn.textContent = walletState.signing ? "Signing…" : "Sign";
+      btn.disabled = walletState.signing;
+      btn.textContent = walletState.signing
+        ? "Signing…"
+        : (robinhoodReady ? "Sign" : "Switch Network & Sign");
     });
     if (e.genesisPendingCopy) e.genesisPendingCopy.textContent = pendingCopy;
     if (e.miningPendingCopy) e.miningPendingCopy.textContent = pendingCopy;
@@ -7878,7 +7892,7 @@ async function loadVerunLeaderboard() {
     _disconnectDebounceTimer = setTimeout(function () {
       _disconnectDebounceTimer = null;
       setWalletState({ address: null, chainId: null, connecting: false });
-    }, 900);
+    }, 400);
   }
 
   function handleProviderEvent(address, chainId, isConnected) {
@@ -7974,23 +7988,71 @@ async function loadVerunLeaderboard() {
 
   async function disconnectWallet() {
     const addressBeingDisconnected = walletState.address;
-    try {
+    setWalletState({ connecting: true });
+
+    // The wallet-side disconnect (WalletConnect session teardown, or an
+    // injected-wallet no-op) and the server-side verification teardown
+    // are independent of each other — neither needs the other's result.
+    // They were previously awaited one after another, which meant every
+    // disconnect click paid for both round trips back to back. Firing
+    // them together cuts that wait to whichever one is slower.
+    const walletDisconnect = (async () => {
       if (!appKit) return;
-      setWalletState({ connecting: true });
       if (appKit.adapter && appKit.adapter.connectionControllerClient &&
           typeof appKit.adapter.connectionControllerClient.disconnect === "function") {
         await appKit.adapter.connectionControllerClient.disconnect();
       } else if (appKit.disconnect && typeof appKit.disconnect === "function") {
         await appKit.disconnect();
       }
-    } catch (err) {
+    })().catch(err => {
       console.error("VERUN wallet disconnect failed:", err);
-    } finally {
-      if (addressBeingDisconnected) {
-        await endServerVerification(addressBeingDisconnected);
-      }
-      setWalletState({ address: null, chainId: null, verified: false, connecting: false, signed: false, signing: false });
+    });
+
+    const serverTeardown = addressBeingDisconnected
+      ? endServerVerification(addressBeingDisconnected)
+      : Promise.resolve();
+
+    await Promise.allSettled([walletDisconnect, serverTeardown]);
+
+    setWalletState({ address: null, chainId: null, verified: false, connecting: false, signed: false, signing: false });
+  }
+
+  // Actively prompts the wallet to add/switch to Robinhood Chain Testnet
+  // instead of just telling the user to do it themselves. Most wallets
+  // don't have this network pre-installed, so without this step the
+  // Sign button would stay permanently disabled for anyone connecting
+  // for the first time. wallet_addEthereumChain is used instead of
+  // wallet_switchEthereumChain even when the network might already be
+  // present — some wallets (e.g. MetaMask) silently no-op or throw on
+  // switch for a chain they haven't explicitly added in that session,
+  // while add-chain reliably both adds (if missing) and switches.
+  async function ensureRobinhoodNetwork(provider) {
+    const targetHex = "0x" + ROBINHOOD_CHAIN_ID.toString(16);
+
+    const currentHex = await provider.request({ method: "eth_chainId" });
+    if (typeof currentHex === "string" && currentHex.toLowerCase() === targetHex.toLowerCase()) {
+      return true;
     }
+
+    // Let a rejection (code 4001) or any other error propagate to the
+    // caller, which already knows how to surface it the same way it
+    // surfaces a rejected signature.
+    await provider.request({
+      method: "wallet_addEthereumChain",
+      params: [{
+        chainId: targetHex,
+        chainName: "Robinhood Chain Testnet",
+        nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+        rpcUrls: ["https://rpc.testnet.chain.robinhood.com/rpc"],
+        blockExplorerUrls: ["https://explorer.testnet.chain.robinhood.com"]
+      }]
+    });
+
+    // Some wallets fire the chain-changed event/provider subscription
+    // asynchronously after add/switch resolves, so re-read directly
+    // rather than relying on walletState having already updated.
+    const confirmedHex = await provider.request({ method: "eth_chainId" });
+    return typeof confirmedHex === "string" && confirmedHex.toLowerCase() === targetHex.toLowerCase();
   }
 
   async function signWallet() {
@@ -8006,32 +8068,6 @@ async function loadVerunLeaderboard() {
       return;
     }
 
-    const robinhoodReady = Number(walletState.chainId) === ROBINHOOD_CHAIN_ID;
-    if (!robinhoodReady) {
-      console.warn("Please switch to Robinhood Chain Testnet before signing.");
-      return;
-    }
-
-    // Build a human-readable ownership message with a random nonce,
-    // timestamp and site URL so each signature is unique and bound to
-    // this domain — replaying a signature from elsewhere would fail.
-    const nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
-      .map(b => b.toString(16).padStart(2, "0")).join("");
-    const timestamp = new Date().toISOString();
-    const domain = window.location.host || window.location.hostname;
-
-    const message = [
-      "VERUN — Verify Wallet Ownership",
-      "",
-      "Sign this message to confirm you control this wallet.",
-      "This request will NOT trigger a blockchain transaction or cost any gas.",
-      "",
-      "Wallet:    " + address,
-      "Nonce:     " + nonce,
-      "Timestamp: " + timestamp,
-      "Domain:    " + domain
-    ].join("\n");
-
     try {
       setWalletState({ signing: true });
 
@@ -8042,6 +8078,38 @@ async function loadVerunLeaderboard() {
       if (!provider || typeof provider.request !== "function") {
         throw new Error("Wallet provider is not available. Try reconnecting.");
       }
+
+      let robinhoodReady = Number(walletState.chainId) === ROBINHOOD_CHAIN_ID;
+      if (!robinhoodReady) {
+        robinhoodReady = await ensureRobinhoodNetwork(provider);
+        if (!robinhoodReady) {
+          throw new Error("Couldn't switch your wallet to Robinhood Chain Testnet.");
+        }
+        // Reflect the confirmed chain immediately so the rest of this
+        // call (and the UI if this throws later) sees the right chain
+        // instead of waiting on the provider's own change event.
+        setWalletState({ chainId: ROBINHOOD_CHAIN_ID });
+      }
+
+      // Build a human-readable ownership message with a random nonce,
+      // timestamp and site URL so each signature is unique and bound to
+      // this domain — replaying a signature from elsewhere would fail.
+      const nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+        .map(b => b.toString(16).padStart(2, "0")).join("");
+      const timestamp = new Date().toISOString();
+      const domain = window.location.host || window.location.hostname;
+
+      const message = [
+        "VERUN — Verify Wallet Ownership",
+        "",
+        "Sign this message to confirm you control this wallet.",
+        "This request will NOT trigger a blockchain transaction or cost any gas.",
+        "",
+        "Wallet:    " + address,
+        "Nonce:     " + nonce,
+        "Timestamp: " + timestamp,
+        "Domain:    " + domain
+      ].join("\n");
 
       const signature = await provider.request({
         method: "personal_sign",
@@ -8055,13 +8123,14 @@ async function loadVerunLeaderboard() {
       // authenticated Supabase user and survives reloads. This also
       // enforces (server-side) that the wallet isn't already actively
       // verified on a different account.
-      await persistServerVerification(address, walletState.chainId, nonce, message, signature);
+      await persistServerVerification(address, ROBINHOOD_CHAIN_ID, nonce, message, signature);
 
       setWalletState({ signed: true, signing: false });
 
     } catch (err) {
       setWalletState({ signing: false });
-      // Code 4001 = user rejected — silent, no alert needed
+      // Code 4001 = user rejected (either the add/switch-network prompt
+      // or the signature itself) — silent, no alert needed.
       if (err && err.code === 4001) return;
 
       // Surfaced from start_wallet_verification when this wallet is
@@ -8121,23 +8190,31 @@ async function loadVerunLeaderboard() {
 
   async function loadWalletModule() {
     bindEventsOnce();
-    try {
-      await initializeAppKit();
-    } catch (err) {
+
+    // These three were previously awaited one after another even though
+    // none of them depends on another's result — fetchWalletLock() and
+    // fetchActiveServerVerification() hit different Supabase RPCs, and
+    // initializeAppKit() is a separate CDN import entirely. Running them
+    // concurrently cuts this module's load time from the sum of all
+    // three round trips down to whichever one is slowest. The only
+    // ordering that actually matters (wallet lock known before the
+    // verified state is shown) is preserved because updateUI() still
+    // only runs once, after all three have settled.
+    const [appKitResult, lockResult, verificationResult] = await Promise.allSettled([
+      initializeAppKit(),
+      fetchWalletLock(),
+      fetchActiveServerVerification()
+    ]);
+
+    if (appKitResult.status === "rejected") {
       // Do not break the rest of VERUN if the external AppKit CDN is
       // temporarily unreachable. The wallet buttons simply remain usable
       // once the connection library becomes reachable again.
-      console.error("VERUN wallet connector unavailable:", err);
+      console.error("VERUN wallet connector unavailable:", appKitResult.reason);
     }
 
-    // Fetch whether this account is already permanently locked to a
-    // wallet from a prior mint. Needed before restoring the verified
-    // session below, so a wrong-wallet reconnect isn't briefly shown
-    // as verified.
-    try {
-      await fetchWalletLock();
-    } catch (err) {
-      console.error("VERUN wallet: failed to fetch wallet lock:", err);
+    if (lockResult.status === "rejected") {
+      console.error("VERUN wallet: failed to fetch wallet lock:", lockResult.reason);
     }
 
     // Restore a previously-verified session from the server. This only
@@ -8146,15 +8223,15 @@ async function loadVerunLeaderboard() {
     // they still have to sign again for that address (and, if the
     // account is locked, updateUI will show the "wrong wallet" state
     // instead regardless of `signed`).
-    try {
-      const record = await fetchActiveServerVerification();
+    if (verificationResult.status === "fulfilled") {
+      const record = verificationResult.value;
       if (record && walletState.address &&
           record.wallet_address &&
           record.wallet_address.toLowerCase() === walletState.address.toLowerCase()) {
         setWalletState({ signed: true });
       }
-    } catch (err) {
-      console.error("VERUN wallet: failed to restore server verification:", err);
+    } else {
+      console.error("VERUN wallet: failed to restore server verification:", verificationResult.reason);
     }
 
     updateUI();
@@ -8181,6 +8258,19 @@ async function loadVerunLeaderboard() {
   // Bind immediately because section navigation can call the loader more
   // than once, while the buttons themselves exist only once in the DOM.
   bindEventsOnce();
+
+  // Start loading the wallet connector the moment this script runs,
+  // rather than waiting for loadWalletModule() to be called after
+  // login. Fetching/parsing the AppKit bundle (and its internal
+  // WalletConnect setup) is the single biggest fixed cost in the whole
+  // connect flow and has nothing to do with whether the user is signed
+  // in yet — by the time an authenticated user reaches the Connect
+  // Wallet button, initializeAppKit()'s cached result is ready
+  // instantly instead of the button paying for that fetch itself.
+  // loadWalletModule() below still awaits the same promise, so nothing
+  // about the existing flow changes if this happens to still be
+  // in-flight.
+  initializeAppKit().catch(function () {});
 })();
 
 // ============================================================
