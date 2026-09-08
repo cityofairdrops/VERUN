@@ -9599,7 +9599,7 @@ async function loadVerunLeaderboard() {
       // up the moment the minting wallet is reconnected on any device.
       try {
         const { error: recordError } = await supabaseClient.rpc(
-          "record_genesis_pass_mint",
+          "record_genesis_pass_mint_v2",
           {
             p_wallet_address: walletAddress,
             p_genesis_code: code,
@@ -9728,7 +9728,7 @@ async function loadVerunLeaderboard() {
         return;
       }
 
-      const { data, error } = await supabaseClient.rpc("record_genesis_pass_mint", {
+      const { data, error } = await supabaseClient.rpc("record_genesis_pass_mint_v2", {
         p_wallet_address: walletAddress,
         p_genesis_code: name,
         p_token_number: chain.tokenId,
