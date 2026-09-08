@@ -9186,13 +9186,19 @@ async function loadVerunLeaderboard() {
       // with the parsed body (when JSON) on error.context — pull out a
       // human-readable message if the function provided one.
       let message = "That genesis code isn't valid.";
+      let body = null;
       try {
         const ctx = error.context;
-        const body = ctx && typeof ctx.json === "function" ? await ctx.json() : null;
+        body = ctx && typeof ctx.json === "function" ? await ctx.json() : null;
         if (body && (body.error || body.message)) message = body.error || body.message;
       } catch (parseErr) {
         // ignore — fall back to the generic message above
       }
+      console.error("VERUN Genesis Pass: genesis-sign rejected the request", {
+        status: error.context && error.context.status,
+        body: body,
+        request: { minter: minterAddress, genesisCode: genesisCode, nonce: nonce.toString(), deadline: deadline }
+      });
       throw new Error(message);
     }
 
@@ -9598,7 +9604,7 @@ async function loadVerunLeaderboard() {
       // (and its referral credit) survive a cleared browser and show
       // up the moment the minting wallet is reconnected on any device.
       try {
-        const { error: recordError } = await supabaseClient.rpc(
+        const { data: recordData, error: recordError } = await supabaseClient.rpc(
           "record_genesis_pass_mint_v2",
           {
             p_wallet_address: walletAddress,
@@ -9608,14 +9614,27 @@ async function loadVerunLeaderboard() {
             p_referral_code: usedReferralCode
           }
         );
-        if (recordError) throw recordError;
+        if (recordError) {
+          console.error("VERUN Genesis Pass: record_genesis_pass_mint_v2 RPC failed", {
+            error: recordError,
+            request: {
+              p_wallet_address: walletAddress,
+              p_genesis_code: code,
+              p_token_number: tokenNumber,
+              p_tx_hash: tx.hash,
+              p_referral_code: usedReferralCode
+            }
+          });
+          throw recordError;
+        }
+        console.log("VERUN Genesis Pass: mint recorded to database successfully", recordData);
       } catch (recordErr) {
         // The mint itself already succeeded on-chain — a backend
         // hiccup here must never be shown to the user as a failed
         // mint. On-chain ownership (chain.owned below) already
         // reflects it; the name/referral record will catch up next
         // time this RPC succeeds.
-        console.error("VERUN Genesis Pass: record_genesis_pass_mint failed", recordErr);
+        console.error("VERUN Genesis Pass: record_genesis_pass_mint_v2 failed", recordErr);
       }
 
       cachedState = {
