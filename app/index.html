@@ -1406,7 +1406,7 @@
       align-items: center;
       justify-content: space-between;
       flex-wrap: nowrap;
-      gap: 8px;
+      gap: 18px;
 
       margin-bottom: 9px;
     }
@@ -1415,14 +1415,14 @@
       color: var(--muted2);
       font-size: 9px;
       font-weight: 800;
-      letter-spacing: 1px;
+      letter-spacing: 0.8px;
       text-transform: uppercase;
       white-space: nowrap;
       flex-shrink: 0;
     }
 
     .mining-pool-amount {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--muted);
       white-space: nowrap;
       text-align: right;
@@ -1430,7 +1430,7 @@
 
     .mining-pool-amount strong {
       color: var(--text);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 800;
     }
 
@@ -2331,6 +2331,26 @@
       min-width: 0;
     }
 
+    /* Each wallet-card state (not-connected / pending-sign / connected)
+       is the actual flex row of [info + button] — .genesis-wallet-card
+       itself only ever has one of these three visible at a time, so its
+       own flex/gap has nothing to distribute between. Without this rule,
+       spacing between the badge and the button silently depended on
+       whatever text happened to sit between them. */
+    .genesis-wallet-not-connected,
+    .genesis-wallet-pending-sign,
+    .genesis-wallet-connected,
+    .mining-wallet-not-connected,
+    .mining-wallet-pending-sign,
+    .mining-wallet-connected {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+
     #genesisWalletCard .genesis-wallet-chain-badge,
     #miningWalletCard .mining-wallet-chain-badge {
       align-self: center;
@@ -2444,6 +2464,16 @@
       .mining-wallet-card {
         flex-direction: column;
         align-items: stretch;
+      }
+      .genesis-wallet-not-connected,
+      .genesis-wallet-pending-sign,
+      .genesis-wallet-connected,
+      .mining-wallet-not-connected,
+      .mining-wallet-pending-sign,
+      .mining-wallet-connected {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
       }
       .genesis-wallet-btn,
       .mining-wallet-btn {
@@ -8446,14 +8476,34 @@ async function loadVerunLeaderboard() {
   // mutate a local copy, so a stale tab can never drift from the
   // server's idea of the balance/session/pool.
   async function fetchStatus() {
-    const { data, error } = await supabaseClient.rpc("get_mining_status");
-    if (error || !data) {
-      console.error("get_mining_status failed:", error);
+    try {
+      let { data, error } = await supabaseClient.rpc("get_mining_status");
+
+      // A pass minted moments ago may not have a mining_accounts row yet
+      // if this is the very first time this account has opened Mining.
+      // Provision it once and retry, rather than leaving the user stuck
+      // on the locked screen despite already owning a pass.
+      if (error) {
+        console.error("get_mining_status failed, provisioning mining account:", error);
+        const provisioned = await supabaseClient.rpc("get_or_create_mining_account");
+        if (provisioned.error) {
+          console.error("get_or_create_mining_account failed:", provisioned.error);
+        } else {
+          ({ data, error } = await supabaseClient.rpc("get_mining_status"));
+        }
+      }
+
+      if (error || !data) {
+        console.error("get_mining_status failed:", error);
+        return null;
+      }
+      status = data;
+      serverOffsetMs = new Date(data.server_time).getTime() - Date.now();
+      return status;
+    } catch (err) {
+      console.error("get_mining_status threw:", err);
       return null;
     }
-    status = data;
-    serverOffsetMs = new Date(data.server_time).getTime() - Date.now();
-    return status;
   }
 
   function render() {
