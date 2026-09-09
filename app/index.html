@@ -1397,37 +1397,40 @@
       border: 1px solid var(--border);
       border-radius: 16px;
 
-      padding: 22px 25px;
-      margin-bottom: 15px;
+      padding: 18px 22px;
+      margin-bottom: 12px;
     }
 
     .mining-pool-top {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       justify-content: space-between;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: 8px;
 
-      margin-bottom: 12px;
+      margin-bottom: 9px;
     }
 
     .mining-pool-label {
       color: var(--muted2);
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 800;
-      letter-spacing: 1.4px;
+      letter-spacing: 1px;
       text-transform: uppercase;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .mining-pool-amount {
-      font-size: 13px;
+      font-size: 11px;
       color: var(--muted);
       white-space: nowrap;
+      text-align: right;
     }
 
     .mining-pool-amount strong {
       color: var(--text);
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 800;
     }
 
@@ -1454,14 +1457,14 @@
 
     .mining-pool-caption {
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-end;
       gap: 10px;
 
       color: var(--muted2);
       font-size: 9px;
       letter-spacing: 0.4px;
       text-transform: uppercase;
-      margin-top: 7px;
+      margin-top: 6px;
     }
 
     .mining-locked {
@@ -1548,8 +1551,8 @@
       border: 1px solid var(--border);
       border-radius: 16px;
 
-      padding: 30px 25px;
-      margin-bottom: 15px;
+      padding: 22px 25px;
+      margin-bottom: 12px;
 
       display: flex;
       flex-direction: column;
@@ -4337,7 +4340,6 @@
           <span class="genesis-wallet-chain-dot"></span>
           <span id="genesisWalletAddressValue"></span>
         </span>
-        <p class="genesis-wallet-copy">Ownership verified on Robinhood Chain Testnet.</p>
       </div>
       <button type="button" class="genesis-wallet-btn genesis-wallet-disconnect-btn" id="genesisWalletDisconnectButton">
         Disconnect Wallet
@@ -4885,53 +4887,6 @@
 
     <div class="mining-pool-caption">
       <span id="miningPoolPercent">100.00% remaining</span>
-      <span id="miningPoolMinedCaption">0 $VERUN mined so far</span>
-    </div>
-
-  </div>
-
-  <!-- Wallet connection: EVM / Robinhood Chain — mirrors the Genesis Pass wallet state -->
-  <div class="mining-wallet-card" id="miningWalletCard">
-
-    <div class="mining-wallet-not-connected" id="miningWalletNotConnected">
-      <div class="mining-wallet-info">
-        <span class="mining-wallet-chain-badge">
-          <span class="mining-wallet-chain-dot"></span>
-          Robinhood Chain · EVM wallet
-        </span>
-        <p class="mining-wallet-copy">
-          Connect your Robinhood Chain wallet to continue.
-        </p>
-      </div>
-      <button type="button" class="mining-wallet-btn mining-wallet-connect-btn" id="miningWalletConnectButton">
-        Connect Wallet
-      </button>
-    </div>
-
-    <div class="mining-wallet-pending-sign" id="miningWalletPendingSign" style="display:none;">
-      <div class="mining-wallet-info">
-        <span class="mining-wallet-chain-badge is-connected">
-          <span class="mining-wallet-chain-dot"></span>
-          <span id="miningWalletPendingAddress"></span>
-        </span>
-        <p class="mining-wallet-copy" id="miningWalletPendingCopy">Sign the message in your wallet to verify ownership.</p>
-      </div>
-      <button type="button" class="mining-wallet-btn mining-wallet-connect-btn" id="miningWalletSignButton">
-        Sign
-      </button>
-    </div>
-
-    <div class="mining-wallet-connected" id="miningWalletConnected" style="display:none;">
-      <div class="mining-wallet-info">
-        <span class="mining-wallet-chain-badge is-connected">
-          <span class="mining-wallet-chain-dot"></span>
-          <span id="miningWalletAddressValue"></span>
-        </span>
-        <p class="mining-wallet-copy">Ownership verified on Robinhood Chain.</p>
-      </div>
-      <button type="button" class="mining-wallet-btn mining-wallet-disconnect-btn" id="miningWalletDisconnectButton">
-        Disconnect Wallet
-      </button>
     </div>
 
   </div>
@@ -8295,15 +8250,6 @@ async function loadVerunLeaderboard() {
     ultra: "Ultra Hashrate"
   };
 
-  // Reads real Genesis Pass ownership from the Genesis Pass module
-  // (local-simulation state until wallet/payment ships — see that
-  // module for details). Falls back to locked if that module hasn't
-  // loaded for any reason.
-  function hasGenesisPass() {
-    if (typeof window.verunHasGenesisPass !== "function") return false;
-    return window.verunHasGenesisPass(currentUserId);
-  }
-
   let currentUserId = null;
   let tickInterval = null;
   let els = null;
@@ -8320,7 +8266,6 @@ async function loadVerunLeaderboard() {
       poolTotal: document.getElementById("miningPoolTotal"),
       poolFill: document.getElementById("miningPoolFill"),
       poolPercent: document.getElementById("miningPoolPercent"),
-      poolMinedCaption: document.getElementById("miningPoolMinedCaption"),
       locked: document.getElementById("miningLocked"),
       dashboard: document.getElementById("miningDashboard"),
       goToGenesis: document.getElementById("miningGoToGenesisButton"),
@@ -8400,14 +8345,12 @@ async function loadVerunLeaderboard() {
     const e = cacheEls();
     const remaining = Number(s.pool_remaining) || 0;
     const total = Number(s.pool_total) || 0;
-    const mined = Number(s.pool_mined) || 0;
     const pct = Math.max(0, Math.min(100, Number(s.pool_remaining_percentage) || 0));
 
     if (e.poolRemaining) e.poolRemaining.textContent = formatIndian(remaining, remaining % 1 !== 0 ? 2 : 0);
     if (e.poolTotal) e.poolTotal.textContent = formatIndian(total);
     if (e.poolFill) e.poolFill.style.width = pct.toFixed(2) + "%";
     if (e.poolPercent) e.poolPercent.textContent = pct.toFixed(2) + "% remaining";
-    if (e.poolMinedCaption) e.poolMinedCaption.textContent = formatIndian(mined, mined % 1 !== 0 ? 2 : 0) + " $VERUN mined so far";
   }
 
   // Purely informational — highlights whichever tier `plan` says is
@@ -8483,12 +8426,20 @@ async function loadVerunLeaderboard() {
     e.balanceValue.classList.add("is-pulsing");
   }
 
-  function updateAccessGate() {
+  // Whether mining is unlocked is decided from get_mining_status() alone —
+  // it already reports genesis_pass_id straight from Supabase (a mint
+  // permanently locks the pass + wallet to this account server-side), so
+  // there's no need to also ask the separate Genesis Pass module, and no
+  // race between that module's own async load and this one's.
+  function applyAccessGate(unlocked) {
     const e = cacheEls();
-    const unlocked = hasGenesisPass();
     if (e.locked) e.locked.style.display = unlocked ? "none" : "";
     if (e.dashboard) e.dashboard.style.display = unlocked ? "" : "none";
     if (e.tiersSection) e.tiersSection.style.display = unlocked ? "" : "none";
+  }
+
+  function isUnlocked() {
+    return !!(status && status.genesis_pass_id);
   }
 
   // Single source of truth: always re-pull from Supabase rather than
@@ -8508,7 +8459,7 @@ async function loadVerunLeaderboard() {
   function render() {
     if (!currentUserId || !status) return;
     const e = cacheEls();
-    updateAccessGate();
+    applyAccessGate(isUnlocked());
 
     renderPool(status);
     renderBadge(status);
@@ -8605,11 +8556,14 @@ async function loadVerunLeaderboard() {
     cacheEls();
     bindEventsOnce();
 
+    // Safe default while we confirm pass ownership with Supabase — never
+    // flashes the unlocked dashboard before we actually know.
+    applyAccessGate(false);
+
     const { data: { session } } = await supabaseClient.auth.getSession();
     currentUserId = session ? session.user.id : null;
     if (!currentUserId) return;
 
-    updateAccessGate();
     await fetchStatus();
     render();
 
