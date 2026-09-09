@@ -8262,14 +8262,26 @@ async function loadVerunLeaderboard() {
 // ============================================================
 // VERUN MINING
 // ============================================================
-// Mining backend is now live in Supabase (mining_accounts, mining_sessions,
+// Mining backend is live in Supabase (mining_accounts, mining_sessions,
 // mining_pool + RPCs: get_mining_status, start_mining_session,
 // process_completed_mining). This module reads/writes exclusively through
-// those RPCs — no localStorage is used for mining balance, session state,
-// or pool totals. Pro/Ultra purchasing (buyTier) is intentionally left
-// inactive here: it goes live once the Robinhood Chain Testnet contract
-// ships (see the Genesis Pass module below for the existing wallet flow
-// that will feed it).
+// those RPCs for balance, session state, and pool totals — no localStorage
+// is used for any of that.
+//
+// Pro/Ultra purchasing (buyTier) is wired to the live VERUNHashrate
+// contract on Robinhood Chain Testnet (see HASHRATE_CONTRACT_ADDRESS
+// below), reusing the same wallet connection the Genesis Pass module
+// already verifies. Price and plan/expiry state are read straight from
+// the chain. IMPORTANT: the mining reward *rate* applied by
+// start_mining_session/process_completed_mining is computed server-side
+// from mining_accounts.plan in Supabase — a purchase here calls
+// record_mining_tier_purchase to sync that column after the transaction
+// confirms, mirroring how record_genesis_pass_mint_v2 syncs the Genesis
+// Pass mint. That RPC needs to exist server-side (verify the tx/getPlan()
+// on-chain, then update mining_accounts.plan + plan_expires_at) — if it's
+// not there yet, purchases will still succeed on-chain and the tier cards
+// below will still show the correct on-chain status, but the boosted
+// mining rate won't be credited server-side until that RPC is added.
 (function () {
 
   const RING_CIRCUMFERENCE = 578.05; // 2 * PI * r(92), matches the SVG ring
@@ -8288,6 +8300,201 @@ async function loadVerunLeaderboard() {
                            // countdown tracks the server clock, not the device's
   let completing = false; // guards against double process_completed_mining calls
   let starting = false; // guards against double start_mining_session calls
+  let buying = null; // tier key currently mid-purchase ("pro"/"ultra"), guards double-submit
+
+  // ── VERUNHashrate contract (Robinhood Chain Testnet) ────────────────
+  const HASHRATE_CONTRACT_ADDRESS = "0x9a017601a096B83788C1056e13C06FD9909B094c";
+  const ROBINHOOD_TESTNET_RPC = "https://rpc.testnet.chain.robinhood.com/rpc";
+  const HASHRATE_CONTRACT_ABI = [{"inputs":[],"name":"buyPro","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"buyUltra","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"address","name":"initialOwner","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"EnforcedPause","type":"error"},{"inputs":[],"name":"ExpectedPause","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"OwnableInvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"OwnableUnauthorizedAccount","type":"error"},{"inputs":[],"name":"ReentrancyGuardReentrantCall","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"FundsWithdrawn","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"enum VERUNHashrate.Plan","name":"plan","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"startedAt","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"expiresAt","type":"uint256"}],"name":"HashratePurchased","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"inputs":[],"name":"pause","outputs":[],"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"account","type":"address"}],"name":"Paused","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"enum VERUNHashrate.Plan","name":"oldPlan","type":"uint8"},{"indexed":true,"internalType":"enum VERUNHashrate.Plan","name":"newPlan","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"startedAt","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"expiresAt","type":"uint256"}],"name":"PlanSwitched","type":"event"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"unpause","outputs":[],"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"account","type":"address"}],"name":"Unpaused","type":"event"},{"inputs":[],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdrawAmount","outputs":[],"stateMutability":"nonpayable","type":"function"},{"stateMutability":"payable","type":"receive"},{"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getPlan","outputs":[{"internalType":"enum VERUNHashrate.Plan","name":"plan","type":"uint8"},{"internalType":"uint256","name":"expiresAt","type":"uint256"},{"internalType":"uint256","name":"rate","type":"uint256"},{"internalType":"bool","name":"active","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"isActive","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PLAN_DURATION","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PRO_PRICE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PRO_RATE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"ULTRA_PRICE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"ULTRA_RATE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}];
+
+  // Fallback prices — shown before the live contract read resolves.
+  // Must match the tier card copy in the HTML.
+  const TIER_PRICE_FALLBACK_ETH = { pro: 0.01, ultra: 0.025 };
+  const TIER_BUY_FN = { pro: "buyPro", ultra: "buyUltra" };
+
+  // Cached on-chain state for the connected wallet, refreshed by
+  // refreshHashrateChainState(). render() reads this synchronously.
+  // `chainTierKey` is derived by matching the returned rate against
+  // PRO_RATE/ULTRA_RATE rather than assuming an enum ordering, so it
+  // stays correct even if the contract's Plan enum order changes.
+  let hashrateChain = {
+    ready: false,
+    paused: null,
+    proPriceWei: null,
+    ultraPriceWei: null,
+    proRate: null,
+    ultraRate: null,
+    chainTierKey: null,  // "pro" | "ultra" | null (none active)
+    expiresAt: null       // seconds since epoch, or null
+  };
+
+  function getEthers() {
+    return window.ethers || null;
+  }
+
+  // Read-only contract instance against the public testnet RPC — used
+  // for price/pause/plan reads that don't require a connected wallet.
+  function getHashrateReadContract() {
+    const ethers = getEthers();
+    if (!ethers) return null;
+    if (!getHashrateReadContract._provider) {
+      getHashrateReadContract._provider = new ethers.JsonRpcProvider(ROBINHOOD_TESTNET_RPC);
+    }
+    return new ethers.Contract(HASHRATE_CONTRACT_ADDRESS, HASHRATE_CONTRACT_ABI, getHashrateReadContract._provider);
+  }
+
+  // Signer-backed contract instance for the actual buyPro()/buyUltra()
+  // transaction — built from the wallet provider the Wallet module
+  // already verified is connected to Robinhood Chain Testnet.
+  async function getHashrateWriteContract() {
+    const ethers = getEthers();
+    if (!ethers) throw new Error("Wallet library failed to load — refresh and try again.");
+    const rawProvider = window.verunWallet && typeof window.verunWallet.getProvider === "function"
+      ? window.verunWallet.getProvider()
+      : null;
+    if (!rawProvider) throw new Error("Wallet provider unavailable. Try reconnecting your wallet.");
+    const browserProvider = new ethers.BrowserProvider(rawProvider);
+    const signer = await browserProvider.getSigner();
+    return new ethers.Contract(HASHRATE_CONTRACT_ADDRESS, HASHRATE_CONTRACT_ABI, signer);
+  }
+
+  // Pulls paused state, live prices, and the connected wallet's current
+  // plan straight from the chain. Safe to call with no wallet connected
+  // (skips the per-wallet getPlan() read in that case) and safe to call
+  // repeatedly — failures just leave the previous cached values in place
+  // so a flaky RPC call never blanks out prices that were already shown.
+  async function refreshHashrateChainState() {
+    const read = getHashrateReadContract();
+    if (!read) return hashrateChain;
+
+    try {
+      const [paused, proPriceWei, ultraPriceWei, proRate, ultraRate] = await Promise.all([
+        read.paused(),
+        read.PRO_PRICE(),
+        read.ULTRA_PRICE(),
+        read.PRO_RATE(),
+        read.ULTRA_RATE()
+      ]);
+      hashrateChain.paused = !!paused;
+      hashrateChain.proPriceWei = proPriceWei;
+      hashrateChain.ultraPriceWei = ultraPriceWei;
+      hashrateChain.proRate = proRate;
+      hashrateChain.ultraRate = ultraRate;
+      hashrateChain.ready = true;
+    } catch (err) {
+      console.error("VERUN Mining: hashrate contract price/pause read failed:", err);
+    }
+
+    const walletState = window.verunWallet ? window.verunWallet.getState() : null;
+    const walletAddress = walletState && walletState.verified ? walletState.address : null;
+
+    if (walletAddress) {
+      try {
+        const plan = await read.getPlan(walletAddress);
+        const active = !!plan.active;
+        const rate = plan.rate;
+        let tierKey = null;
+        if (active && hashrateChain.proRate !== null && rate === hashrateChain.proRate) tierKey = "pro";
+        else if (active && hashrateChain.ultraRate !== null && rate === hashrateChain.ultraRate) tierKey = "ultra";
+        hashrateChain.chainTierKey = tierKey;
+        hashrateChain.expiresAt = active ? Number(plan.expiresAt) : null;
+      } catch (err) {
+        console.error("VERUN Mining: hashrate contract getPlan() read failed:", err);
+      }
+    } else {
+      hashrateChain.chainTierKey = null;
+      hashrateChain.expiresAt = null;
+    }
+
+    return hashrateChain;
+  }
+
+  function formatExpiry(expiresAtSeconds) {
+    if (!expiresAtSeconds) return "";
+    try {
+      return new Date(expiresAtSeconds * 1000).toLocaleDateString(undefined, {
+        month: "short", day: "numeric", year: "numeric"
+      });
+    } catch (err) {
+      return "";
+    }
+  }
+
+  // Buys/upgrades to `tierKey` ("pro" or "ultra"): sends the payable
+  // transaction against the live contract, then syncs the purchase to
+  // Supabase so the boosted rate applies server-side too. Mirrors the
+  // Genesis Pass mint flow's error handling (never surface a backend
+  // sync hiccup as a failed purchase once the on-chain tx succeeded).
+  async function buyTier(tierKey) {
+    if (buying || !currentUserId) return;
+    const walletState = window.verunWallet ? window.verunWallet.getState() : null;
+    const walletVerified = !!(walletState && walletState.verified);
+    // Defense in depth: the button is already gated on this, but never
+    // trust client UI state alone as the only gate on an action that
+    // moves real testnet funds.
+    if (!walletVerified) return;
+    if (hashrateChain.paused) return;
+    if (hashrateChain.chainTierKey === tierKey) return; // already the active tier
+
+    const fnName = TIER_BUY_FN[tierKey];
+    if (!fnName) return;
+
+    const card = els && els.tiersGrid
+      ? els.tiersGrid.querySelector('.mining-tier[data-tier="' + tierKey + '"]')
+      : null;
+    const buyButton = card ? card.querySelector("[data-tier-buy]") : null;
+    const statusEl = card ? card.querySelector('[data-status-for="' + tierKey + '"]') : null;
+
+    buying = tierKey;
+    if (buyButton) {
+      buyButton.disabled = true;
+      buyButton.textContent = "Confirm in wallet…";
+    }
+    if (statusEl) statusEl.textContent = "";
+
+    try {
+      const priceWei = tierKey === "pro" ? hashrateChain.proPriceWei : hashrateChain.ultraPriceWei;
+      if (priceWei === null || priceWei === undefined) {
+        throw new Error("Price unavailable — try again in a moment.");
+      }
+
+      const write = await getHashrateWriteContract();
+      const tx = await write[fnName]({ value: priceWei });
+
+      if (buyButton) buyButton.textContent = "Confirming on-chain…";
+      await tx.wait();
+
+      // Persist the purchase server-side so start_mining_session /
+      // process_completed_mining pick up the boosted rate. On-chain
+      // ownership already reflects the purchase regardless of whether
+      // this call succeeds — see the module header comment above.
+      try {
+        const { error: recordError } = await supabaseClient.rpc("record_mining_tier_purchase", {
+          p_wallet_address: walletState.address,
+          p_tier: tierKey,
+          p_tx_hash: tx.hash
+        });
+        if (recordError) {
+          console.error("VERUN Mining: record_mining_tier_purchase RPC failed", recordError);
+        }
+      } catch (recordErr) {
+        console.error("VERUN Mining: record_mining_tier_purchase threw", recordErr);
+      }
+
+      await refreshHashrateChainState();
+      await fetchStatus();
+      render();
+    } catch (err) {
+      const message = (err && (err.code === "ACTION_REJECTED" || err.code === 4001))
+        ? "Transaction rejected in wallet."
+        : (err && err.reason) || (err && err.shortMessage) || (err && err.message) || "Purchase failed. Please try again.";
+      console.error("VERUN Mining: buy" + tierKey + " failed:", message);
+      if (statusEl) statusEl.textContent = message;
+    } finally {
+      buying = null;
+      render();
+    }
+  }
 
   function cacheEls() {
     if (els) return els;
@@ -8323,10 +8530,12 @@ async function loadVerunLeaderboard() {
         if (tagEl && !tagEl.dataset.defaultTag) {
           tagEl.dataset.defaultTag = tagEl.textContent;
         }
-        // Purchasing isn't live yet — buttons stay disabled until the
-        // Pro/Ultra contract ships.
+        // Snapshot each buy button's original label ("Upgrade") the
+        // same way, so render can restore it once a purchase settles.
         const buyButton = card.querySelector("[data-tier-buy]");
-        if (buyButton) buyButton.disabled = true;
+        if (buyButton && !buyButton.dataset.defaultLabel) {
+          buyButton.dataset.defaultLabel = buyButton.textContent;
+        }
       });
     }
 
@@ -8383,20 +8592,28 @@ async function loadVerunLeaderboard() {
     if (e.poolPercent) e.poolPercent.textContent = pct.toFixed(2) + "% remaining";
   }
 
-  // Purely informational — highlights whichever tier `plan` says is
-  // active. Buy/Renew buttons stay disabled (see cacheEls) until the
-  // Pro/Ultra contract ships.
+  // Highlights whichever tier is active. For Pro/Ultra, "active" is
+  // read straight from the chain (hashrateChain.chainTierKey) since
+  // that's the source of truth for what was actually purchased; it
+  // falls back to Supabase's `plan` (the server's applied rate) only
+  // if the chain read hasn't resolved yet. Buy buttons send a real
+  // transaction, so they stay disabled while a purchase is in flight,
+  // while the contract is paused, or before wallet/price data is ready.
   function renderTierCards(s) {
     const e = cacheEls();
     if (!e.tiersGrid) return;
 
+    const walletVerified = !!(window.verunWallet && window.verunWallet.getState().verified);
+
     e.tiersGrid.querySelectorAll(".mining-tier").forEach(card => {
       const tierKey = card.getAttribute("data-tier");
-      const isActive = s.plan === tierKey;
+      const chainKnown = hashrateChain.ready && walletVerified;
+      const isActive = chainKnown ? hashrateChain.chainTierKey === tierKey : s.plan === tierKey;
       card.classList.toggle("is-active", isActive);
 
       const tagEl = card.querySelector(".mining-tier-tag");
       const statusEl = card.querySelector('[data-status-for="' + tierKey + '"]');
+      const buyButton = card.querySelector("[data-tier-buy]");
 
       if (tagEl) {
         if (isActive) {
@@ -8408,7 +8625,23 @@ async function loadVerunLeaderboard() {
         }
       }
 
-      if (statusEl) statusEl.textContent = "";
+      if (buyButton && buying !== tierKey) {
+        const disabled = !walletVerified || !hashrateChain.ready || !!hashrateChain.paused || isActive;
+        buyButton.disabled = disabled;
+        buyButton.textContent = isActive ? "Active" : (buyButton.dataset.defaultLabel || "Upgrade");
+      }
+
+      if (statusEl && buying !== tierKey) {
+        if (hashrateChain.paused) {
+          statusEl.textContent = "Purchases are paused on the contract.";
+        } else if (!walletVerified) {
+          statusEl.textContent = "Connect your Robinhood Chain Testnet wallet to upgrade.";
+        } else if (isActive && hashrateChain.expiresAt) {
+          statusEl.textContent = "Active until " + formatExpiry(hashrateChain.expiresAt);
+        } else {
+          statusEl.textContent = "";
+        }
+      }
     });
   }
 
@@ -8600,6 +8833,14 @@ async function loadVerunLeaderboard() {
         }
       });
     }
+    if (e.tiersGrid) {
+      e.tiersGrid.querySelectorAll("[data-tier-buy]").forEach(buyButton => {
+        if (buyButton.dataset.miningBound) return;
+        buyButton.dataset.miningBound = "1";
+        const tierKey = buyButton.getAttribute("data-tier-buy");
+        buyButton.addEventListener("click", () => buyTier(tierKey));
+      });
+    }
   }
 
   async function loadMiningSection() {
@@ -8614,7 +8855,7 @@ async function loadVerunLeaderboard() {
     currentUserId = session ? session.user.id : null;
     if (!currentUserId) return;
 
-    await fetchStatus();
+    await Promise.all([fetchStatus(), refreshHashrateChainState()]);
     render();
 
     if (!tickInterval) {
