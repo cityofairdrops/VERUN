@@ -8478,17 +8478,58 @@ async function loadVerunLeaderboard() {
       // ownership already reflects the purchase regardless of whether
       // this call succeeds — see the module header comment above.
       try {
-        const { error: recordError } = await supabaseClient.rpc("record_mining_tier_purchase", {
-          p_wallet_address: walletState.address,
-          p_tier: tierKey,
-          p_tx_hash: tx.hash
-        });
-        if (recordError) {
-          console.error("VERUN Mining: record_mining_tier_purchase RPC failed", recordError);
-        }
-      } catch (recordErr) {
-        console.error("VERUN Mining: record_mining_tier_purchase threw", recordErr);
+  if (buyButton) {
+    buyButton.textContent = "Verifying purchase…";
+  }
+
+  const {
+    data: verificationData,
+    error: verificationError
+  } = await supabaseClient.functions.invoke(
+    "verify-mining-purchase",
+    {
+      body: {
+        tx_hash: tx.hash
       }
+    }
+  );
+
+  if (verificationError) {
+    console.error(
+      "VERUN Mining: verification request failed",
+      verificationError
+    );
+
+    throw verificationError;
+  }
+
+  if (!verificationData?.verified) {
+    throw new Error(
+      verificationData?.error ||
+      "Purchase could not be verified."
+    );
+  }
+
+  console.log(
+    "VERUN Mining: purchase verified successfully",
+    verificationData
+  );
+
+} catch (verificationError) {
+
+  console.error(
+    "VERUN Mining: purchase verification failed",
+    verificationError
+  );
+
+  if (statusEl) {
+    statusEl.textContent =
+      verificationError?.message ||
+      "Purchase verification failed.";
+  }
+
+  throw verificationError;
+}
 
       await refreshHashrateChainState();
       await fetchStatus();
