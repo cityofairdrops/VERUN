@@ -5005,7 +5005,7 @@
       <div class="mining-tier" data-tier="pro">
         <div class="mining-tier-top">
           <span class="mining-tier-name">Pro</span>
-          <span class="mining-tier-tag">0.01 ETH</span>
+          <span class="mining-tier-tag">0.003 ETH</span>
         </div>
         <div class="mining-tier-speed">3<small>$VERUN / 24h</small></div>
         <p class="mining-tier-desc">6x the mining speed of Basic. Active for 30 days, then falls back to Basic.</p>
@@ -5016,7 +5016,7 @@
       <div class="mining-tier" data-tier="ultra">
         <div class="mining-tier-top">
           <span class="mining-tier-name">Ultra</span>
-          <span class="mining-tier-tag">0.025 ETH</span>
+          <span class="mining-tier-tag">0.007 ETH</span>
         </div>
         <div class="mining-tier-speed">5<small>$VERUN / 24h</small></div>
         <p class="mining-tier-desc">10x the mining speed of Basic. Active for 30 days, then falls back to Basic.</p>
@@ -8226,6 +8226,12 @@ async function loadVerunLeaderboard() {
   window.verunWallet = {
     getState: () => Object.assign({}, walletState),
     open: connectWallet,
+    // Triggers the ownership-signature step directly — used by the
+    // Mining module's Pro/Ultra buttons, which collapse the connect →
+    // sign → buy flow into a single button instead of a separate
+    // wallet card (see the Genesis Pass wallet card for that fuller
+    // 3-panel version of the same flow).
+    sign: signWallet,
     disconnect: disconnectWallet,
     // Permanently binds this account to `address` (the wallet that just
     // minted). Called by the Genesis Pass module right after a mint
@@ -8309,8 +8315,11 @@ async function loadVerunLeaderboard() {
 
   // Fallback prices — shown before the live contract read resolves.
   // Must match the tier card copy in the HTML.
-  const TIER_PRICE_FALLBACK_ETH = { pro: 0.01, ultra: 0.025 };
+  const TIER_PRICE_FALLBACK_ETH = { pro: 0.003, ultra: 0.007 };
   const TIER_BUY_FN = { pro: "buyPro", ultra: "buyUltra" };
+  // Same chain the Genesis Pass wallet flow checks against — duplicated
+  // locally rather than imported since each module here is self-contained.
+  const MINING_ROBINHOOD_CHAIN_ID = 46630;
 
   // Cached on-chain state for the connected wallet, refreshed by
   // refreshHashrateChainState(). render() reads this synchronously.
@@ -8496,6 +8505,40 @@ async function loadVerunLeaderboard() {
     }
   }
 
+  // Drives the single Pro/Ultra action button through the same
+  // connect → sign → verified states the Genesis Pass wallet card
+  // shows across three separate panels — collapsed here into one
+  // button's label + click action, reusing the exact same shared
+  // wallet session (window.verunWallet) and Reown AppKit flow.
+  function computeWalletButtonPhase() {
+    const wallet = window.verunWallet;
+    const ws = wallet ? wallet.getState() : null;
+    const lockedWallet = wallet && typeof wallet.getLockedWallet === "function"
+      ? wallet.getLockedWallet()
+      : null;
+    const connected = !!(ws && ws.address);
+    const wrongWallet = !!(
+      lockedWallet && ws && ws.address &&
+      ws.address.toLowerCase() !== lockedWallet.toLowerCase()
+    );
+    const robinhoodReady = connected && !wrongWallet && Number(ws.chainId) === MINING_ROBINHOOD_CHAIN_ID;
+    const signed = !!(ws && ws.signed);
+
+    let phase;
+    if (!connected || wrongWallet) phase = "connect";
+    else if (!signed) phase = "sign";
+    else phase = "buy";
+
+    return {
+      phase,
+      wrongWallet,
+      robinhoodReady,
+      connecting: !!(ws && ws.connecting),
+      signing: !!(ws && ws.signing),
+      verified: !!(ws && ws.verified)
+    };
+  }
+
   function cacheEls() {
     if (els) return els;
     els = {
@@ -8596,18 +8639,25 @@ async function loadVerunLeaderboard() {
   // read straight from the chain (hashrateChain.chainTierKey) since
   // that's the source of truth for what was actually purchased; it
   // falls back to Supabase's `plan` (the server's applied rate) only
-  // if the chain read hasn't resolved yet. Buy buttons send a real
-  // transaction, so they stay disabled while a purchase is in flight,
-  // while the contract is paused, or before wallet/price data is ready.
+  // if the chain read hasn't resolved yet.
+  //
+  // The single action button on each Pro/Ultra card carries the wallet
+  // connect → sign → buy flow itself (see computeWalletButtonPhase) —
+  // there's no separate wallet card in Mining the way there is in
+  // Genesis Pass; clicking it in the "connect" or "sign" phase opens
+  // the same AppKit modal / triggers the same signature request that
+  // the Genesis Pass wallet card's own buttons do, via the shared
+  // window.verunWallet session. Basic never gets this button — it's
+  // free the moment a Genesis Pass is held.
   function renderTierCards(s) {
     const e = cacheEls();
     if (!e.tiersGrid) return;
 
-    const walletVerified = !!(window.verunWallet && window.verunWallet.getState().verified);
+    const walletPhase = computeWalletButtonPhase();
 
     e.tiersGrid.querySelectorAll(".mining-tier").forEach(card => {
       const tierKey = card.getAttribute("data-tier");
-      const chainKnown = hashrateChain.ready && walletVerified;
+      const chainKnown = hashrateChain.ready && walletPhase.verified;
       const isActive = chainKnown ? hashrateChain.chainTierKey === tierKey : s.plan === tierKey;
       card.classList.toggle("is-active", isActive);
 
@@ -8625,21 +8675,44 @@ async function loadVerunLeaderboard() {
         }
       }
 
-      if (buyButton && buying !== tierKey) {
-        const disabled = !walletVerified || !hashrateChain.ready || !!hashrateChain.paused || isActive;
-        buyButton.disabled = disabled;
-        buyButton.textContent = isActive ? "Active" : (buyButton.dataset.defaultLabel || "Upgrade");
+      if (!buyButton) return;
+
+      if (buying === tierKey) {
+        // mid-purchase — buyTier() owns the button's label/disabled
+        // state directly, leave it alone here.
+        return;
       }
 
-      if (statusEl && buying !== tierKey) {
-        if (hashrateChain.paused) {
-          statusEl.textContent = "Purchases are paused on the contract.";
-        } else if (!walletVerified) {
-          statusEl.textContent = "Connect your Robinhood Chain Testnet wallet to upgrade.";
-        } else if (isActive && hashrateChain.expiresAt) {
-          statusEl.textContent = "Active until " + formatExpiry(hashrateChain.expiresAt);
-        } else {
-          statusEl.textContent = "";
+      if (walletPhase.phase === "connect") {
+        buyButton.dataset.tierAction = "connect";
+        buyButton.disabled = walletPhase.connecting;
+        buyButton.textContent = walletPhase.connecting
+          ? "Connecting…"
+          : (walletPhase.wrongWallet ? "Switch Wallet" : "Connect Robinhood Wallet to Upgrade");
+        if (statusEl) {
+          statusEl.textContent = walletPhase.wrongWallet
+            ? "Connect the wallet this account is linked to."
+            : "";
+        }
+      } else if (walletPhase.phase === "sign") {
+        buyButton.dataset.tierAction = "sign";
+        buyButton.disabled = walletPhase.signing;
+        buyButton.textContent = walletPhase.signing
+          ? "Signing…"
+          : (walletPhase.robinhoodReady ? "Sign to Verify" : "Switch Network & Sign");
+        if (statusEl) statusEl.textContent = "";
+      } else {
+        buyButton.dataset.tierAction = "buy";
+        buyButton.disabled = !hashrateChain.ready || !!hashrateChain.paused || isActive;
+        buyButton.textContent = isActive ? "Active" : (buyButton.dataset.defaultLabel || "Upgrade");
+        if (statusEl) {
+          if (hashrateChain.paused) {
+            statusEl.textContent = "Purchases are paused on the contract.";
+          } else if (isActive && hashrateChain.expiresAt) {
+            statusEl.textContent = "Active until " + formatExpiry(hashrateChain.expiresAt);
+          } else {
+            statusEl.textContent = "";
+          }
         }
       }
     });
@@ -8838,7 +8911,20 @@ async function loadVerunLeaderboard() {
         if (buyButton.dataset.miningBound) return;
         buyButton.dataset.miningBound = "1";
         const tierKey = buyButton.getAttribute("data-tier-buy");
-        buyButton.addEventListener("click", () => buyTier(tierKey));
+        buyButton.addEventListener("click", () => {
+          const action = buyButton.dataset.tierAction || "buy";
+          if (action === "connect") {
+            if (window.verunWallet && typeof window.verunWallet.open === "function") {
+              window.verunWallet.open();
+            }
+          } else if (action === "sign") {
+            if (window.verunWallet && typeof window.verunWallet.sign === "function") {
+              window.verunWallet.sign();
+            }
+          } else {
+            buyTier(tierKey);
+          }
+        });
       });
     }
   }
