@@ -8443,7 +8443,7 @@ async function loadVerunLeaderboard() {
     // moves real testnet funds.
     if (!walletVerified) return;
     if (hashrateChain.paused) return;
-    if (hashrateChain.chainTierKey === tierKey) return; // already the active tier
+    if (status && status.plan === tierKey) return; // already the active tier
 
     const fnName = TIER_BUY_FN[tierKey];
     if (!fnName) return;
@@ -8648,6 +8648,22 @@ async function loadVerunLeaderboard() {
     return Number(amount || 0).toFixed(6);
   }
 
+  // Live, ticking preview of the balance while a session is running:
+  // already-credited total_mined plus this session's reward
+  // interpolated by elapsed/session time. mining_rate is the reward
+  // for one full (24h) session, matching the session length the
+  // backend actually runs (see the "24:00:00" default countdown and
+  // the "$VERUN / 24h" tier labels) — so at elapsed === sessionMs this
+  // lines up with what process_completed_mining is about to credit.
+  // The real credit only ever lands via that backend call at session
+  // end; this is purely a display projection off real Supabase fields,
+  // not a client-side fake counter.
+  function projectedBalance(s, elapsedMs, sessionMs) {
+    const rate = Number(s.mining_rate) || 0;
+    const fraction = sessionMs > 0 ? Math.min(1, Math.max(0, elapsedMs / sessionMs)) : 0;
+    return Number(s.total_mined || 0) + rate * fraction;
+  }
+
   function formatCountdown(msRemaining) {
     const totalSeconds = Math.max(0, Math.ceil(msRemaining / 1000));
     const h = Math.floor(totalSeconds / 3600);
@@ -8676,30 +8692,34 @@ async function loadVerunLeaderboard() {
     if (e.poolPercent) e.poolPercent.textContent = pct.toFixed(2) + "% remaining";
   }
 
-  // Highlights whichever tier is active. For Pro/Ultra, "active" is
-  // read straight from the chain (hashrateChain.chainTierKey) since
-  // that's the source of truth for what was actually purchased; it
-  // falls back to Supabase's `plan` (the server's applied rate) only
-  // if the chain read hasn't resolved yet.
+  // Which tier is "active" is decided from Supabase's status.plan alone
+  // — the durable, server-confirmed record of what's actually being
+  // credited — never from live wallet/chain connection state. That's
+  // what keeps an already-purchased Pro/Ultra card showing "Active"
+  // even after the wallet session/signature has since expired; only
+  // *buying* a different tier requires a live, connected, signed
+  // wallet, so the connect → sign → buy flow (computeWalletButtonPhase)
+  // only ever drives the button on a tier that isn't already owned.
+  // Basic gets the same "Current Tier" treatment as Pro/Ultra whenever
+  // it's the plan on file — not a separate "Included" state — so the
+  // card grid always shows exactly one tier as chosen, the same way,
+  // by default and after every upgrade.
   //
-  // The single action button on each Pro/Ultra card carries the wallet
-  // connect → sign → buy flow itself (see computeWalletButtonPhase) —
-  // there's no separate wallet card in Mining the way there is in
-  // Genesis Pass; clicking it in the "connect" or "sign" phase opens
-  // the same AppKit modal / triggers the same signature request that
-  // the Genesis Pass wallet card's own buttons do, via the shared
-  // window.verunWallet session. Basic never gets this button — it's
-  // free the moment a Genesis Pass is held.
+  // There's no separate wallet card in Mining the way there is in
+  // Genesis Pass; clicking a buy button in the "connect" or "sign"
+  // phase opens the same AppKit modal / triggers the same signature
+  // request that the Genesis Pass wallet card's own buttons do, via
+  // the shared window.verunWallet session.
   function renderTierCards(s) {
     const e = cacheEls();
     if (!e.tiersGrid) return;
 
     const walletPhase = computeWalletButtonPhase();
+    const currentPlan = s.plan || "basic";
 
     e.tiersGrid.querySelectorAll(".mining-tier").forEach(card => {
       const tierKey = card.getAttribute("data-tier");
-      const chainKnown = hashrateChain.ready && walletPhase.verified;
-      const isActive = chainKnown ? hashrateChain.chainTierKey === tierKey : s.plan === tierKey;
+      const isActive = currentPlan === tierKey;
       card.classList.toggle("is-active", isActive);
 
       const tagEl = card.querySelector(".mining-tier-tag");
@@ -8712,15 +8732,36 @@ async function loadVerunLeaderboard() {
           tagEl.classList.add("mining-tier-tag--free");
         } else {
           tagEl.textContent = tagEl.dataset.defaultTag || tagEl.textContent;
-          tagEl.classList.remove("mining-tier-tag--free");
+          // Basic is always free regardless of whether it's the active
+          // tier right now — only Pro/Ultra's green styling is tied to
+          // being the current pick.
+          if (tierKey !== "basic") tagEl.classList.remove("mining-tier-tag--free");
         }
       }
 
-      if (!buyButton) return;
+      if (!buyButton) return; // Basic has no buy button at all.
 
       if (buying === tierKey) {
         // mid-purchase — buyTier() owns the button's label/disabled
         // state directly, leave it alone here.
+        return;
+      }
+
+      if (isActive) {
+        // Already the account's tier on record — nothing to buy, so
+        // this never re-enters the connect/sign flow regardless of
+        // wallet state. Expiry, when known, prefers a live on-chain
+        // read for this exact tier and falls back to whatever
+        // Supabase reports.
+        buyButton.dataset.tierAction = "none";
+        buyButton.disabled = true;
+        buyButton.textContent = "Active";
+        if (statusEl) {
+          const chainExpiry = hashrateChain.chainTierKey === tierKey ? hashrateChain.expiresAt : null;
+          const supabaseExpiryMs = s.plan_expires_at ? new Date(s.plan_expires_at).getTime() : null;
+          const expirySeconds = chainExpiry || (supabaseExpiryMs ? Math.floor(supabaseExpiryMs / 1000) : null);
+          statusEl.textContent = expirySeconds ? "Active until " + formatExpiry(expirySeconds) : "";
+        }
         return;
       }
 
@@ -8729,7 +8770,7 @@ async function loadVerunLeaderboard() {
         buyButton.disabled = walletPhase.connecting;
         buyButton.textContent = walletPhase.connecting
           ? "Connecting…"
-          : (walletPhase.wrongWallet ? "Switch Wallet" : "Connect Robinhood Wallet to Upgrade");
+          : (walletPhase.wrongWallet ? "Switch Wallet" : "Connect Wallet to Upgrade");
         if (statusEl) {
           statusEl.textContent = walletPhase.wrongWallet
             ? "Connect the wallet this account is linked to."
@@ -8744,16 +8785,10 @@ async function loadVerunLeaderboard() {
         if (statusEl) statusEl.textContent = "";
       } else {
         buyButton.dataset.tierAction = "buy";
-        buyButton.disabled = !hashrateChain.ready || !!hashrateChain.paused || isActive;
-        buyButton.textContent = isActive ? "Active" : (buyButton.dataset.defaultLabel || "Upgrade");
+        buyButton.disabled = !hashrateChain.ready || !!hashrateChain.paused;
+        buyButton.textContent = buyButton.dataset.defaultLabel || "Upgrade";
         if (statusEl) {
-          if (hashrateChain.paused) {
-            statusEl.textContent = "Purchases are paused on the contract.";
-          } else if (isActive && hashrateChain.expiresAt) {
-            statusEl.textContent = "Active until " + formatExpiry(hashrateChain.expiresAt);
-          } else {
-            statusEl.textContent = "";
-          }
+          statusEl.textContent = hashrateChain.paused ? "Purchases are paused on the contract." : "";
         }
       }
     });
@@ -8876,7 +8911,7 @@ async function loadVerunLeaderboard() {
       const elapsed = Math.min(sessionMs, Math.max(0, serverNow() - startMs));
 
       renderRunningButton(elapsed, sessionMs);
-      if (e.balanceValue) e.balanceValue.textContent = formatVerun(status.total_mined);
+      if (e.balanceValue) e.balanceValue.textContent = formatVerun(projectedBalance(status, elapsed, sessionMs));
       if (e.statusHint) e.statusHint.textContent = "Mining in progress — check back when the session ends.";
 
       if (serverNow() >= endMs) {
@@ -8954,7 +8989,9 @@ async function loadVerunLeaderboard() {
         const tierKey = buyButton.getAttribute("data-tier-buy");
         buyButton.addEventListener("click", () => {
           const action = buyButton.dataset.tierAction || "buy";
-          if (action === "connect") {
+          if (action === "none") {
+            return; // already the active tier — nothing to do
+          } else if (action === "connect") {
             if (window.verunWallet && typeof window.verunWallet.open === "function") {
               window.verunWallet.open();
             }
