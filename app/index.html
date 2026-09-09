@@ -8277,23 +8277,22 @@ async function loadVerunLeaderboard() {
 // ============================================================
 // VERUN MINING
 // ============================================================
-// No mining backend exists yet (no Supabase table, no ETH wallet
-// wiring), so this whole module runs client-side against
-// localStorage, namespaced per logged-in user id. The public shape
-// (state object, TIERS map, awardSession/buyTier functions) is
-// written so it's a drop-in swap later: replace the readState/
-// writeState/pool helpers with real Supabase reads/writes and RPC
-// calls once the mining + genesis pass tables and wallet flow exist.
+// Mining backend is now live in Supabase (mining_accounts, mining_sessions,
+// mining_pool + RPCs: get_mining_status, start_mining_session,
+// process_completed_mining). This module reads/writes exclusively through
+// those RPCs — no localStorage is used for mining balance, session state,
+// or pool totals. Pro/Ultra purchasing (buyTier) is intentionally left
+// inactive here: it goes live once the Robinhood Chain Testnet contract
+// ships (see the Genesis Pass module below for the existing wallet flow
+// that will feed it).
 (function () {
 
-  const SESSION_MS = 24 * 60 * 60 * 1000; // one mining session = 24h
-  const POOL_TOTAL = 200000; // fixed $VERUN pool
   const RING_CIRCUMFERENCE = 578.05; // 2 * PI * r(92), matches the SVG ring
 
-  const TIERS = {
-    basic: { label: "Basic Hashrate", speed: 0.5, priceEth: 0, days: null },
-    pro: { label: "Pro Hashrate", speed: 3, priceEth: 0.01, days: 30 },
-    ultra: { label: "Ultra Hashrate", speed: 5, priceEth: 0.025, days: 30 }
+  const TIER_LABELS = {
+    basic: "Basic Hashrate",
+    pro: "Pro Hashrate",
+    ultra: "Ultra Hashrate"
   };
 
   // Reads real Genesis Pass ownership from the Genesis Pass module
@@ -8308,6 +8307,11 @@ async function loadVerunLeaderboard() {
   let currentUserId = null;
   let tickInterval = null;
   let els = null;
+  let status = null; // last get_mining_status() response
+  let serverOffsetMs = 0; // (server_time - Date.now()) at last fetch, so the
+                           // countdown tracks the server clock, not the device's
+  let completing = false; // guards against double process_completed_mining calls
+  let starting = false; // guards against double start_mining_session calls
 
   function cacheEls() {
     if (els) return els;
@@ -8344,63 +8348,14 @@ async function loadVerunLeaderboard() {
         if (tagEl && !tagEl.dataset.defaultTag) {
           tagEl.dataset.defaultTag = tagEl.textContent;
         }
+        // Purchasing isn't live yet — buttons stay disabled until the
+        // Pro/Ultra contract ships.
+        const buyButton = card.querySelector("[data-tier-buy]");
+        if (buyButton) buyButton.disabled = true;
       });
     }
 
-    // Also set the pool bar/total to their correct starting values
-    // immediately (0 mined yet), overriding the static placeholder
-    // markup shown before JS runs.
-    if (els.poolTotal) els.poolTotal.textContent = formatIndian(POOL_TOTAL);
-
     return els;
-  }
-
-  function storageKey(userId) {
-    return "verunMining_" + userId;
-  }
-
-  function defaultState() {
-    return {
-      activeTier: "basic",
-      tierExpiresAt: null, // ms epoch, only set for pro/ultra
-      lastPurchasedTier: null, // "pro" | "ultra" | null — survives expiry, drives Renew vs Upgrade
-      sessionStartAt: null, // ms epoch, null = idle
-      minedBalance: 0
-    };
-  }
-
-  function readState(userId) {
-    try {
-      const raw = localStorage.getItem(storageKey(userId));
-      if (!raw) return defaultState();
-      const parsed = JSON.parse(raw);
-      return Object.assign(defaultState(), parsed);
-    } catch (err) {
-      return defaultState();
-    }
-  }
-
-  function writeState(userId, state) {
-    try {
-      localStorage.setItem(storageKey(userId), JSON.stringify(state));
-    } catch (err) {
-      // localStorage unavailable (private mode / quota) — mining still
-      // works for the rest of this session, it just won't persist.
-    }
-  }
-
-  // Shared pool counter. Simulated locally in the absence of a
-  // backend aggregate — every completed session across every local
-  // user on this device adds to it. Swap for a real aggregate query
-  // (e.g. sum of a mining_sessions table) once one exists.
-  function readPoolMined() {
-    const raw = localStorage.getItem("verunMiningPoolMined");
-    const value = raw ? parseFloat(raw) : 0;
-    return isNaN(value) ? 0 : value;
-  }
-
-  function writePoolMined(value) {
-    localStorage.setItem("verunMiningPoolMined", String(Math.min(value, POOL_TOTAL)));
   }
 
   // Indian digit grouping (2,00,000 instead of 200,000). Accepts a
@@ -8421,31 +8376,8 @@ async function loadVerunLeaderboard() {
     return (isNegative ? "-" : "") + grouped + (decPart ? "." + decPart : "");
   }
 
-  // Mutates state in place, reverting an expired pro/ultra tier back
-  // to Basic. Returns true if a change was made (so the caller knows
-  // to persist it). lastPurchasedTier is intentionally left alone —
-  // it's what drives showing "Renew" once the lock lifts.
-  function expireTierIfNeeded(state) {
-    if (state.activeTier !== "basic" && state.tierExpiresAt && Date.now() >= state.tierExpiresAt) {
-      state.activeTier = "basic";
-      state.tierExpiresAt = null;
-      return true;
-    }
-    return false;
-  }
-
-  function currentTier(state) {
-    return TIERS[state.activeTier] || TIERS.basic;
-  }
-
-  // True while a paid tier is active and hasn't expired yet — the
-  // whole hashrate purchase system is locked during this window.
-  function isPurchaseLocked(state) {
-    return state.activeTier !== "basic" && !!state.tierExpiresAt && Date.now() < state.tierExpiresAt;
-  }
-
   function formatVerun(amount) {
-    return amount.toFixed(6);
+    return Number(amount || 0).toFixed(6);
   }
 
   function formatCountdown(msRemaining) {
@@ -8457,39 +8389,41 @@ async function loadVerunLeaderboard() {
     return pad(h) + ":" + pad(m) + ":" + pad(s);
   }
 
-  function formatDaysLeft(expiresAt) {
-    const msLeft = expiresAt - Date.now();
-    const days = Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
-    return days + (days === 1 ? " day left" : " days left");
+  // Estimated current server time: Date.now() plus the offset captured
+  // from the last get_mining_status() response. This is what keeps the
+  // countdown honest if the device's clock is wrong or changed.
+  function serverNow() {
+    return Date.now() + serverOffsetMs;
   }
 
-  function renderPool() {
+  function renderPool(s) {
     const e = cacheEls();
-    const mined = Math.min(readPoolMined(), POOL_TOTAL);
-    const remaining = POOL_TOTAL - mined;
-    const pct = Math.min(100, (remaining / POOL_TOTAL) * 100);
+    const remaining = Number(s.pool_remaining) || 0;
+    const total = Number(s.pool_total) || 0;
+    const mined = Number(s.pool_mined) || 0;
+    const pct = Math.max(0, Math.min(100, Number(s.pool_remaining_percentage) || 0));
 
     if (e.poolRemaining) e.poolRemaining.textContent = formatIndian(remaining, remaining % 1 !== 0 ? 2 : 0);
-    if (e.poolTotal) e.poolTotal.textContent = formatIndian(POOL_TOTAL);
+    if (e.poolTotal) e.poolTotal.textContent = formatIndian(total);
     if (e.poolFill) e.poolFill.style.width = pct.toFixed(2) + "%";
     if (e.poolPercent) e.poolPercent.textContent = pct.toFixed(2) + "% remaining";
     if (e.poolMinedCaption) e.poolMinedCaption.textContent = formatIndian(mined, mined % 1 !== 0 ? 2 : 0) + " $VERUN mined so far";
   }
 
-  function renderTierCards(state) {
+  // Purely informational — highlights whichever tier `plan` says is
+  // active. Buy/Renew buttons stay disabled (see cacheEls) until the
+  // Pro/Ultra contract ships.
+  function renderTierCards(s) {
     const e = cacheEls();
     if (!e.tiersGrid) return;
 
-    const locked = isPurchaseLocked(state);
-
     e.tiersGrid.querySelectorAll(".mining-tier").forEach(card => {
       const tierKey = card.getAttribute("data-tier");
-      const isActive = state.activeTier === tierKey;
+      const isActive = s.plan === tierKey;
       card.classList.toggle("is-active", isActive);
 
       const tagEl = card.querySelector(".mining-tier-tag");
       const statusEl = card.querySelector('[data-status-for="' + tierKey + '"]');
-      const buyButton = card.querySelector("[data-tier-buy]");
 
       if (tagEl) {
         if (isActive) {
@@ -8501,63 +8435,41 @@ async function loadVerunLeaderboard() {
         }
       }
 
-      if (statusEl) {
-        if (isActive && tierKey !== "basic" && state.tierExpiresAt) {
-          statusEl.textContent = formatDaysLeft(state.tierExpiresAt);
-        } else {
-          statusEl.textContent = "";
-        }
-      }
-
-      if (buyButton) {
-        const isRenewable = state.lastPurchasedTier === tierKey;
-        buyButton.disabled = locked;
-        buyButton.textContent = isRenewable ? "Renew" : "Upgrade";
-      }
+      if (statusEl) statusEl.textContent = "";
     });
-
-    if (e.tiersLockNote) {
-      if (locked) {
-        e.tiersLockNote.style.display = "";
-        e.tiersLockNote.textContent =
-          "Hashrate purchases are locked while " + currentTier(state).label +
-          " is active — " + formatDaysLeft(state.tierExpiresAt) + " until you can renew or switch.";
-      } else {
-        e.tiersLockNote.style.display = "none";
-      }
-    }
   }
 
-  function renderBadge(state, tier) {
+  function renderBadge(s) {
     const e = cacheEls();
-    if (e.tierLabel) e.tierLabel.textContent = tier.label;
-    if (e.tierSpeed) e.tierSpeed.textContent = tier.speed + " $VERUN / 24h";
+    const label = TIER_LABELS[s.plan] || TIER_LABELS.basic;
+    if (e.tierLabel) e.tierLabel.textContent = label;
+    if (e.tierSpeed) e.tierSpeed.textContent = (Number(s.mining_rate) || 0) + " $VERUN / 24h";
     if (e.badge) {
-      e.badge.classList.toggle("is-pro", state.activeTier === "pro");
-      e.badge.classList.toggle("is-ultra", state.activeTier === "ultra");
+      e.badge.classList.toggle("is-pro", s.plan === "pro");
+      e.badge.classList.toggle("is-ultra", s.plan === "ultra");
     }
   }
 
-  function renderIdleButton() {
+  function renderIdleButton(closed) {
     const e = cacheEls();
     if (!e.button) return;
     e.button.classList.remove("is-running");
-    e.button.disabled = false;
-    if (e.buttonText) e.buttonText.textContent = "Tap to Start";
+    e.button.disabled = !!closed;
+    if (e.buttonText) e.buttonText.textContent = closed ? "Mining Closed" : "Tap to Start";
     if (e.buttonTimer) e.buttonTimer.textContent = "24:00:00";
     if (e.ring) e.ring.style.strokeDashoffset = String(RING_CIRCUMFERENCE);
   }
 
-  function renderRunningButton(elapsedMs) {
+  function renderRunningButton(elapsedMs, sessionMs) {
     const e = cacheEls();
     if (!e.button) return;
     e.button.classList.add("is-running");
     e.button.disabled = true;
-    const remaining = SESSION_MS - elapsedMs;
+    const remaining = Math.max(0, sessionMs - elapsedMs);
     if (e.buttonText) e.buttonText.textContent = "Mining";
     if (e.buttonTimer) e.buttonTimer.textContent = formatCountdown(remaining);
     if (e.ring) {
-      const fraction = Math.min(1, Math.max(0, elapsedMs / SESSION_MS));
+      const fraction = Math.min(1, Math.max(0, elapsedMs / sessionMs));
       e.ring.style.strokeDashoffset = String(RING_CIRCUMFERENCE * (1 - fraction));
     }
   }
@@ -8571,87 +8483,6 @@ async function loadVerunLeaderboard() {
     e.balanceValue.classList.add("is-pulsing");
   }
 
-  // Completes any session that finished (even while the tab was
-  // closed), crediting the full tier reward and advancing the pool.
-  function settleIfComplete(state) {
-    if (!state.sessionStartAt) return false;
-    const elapsed = Date.now() - state.sessionStartAt;
-    if (elapsed < SESSION_MS) return false;
-
-    const tier = currentTier(state);
-    state.minedBalance += tier.speed;
-    state.sessionStartAt = null;
-    writePoolMined(readPoolMined() + tier.speed);
-    return true;
-  }
-
-  function render() {
-    if (!currentUserId) return;
-    const e = cacheEls();
-    updateAccessGate();
-    const state = readState(currentUserId);
-
-    const expired = expireTierIfNeeded(state);
-    const tier = currentTier(state);
-    const justCompleted = settleIfComplete(state);
-    if (expired || justCompleted) {
-      writeState(currentUserId, state);
-    }
-
-    renderPool();
-    renderBadge(state, tier);
-    renderTierCards(state);
-
-    if (state.sessionStartAt) {
-      const elapsed = Date.now() - state.sessionStartAt;
-      renderRunningButton(elapsed);
-      const liveBalance = state.minedBalance + tier.speed * Math.min(1, elapsed / SESSION_MS);
-      if (e.balanceValue) e.balanceValue.textContent = formatVerun(liveBalance);
-      if (e.statusHint) e.statusHint.textContent = "Mining in progress — check back when the session ends.";
-    } else {
-      renderIdleButton();
-      if (e.balanceValue) e.balanceValue.textContent = formatVerun(state.minedBalance);
-      if (e.statusHint) {
-        e.statusHint.textContent = justCompleted
-          ? "Session complete! Start a new one to keep mining."
-          : "Start a session to begin mining.";
-      }
-      if (justCompleted) pulseBalance();
-    }
-  }
-
-  function startSession() {
-    if (!currentUserId) return;
-    const state = readState(currentUserId);
-    if (state.sessionStartAt) return; // already running
-    state.sessionStartAt = Date.now();
-    writeState(currentUserId, state);
-    render();
-  }
-
-  function buyTier(tierKey) {
-    if (!currentUserId) return;
-    const tier = TIERS[tierKey];
-    if (!tier) return;
-
-    const state = readState(currentUserId);
-    if (isPurchaseLocked(state)) return; // purchase system is locked until the active plan expires
-
-    // TODO(genesis-pass + wallet): this is a local simulation until
-    // real ETH payment + wallet connection ships. Replace this
-    // with the actual transaction flow, and only call
-    // writeState() after the chain confirms payment.
-
-    // Any purchase — whether it's the same tier renewing or a switch
-    // to the other paid tier — shifts the current tier to the one
-    // just purchased.
-    state.activeTier = tierKey;
-    state.tierExpiresAt = Date.now() + tier.days * 24 * 60 * 60 * 1000;
-    state.lastPurchasedTier = tierKey;
-    writeState(currentUserId, state);
-    render();
-  }
-
   function updateAccessGate() {
     const e = cacheEls();
     const unlocked = hasGenesisPass();
@@ -8660,19 +8491,102 @@ async function loadVerunLeaderboard() {
     if (e.tiersSection) e.tiersSection.style.display = unlocked ? "" : "none";
   }
 
+  // Single source of truth: always re-pull from Supabase rather than
+  // mutate a local copy, so a stale tab can never drift from the
+  // server's idea of the balance/session/pool.
+  async function fetchStatus() {
+    const { data, error } = await supabaseClient.rpc("get_mining_status");
+    if (error || !data) {
+      console.error("get_mining_status failed:", error);
+      return null;
+    }
+    status = data;
+    serverOffsetMs = new Date(data.server_time).getTime() - Date.now();
+    return status;
+  }
+
+  function render() {
+    if (!currentUserId || !status) return;
+    const e = cacheEls();
+    updateAccessGate();
+
+    renderPool(status);
+    renderBadge(status);
+    renderTierCards(status);
+
+    if (status.mining_closed) {
+      renderIdleButton(true);
+      if (e.balanceValue) e.balanceValue.textContent = formatVerun(status.total_mined);
+      if (e.statusHint) e.statusHint.textContent = "Mining Closed — the 200,000 $VERUN pool has been fully mined.";
+      return;
+    }
+
+    if (status.session_active && status.session_expires_at) {
+      const startMs = new Date(status.session_started_at).getTime();
+      const endMs = new Date(status.session_expires_at).getTime();
+      const sessionMs = Math.max(1, endMs - startMs);
+      const elapsed = Math.min(sessionMs, Math.max(0, serverNow() - startMs));
+
+      renderRunningButton(elapsed, sessionMs);
+      if (e.balanceValue) e.balanceValue.textContent = formatVerun(status.total_mined);
+      if (e.statusHint) e.statusHint.textContent = "Mining in progress — check back when the session ends.";
+
+      if (serverNow() >= endMs) {
+        completeSession();
+      }
+    } else {
+      renderIdleButton(false);
+      if (e.balanceValue) e.balanceValue.textContent = formatVerun(status.total_mined);
+      if (e.statusHint) e.statusHint.textContent = "Start a session to begin mining.";
+    }
+  }
+
+  // Called once the countdown reaches zero. The backend re-checks the
+  // 24h window and the 200k pool cap itself, so this is safe to call
+  // even if it fires more than once (e.g. two tabs open).
+  async function completeSession() {
+    if (completing) return;
+    completing = true;
+    try {
+      const { error } = await supabaseClient.rpc("process_completed_mining");
+      if (error) {
+        console.error("process_completed_mining failed:", error);
+        return;
+      }
+      const prevBalance = status ? Number(status.total_mined) : 0;
+      await fetchStatus();
+      if (status && Number(status.total_mined) > prevBalance) pulseBalance();
+      render();
+    } finally {
+      completing = false;
+    }
+  }
+
+  async function startSession() {
+    if (!currentUserId || !status || status.mining_closed || status.session_active || starting) return;
+    starting = true;
+    const e = cacheEls();
+    if (e.button) e.button.disabled = true;
+    try {
+      const { error } = await supabaseClient.rpc("start_mining_session");
+      if (error) {
+        console.error("start_mining_session failed:", error);
+        return;
+      }
+      await fetchStatus();
+      render();
+    } finally {
+      starting = false;
+      // If the session didn't end up active for some reason, restore the button.
+      if (e.button && !(status && status.session_active)) e.button.disabled = false;
+    }
+  }
+
   function bindEventsOnce() {
     const e = cacheEls();
     if (e.button && !e.button.dataset.miningBound) {
       e.button.dataset.miningBound = "1";
       e.button.addEventListener("click", startSession);
-    }
-    if (e.tiersGrid && !e.tiersGrid.dataset.miningBound) {
-      e.tiersGrid.dataset.miningBound = "1";
-      e.tiersGrid.addEventListener("click", event => {
-        const buyButton = event.target.closest("[data-tier-buy]");
-        if (!buyButton || buyButton.disabled) return;
-        buyTier(buyButton.getAttribute("data-tier-buy"));
-      });
     }
     if (e.goToGenesis && !e.goToGenesis.dataset.miningBound) {
       e.goToGenesis.dataset.miningBound = "1";
@@ -8696,10 +8610,13 @@ async function loadVerunLeaderboard() {
     if (!currentUserId) return;
 
     updateAccessGate();
+    await fetchStatus();
     render();
 
     if (!tickInterval) {
-      tickInterval = setInterval(render, 1000);
+      tickInterval = setInterval(() => {
+        if (status) render();
+      }, 1000);
     }
   }
 
