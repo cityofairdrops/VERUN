@@ -1151,6 +1151,7 @@
     }
 
     .referral-stat strong {
+      flex-shrink: 0;
       font-size: 18px;
       font-weight: 850;
       color: var(--green);
@@ -1164,7 +1165,8 @@
       display: flex;
       flex-wrap: wrap;
       align-items: baseline;
-      gap: 6px;
+      justify-content: space-between;
+      column-gap: 6px;
       row-gap: 4px;
       min-width: 0;
     }
@@ -1172,10 +1174,15 @@
     /* .referral-stat span above would otherwise mute the shared
        badge's color/size to match the plain stat labels — this beats
        it on specificity so the referral card's badge looks identical
-       to the balance card's. */
+       to the balance card's. Sized/positioned to match the balance
+       card treatment: small, flush at the end of the line, dropping
+       to its own line (via flex-wrap above) rather than overflowing
+       the narrower stat column if it ever doesn't fit. */
     .referral-stat .xp-multiplier-badge {
+      flex-shrink: 0;
       color: var(--green);
-      font-size: 9px;
+      font-size: 8px;
+      padding: 2.5px 7px;
     }
 
     .referral-progress {
