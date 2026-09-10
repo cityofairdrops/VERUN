@@ -374,6 +374,58 @@
       border-radius: 50%;
     }
 
+    /* Genesis Pass holders (server-side 2x XP rate) get a visibly
+       premium version of the same card — a warmer gold-tinted glow
+       layered over the standard green, plus a small badge next to
+       the "Your Balance" label. Purely presentational: it never
+       changes profile.xp or any balance math. */
+    .balance-card.is-elite {
+      border-color: rgba(255,205,110,0.35);
+      background:
+        radial-gradient(
+          circle at 85% 15%,
+          rgba(255,205,110,0.16),
+          transparent 40%
+        ),
+        radial-gradient(
+          circle at 8% 100%,
+          rgba(141,255,183,0.08),
+          transparent 45%
+        ),
+        var(--panel);
+      box-shadow:
+        0 0 0 1px rgba(255,205,110,0.08),
+        0 0 34px rgba(255,205,110,0.14),
+        0 20px 50px rgba(0,0,0,.55);
+    }
+
+    .balance-card.is-elite::after {
+      border-color: rgba(255,205,110,0.16);
+    }
+
+    .balance-card-elite-tag {
+      display: none;
+      align-items: center;
+      gap: 5px;
+
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+
+      color: #f6cc6e;
+      background: rgba(255,205,110,0.12);
+      border: 1px solid rgba(255,205,110,0.3);
+      border-radius: 999px;
+      padding: 3px 8px;
+
+      margin-left: 8px;
+    }
+
+    .balance-card.is-elite .balance-card-elite-tag {
+      display: inline-flex;
+    }
+
     .balance-label {
       color: var(--muted2);
       font-size: 10px;
@@ -383,12 +435,25 @@
     }
 
     .balance {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      column-gap: 14px;
+      row-gap: 4px;
+
       font-size: clamp(45px, 7vw, 70px);
       line-height: 1;
       letter-spacing: -4px;
       font-weight: 900;
 
       margin: 10px 0 4px;
+    }
+
+    .balance-figure {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 6px;
     }
 
     .balance span {
@@ -404,6 +469,16 @@
       color: inherit;
       font-size: inherit;
       letter-spacing: inherit;
+    }
+
+    /* Genesis Pass holders' server-side 2x XP rate, surfaced next to
+       the amount — sits on the balance's own baseline via the flex
+       row above, so it never wraps under the figure on narrow screens
+       unless space genuinely runs out. */
+    .xp-multiplier-badge {
+      font-weight: 800;
+      white-space: nowrap;
+      align-self: center;
     }
 
     .bal-top {
@@ -1055,6 +1130,30 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .referral-stat-value-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    /* Two classes here (vs. the single-class .xp-multiplier-badge on
+       the balance card) so this beats the ".referral-stat span"
+       descendant rule above, which would otherwise mute this tag's
+       color/size to match the plain stat labels. */
+    .referral-stat .referral-xp-multiplier-tag {
+      flex-shrink: 0;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      color: var(--green);
+      background: var(--green-soft);
+      border: 1px solid var(--green-border);
+      border-radius: 999px;
+      padding: 1px 6px;
+      white-space: nowrap;
     }
 
     .referral-progress {
@@ -4374,6 +4473,12 @@
         <div class="bal-top">
           <div class="balance-label">
             Your Balance
+            <span class="balance-card-elite-tag">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13 2 3 14h9l-1 8 10-12h-9z" fill="currentColor" stroke="none"/>
+              </svg>
+              Genesis
+            </span>
           </div>
 
           <div class="bal-top-right">
@@ -4393,7 +4498,8 @@
           </div>
         </div>
             <div class="balance">
-  <span id="xpBalance" style="visibility:hidden;">0</span> <span>XP</span>
+  <span class="balance-figure"><span id="xpBalance" style="visibility:hidden;">0</span> <span>XP</span></span>
+  <span id="xpMultiplierBadge" class="xp-multiplier-badge" style="display:none;">(2X Multiplier)</span>
 </div>
 
 <div class="balance-note">
@@ -5132,7 +5238,10 @@
 
       <div class="referral-stat">
         <span>Referral XP</span>
-        <strong id="referralXp">0 XP</strong>
+        <div class="referral-stat-value-row">
+          <strong id="referralXp">0 XP</strong>
+          <span id="referralXpMultiplierTag" class="referral-xp-multiplier-tag" style="display:none;">2X</span>
+        </div>
       </div>
 
     </div>
@@ -5776,17 +5885,41 @@ async function loadReferralDashboard() {
       `${window.location.origin}${window.location.pathname}?ref=${encodeURIComponent(profile.referral_code)}`;
   }
 
+  // Genesis Pass holders earn ALL XP — including referral XP — at 2x
+  // server-side. This block is a display-only estimate (it always has
+  // been, per the note above: a flat rate assumption, not a ledger
+  // read), so it mirrors the account's *current* rate rather than
+  // reconstructing exactly when each past referral was credited.
+  // profiles.xp itself (shown on the balance card) remains the real,
+  // backend-computed total — this is never used to calculate it.
+  let hasGenesisPass = false;
+  try {
+    const { data: passState, error: passError } =
+      await supabaseClient.rpc("get_my_genesis_pass");
+    if (passError) throw passError;
+    hasGenesisPass = !!(passState && passState.owned);
+  } catch (err) {
+    console.error("Failed to check Genesis Pass status:", err);
+  }
+  const xpMultiplier = hasGenesisPass ? 2 : 1;
+
   // XP earned so far: a flat 100 XP per referral, plus any
   // milestone bonus XP already reached (the 100-referral milestone
-  // pays $VERUN, not XP, so it never adds to this total).
+  // pays $VERUN, not XP, so it never adds to this total) — both
+  // scaled by the account's current XP multiplier.
   const milestoneBonusXp = REFERRAL_MILESTONES
     .filter(m => count >= m.threshold)
     .reduce((sum, m) => sum + m.bonusXp, 0);
 
-  const earnedXp = (count * REFERRAL_XP_PER_REFERRAL) + milestoneBonusXp;
+  const earnedXp = ((count * REFERRAL_XP_PER_REFERRAL) + milestoneBonusXp) * xpMultiplier;
 
   if (referralXpEl) {
     referralXpEl.textContent = `${earnedXp.toLocaleString()} XP`;
+  }
+
+  const referralXpMultiplierEl = document.getElementById("referralXpMultiplierTag");
+  if (referralXpMultiplierEl) {
+    referralXpMultiplierEl.style.display = hasGenesisPass ? "" : "none";
   }
 
   // Mark milestones already reached
@@ -6190,6 +6323,20 @@ async function markAllNotificationsRead() {
       return;
     }
 
+    // Genesis Pass holders earn XP at 2x — the backend applies that
+    // multiplier itself when it credits profiles.xp, so this is purely
+    // a display flag (drives the "(2X Multiplier)" tag + the elevated
+    // balance card styling below), never a factor in any XP math here.
+    let hasGenesisPass = false;
+    try {
+      const { data: passState, error: passError } =
+        await supabaseClient.rpc("get_my_genesis_pass");
+      if (passError) throw passError;
+      hasGenesisPass = !!(passState && passState.owned);
+    } catch (err) {
+      console.error("Failed to check Genesis Pass status:", err);
+    }
+
     if (!profile) {
 
       console.log("Creating VERUN profile:", {
@@ -6207,7 +6354,6 @@ async function markAllNotificationsRead() {
             x_user_id: xUserId,
             x_followers: 0,
             xp: 0,
-            xp_multiplier: 1,
             current_streak: 0,
             longest_streak: 0,
             referrals_count: 0
@@ -6236,11 +6382,11 @@ async function markAllNotificationsRead() {
     return;
   }
 
-  updateDashboard(existingProfile);
+  updateDashboard(existingProfile, hasGenesisPass);
   return;
       }
 
-            updateDashboard(newProfile);
+            updateDashboard(newProfile, hasGenesisPass);
 
       const { data: bonusData, error: bonusError } =
         await supabaseClient.rpc("initialize_verun_early_bonus");
@@ -6253,12 +6399,12 @@ async function markAllNotificationsRead() {
 
    } else {
 
-      updateDashboard(profile);
+      updateDashboard(profile, hasGenesisPass);
 
     }
   }
 
-  function updateDashboard(profile) {
+  function updateDashboard(profile, hasGenesisPass) {
 
     const profileName =
       document.getElementById("profileName");
@@ -6293,7 +6439,18 @@ async function markAllNotificationsRead() {
 
     if (balance) {
       balance.innerHTML =
-        `<span id="xpBalance">${profile.xp || 0}</span> <span>XP</span>`;
+        `<span class="balance-figure"><span id="xpBalance">${profile.xp || 0}</span> <span>XP</span></span>` +
+        `<span id="xpMultiplierBadge" class="xp-multiplier-badge"${hasGenesisPass ? "" : ' style="display:none;"'}>(2X Multiplier)</span>`;
+    }
+
+    // Genesis Pass holders get a visibly elevated balance card — this
+    // class only ever toggles the card's own presentation; it never
+    // touches profile.xp or how it's calculated.
+    const balanceCardEl =
+      document.querySelector(".balance-card");
+
+    if (balanceCardEl) {
+      balanceCardEl.classList.toggle("is-elite", !!hasGenesisPass);
     }
 
     const overviewValues =
@@ -10735,6 +10892,13 @@ async function loadVerunLeaderboard() {
             "Your mint is confirmed on-chain."
           );
         }
+
+        // Re-pull the profile now that this account is a Genesis Pass
+        // holder, so the balance card's "(2X Multiplier)" tag and
+        // elevated styling appear immediately instead of on next reload.
+        if (typeof loadUserProfile === "function") {
+          loadUserProfile();
+        }
       } catch (recordErr) {
         // The mint itself already succeeded on-chain — a backend
         // hiccup here must never be shown to the user as a failed
@@ -10797,6 +10961,9 @@ async function loadVerunLeaderboard() {
       claiming = false;
       await refreshClaimState(); // re-reads claimable balance and re-renders via caller
       renderReferralPanel();
+      if (typeof loadUserProfile === "function") {
+        loadUserProfile();
+      }
     } catch (err) {
       claiming = false;
       const message = (err && (err.code === "ACTION_REJECTED" || err.code === 4001))
