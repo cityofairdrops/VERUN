@@ -5940,6 +5940,10 @@ const NOTIF_ICONS = {
   mint: { symbol: "◆", color: "var(--green)" },
   genesis_code: { symbol: "✦", color: "var(--green)" },
   mining: { symbol: "⛏", color: "var(--green)" },
+  mining_start: { symbol: "⛏", color: "var(--green)" },
+  mining_end: { symbol: "⛏", color: "var(--green)" },
+  hashrate_up: { symbol: "▲", color: "var(--green)" },
+  hashrate_down: { symbol: "▼", color: "var(--green)" },
   default: { symbol: "•", color: "var(--green)" }
 };
 
@@ -6035,24 +6039,44 @@ async function loadNotifications() {
   renderNotifications();
 }
 
+let markingAllRead = false;
+
 async function markAllNotificationsRead() {
+  if (markingAllRead) return; // guard against double-clicks firing two updates
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session) return;
 
   const unreadIds = verunNotifications.filter(n => !n.read).map(n => n.id);
   if (unreadIds.length === 0) return;
 
+  markingAllRead = true;
+
+  // Optimistic update so the badge/list respond instantly...
+  const previousNotifications = verunNotifications;
   verunNotifications = verunNotifications.map(n => ({ ...n, read: true }));
   renderNotifications();
 
-  const { error } = await supabaseClient
-    .from("notifications")
-    .update({ read: true })
-    .eq("user_id", session.user.id)
-    .in("id", unreadIds);
+  try {
+    const { error } = await supabaseClient
+      .from("notifications")
+      .update({ read: true })
+      .eq("user_id", session.user.id)
+      .in("id", unreadIds);
 
-  if (error) {
-    console.error("Failed to mark notifications read:", error);
+    if (error) {
+      throw error;
+    }
+  } catch (err) {
+    // ...but if the write didn't actually persist (missing RLS policy,
+    // network error, etc.) roll back to the real state instead of
+    // leaving the UI showing "read" for notifications that aren't —
+    // that mismatch is what made this look broken (unread badge
+    // reappearing after the next reload).
+    console.error("Failed to mark notifications read:", err);
+    verunNotifications = previousNotifications;
+    await loadNotifications();
+  } finally {
+    markingAllRead = false;
   }
 }
 
@@ -9163,6 +9187,14 @@ async function loadVerunLeaderboard() {
 
       await refreshHashrateChainState();
       await fetchStatus();
+      if (status && status.plan === tierKey && typeof insertSelfNotification === "function") {
+        const tierLabel = TIER_LABELS[tierKey] || tierKey;
+        insertSelfNotification(
+          "hashrate_up",
+          tierLabel + " activated",
+          "Your mining rate is now " + (Number(status.mining_rate) || 0) + " $VERUN / 24h."
+        );
+      }
       render();
     } catch (err) {
       const message = (err && (err.code === "ACTION_REJECTED" || err.code === 4001))
@@ -9488,6 +9520,7 @@ async function loadVerunLeaderboard() {
   // mutate a local copy, so a stale tab can never drift from the
   // server's idea of the balance/session/pool.
   async function fetchStatus() {
+    const previousPlan = status ? status.plan : null;
     try {
       let { data, error } = await supabaseClient.rpc("get_mining_status");
 
@@ -9511,6 +9544,27 @@ async function loadVerunLeaderboard() {
       }
       status = data;
       serverOffsetMs = new Date(data.server_time).getTime() - Date.now();
+
+      // The backend silently reverts plan/mining_rate once plan_expires_at
+      // has passed — it doesn't write a notification row itself. Noticing
+      // the drop here, the moment this client re-pulls status, is what
+      // surfaces it as a "Hashrate expired" notification.
+      if (
+        previousPlan &&
+        previousPlan !== "basic" &&
+        status.plan &&
+        status.plan !== previousPlan &&
+        typeof insertSelfNotification === "function"
+      ) {
+        const fromLabel = TIER_LABELS[previousPlan] || previousPlan;
+        const toLabel = TIER_LABELS[status.plan] || status.plan;
+        insertSelfNotification(
+          "hashrate_down",
+          fromLabel + " expired",
+          "Your hashrate reverted to " + toLabel + "."
+        );
+      }
+
       return status;
     } catch (err) {
       console.error("get_mining_status threw:", err);
@@ -9568,7 +9622,17 @@ async function loadVerunLeaderboard() {
       }
       const prevBalance = status ? Number(status.total_mined) : 0;
       await fetchStatus();
-      if (status && Number(status.total_mined) > prevBalance) pulseBalance();
+      const earned = status ? Number(status.total_mined) - prevBalance : 0;
+      if (earned > 0) {
+        pulseBalance();
+        if (typeof insertSelfNotification === "function") {
+          insertSelfNotification(
+            "mining_end",
+            "Mining session ended",
+            "+" + formatVerun(earned) + " $VERUN mined."
+          );
+        }
+      }
       render();
     } finally {
       completing = false;
@@ -9587,6 +9651,13 @@ async function loadVerunLeaderboard() {
         return;
       }
       await fetchStatus();
+      if (status && status.session_active && typeof insertSelfNotification === "function") {
+        insertSelfNotification(
+          "mining_start",
+          "Mining session started",
+          "Come back in 24h to collect your $VERUN."
+        );
+      }
       render();
     } finally {
       starting = false;
@@ -9653,8 +9724,17 @@ async function loadVerunLeaderboard() {
     render();
 
     if (!tickInterval) {
-      tickInterval = setInterval(() => {
-        if (status) render();
+      let tickCount = 0;
+      tickInterval = setInterval(async () => {
+        if (!status) return;
+        tickCount++;
+        // Re-pull from Supabase every 60s (not every tick) so a Pro/Ultra
+        // plan expiring server-side gets noticed — and notified — while
+        // this tab is still open, not only the next time Mining loads.
+        if (tickCount % 60 === 0) {
+          await fetchStatus();
+        }
+        render();
       }, 1000);
     }
   }
@@ -10644,6 +10724,17 @@ async function loadVerunLeaderboard() {
           throw recordError;
         }
         console.log("VERUN Genesis Pass: mint recorded to database successfully", recordData);
+
+        if (typeof insertSelfNotification === "function") {
+          const label = tokenNumber !== null && !Number.isNaN(tokenNumber)
+            ? "#" + tokenNumber
+            : "";
+          insertSelfNotification(
+            "mint",
+            ("Genesis Pass " + label + " minted!").replace(/\s+/g, " ").trim(),
+            "Your mint is confirmed on-chain."
+          );
+        }
       } catch (recordErr) {
         // The mint itself already succeeded on-chain — a backend
         // hiccup here must never be shown to the user as a failed
