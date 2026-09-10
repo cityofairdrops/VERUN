@@ -412,12 +412,23 @@
     }
 
     .balance {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      column-gap: 10px;
+      row-gap: 2px;
+
       font-size: clamp(45px, 7vw, 70px);
       line-height: 1;
       letter-spacing: -4px;
       font-weight: 900;
 
       margin: 10px 0 4px;
+    }
+
+    .balance-figure {
+      flex-shrink: 0;
     }
 
     .balance .balance-unit {
@@ -436,10 +447,13 @@
     }
 
     /* Genesis Pass holders' server-side 2x XP rate, surfaced as a
-       small animated pill right after the amount. Deliberately kept
-       out of the big number's own font/flex context above so the
+       small animated pill at the end of the balance line. Deliberately
+       kept out of the big number's own font context above so the
        balance figure always renders at full, undiminished size —
-       this is a small accent next to it, not an equal-weight sibling. */
+       this is a small accent on the line, not an equal-weight sibling.
+       flex-wrap: wrap above means if a very long number ever leaves no
+       room for it, it drops to its own line instead of spilling past
+       the card's edge. */
     @keyframes xpBadgeShine {
       0%   { left: -60%; }
       55%  { left: 130%; }
@@ -452,6 +466,7 @@
       align-items: center;
       overflow: hidden;
       vertical-align: middle;
+      flex-shrink: 0;
 
       font-size: 10px;
       font-weight: 800;
@@ -467,13 +482,13 @@
       margin-left: 6px;
     }
 
-    /* On the balance card the badge sits right against the "XP"
-       label with little room to breathe — a bit more distance here
-       reads as a deliberate, separate accent rather than a crowded
-       afterthought. Kept modest: still clearly tied to the same line,
-       not pushed out toward the card's edge. */
+    /* Smaller and set at the end of the line via the flex row above,
+       rather than crowding right after the "XP" label. */
     .balance .xp-multiplier-badge {
-      margin-left: 18px;
+      align-self: center;
+      margin-left: 0;
+      font-size: 8px;
+      padding: 2.5px 7px;
     }
 
     .xp-multiplier-badge::after {
@@ -4499,7 +4514,7 @@
           </div>
         </div>
             <div class="balance">
-  <span id="xpBalance" style="visibility:hidden;">0</span> <span class="balance-unit">XP</span><span id="xpMultiplierBadge" class="xp-multiplier-badge" style="display:none;">2X Multiplier</span>
+  <span class="balance-figure"><span id="xpBalance" style="visibility:hidden;">0</span> <span class="balance-unit">XP</span></span><span id="xpMultiplierBadge" class="xp-multiplier-badge" style="display:none;">2X Multiplier</span>
 </div>
 
 <div class="balance-note">
@@ -6439,7 +6454,7 @@ async function markAllNotificationsRead() {
 
     if (balance) {
       balance.innerHTML =
-        `<span id="xpBalance">${profile.xp || 0}</span> <span class="balance-unit">XP</span>` +
+        `<span class="balance-figure"><span id="xpBalance">${profile.xp || 0}</span> <span class="balance-unit">XP</span></span>` +
         `<span id="xpMultiplierBadge" class="xp-multiplier-badge"${hasGenesisPass ? "" : ' style="display:none;"'}>2X Multiplier</span>`;
     }
 
