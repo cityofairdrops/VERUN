@@ -2210,6 +2210,171 @@
       45%, 55% { opacity: 1; transform: scale(1) rotate(25deg); }
     }
 
+    /* ================= GENESIS MINT SUCCESS MODAL ================= */
+    /* Reuses .genesis-ticket-wrap / .genesis-ticket / .genesis-ticket-icon
+       / .genesis-ticket-name as-is, so the same premium ticket motion
+       (idle float, foil spin, card sweep, seal pulse, spark twinkle)
+       carries straight into this celebration popup. */
+
+    .mint-success-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.7);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s ease;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .mint-success-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .mint-success-modal {
+      position: relative;
+      width: 100%;
+      max-width: 360px;
+      overflow: hidden;
+
+      background: var(--drawer-bg);
+      border: 1px solid var(--green-border);
+      border-radius: 18px;
+      box-shadow: 0 30px 70px rgba(0,0,0,0.6);
+
+      padding: 32px 24px 26px;
+      text-align: center;
+
+      transform: translateY(18px) scale(.92);
+      opacity: 0;
+      transition: transform .38s cubic-bezier(.2,.8,.2,1), opacity .3s ease;
+    }
+
+    .mint-success-overlay.open .mint-success-modal {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+
+    .mint-success-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3;
+    }
+
+    .mint-success-close:hover {
+      color: var(--text);
+      border-color: var(--green-border);
+    }
+
+    .mint-success-kicker {
+      color: var(--green);
+      font-size: 9.5px;
+      font-weight: 900;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .mint-success-title {
+      font-size: 19px;
+      font-weight: 900;
+      letter-spacing: -.3px;
+      margin-bottom: 18px;
+    }
+
+    .mint-success-ticket-wrap {
+      margin: 0 auto 18px;
+    }
+
+    .mint-success-copy {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.6;
+      max-width: 280px;
+      margin: 0 auto;
+    }
+
+    /* Confetti burst — paused by default; the JS adds/re-adds the
+       "-play" class (with a forced reflow in between) so the burst
+       replays from frame zero every time the modal opens, instead of
+       only animating once on page load. */
+    .mint-success-confetti {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .mint-success-confetti span {
+      position: absolute;
+      top: -12px;
+      width: 6px;
+      height: 12px;
+      opacity: 0;
+      border-radius: 1px;
+    }
+
+    .mint-success-confetti span:nth-child(1)  { left:4%;  background:#ffe28a; }
+    .mint-success-confetti span:nth-child(2)  { left:12%; background:#8dffb7; }
+    .mint-success-confetti span:nth-child(3)  { left:20%; background:#f6b73c; }
+    .mint-success-confetti span:nth-child(4)  { left:29%; background:#ffffff; }
+    .mint-success-confetti span:nth-child(5)  { left:37%; background:#8dffb7; }
+    .mint-success-confetti span:nth-child(6)  { left:46%; background:#ffe28a; }
+    .mint-success-confetti span:nth-child(7)  { left:54%; background:#f6b73c; }
+    .mint-success-confetti span:nth-child(8)  { left:62%; background:#8dffb7; }
+    .mint-success-confetti span:nth-child(9)  { left:70%; background:#ffffff; }
+    .mint-success-confetti span:nth-child(10) { left:78%; background:#ffe28a; }
+    .mint-success-confetti span:nth-child(11) { left:86%; background:#f6b73c; }
+    .mint-success-confetti span:nth-child(12) { left:93%; background:#8dffb7; }
+    .mint-success-confetti span:nth-child(13) { left:50%; background:#ffe28a; }
+    .mint-success-confetti span:nth-child(14) { left:16%; background:#ffffff; }
+
+    .mint-success-confetti-play span {
+      animation: verunConfettiFall 2.4s ease-in forwards;
+    }
+
+    .mint-success-confetti-play span:nth-child(1)  { animation-delay:.02s; }
+    .mint-success-confetti-play span:nth-child(2)  { animation-delay:.18s; }
+    .mint-success-confetti-play span:nth-child(3)  { animation-delay:.05s; }
+    .mint-success-confetti-play span:nth-child(4)  { animation-delay:.24s; }
+    .mint-success-confetti-play span:nth-child(5)  { animation-delay:.10s; }
+    .mint-success-confetti-play span:nth-child(6)  { animation-delay:.30s; }
+    .mint-success-confetti-play span:nth-child(7)  { animation-delay:.14s; }
+    .mint-success-confetti-play span:nth-child(8)  { animation-delay:.22s; }
+    .mint-success-confetti-play span:nth-child(9)  { animation-delay:.06s; }
+    .mint-success-confetti-play span:nth-child(10) { animation-delay:.28s; }
+    .mint-success-confetti-play span:nth-child(11) { animation-delay:.16s; }
+    .mint-success-confetti-play span:nth-child(12) { animation-delay:.08s; }
+    .mint-success-confetti-play span:nth-child(13) { animation-delay:.36s; }
+    .mint-success-confetti-play span:nth-child(14) { animation-delay:.40s; }
+
+    @keyframes verunConfettiFall {
+      0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+      8%   { opacity: 1; }
+      100% { transform: translateY(340px) rotate(540deg); opacity: 0; }
+    }
+
     .genesis-mint-title,
     .genesis-owned-title {
       font-size: 16px;
@@ -2248,12 +2413,15 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
+      max-width: 100%;
+      flex-wrap: wrap;
+      justify-content: center;
 
       padding: 7px 14px;
 
       background: var(--panel2);
       border: 1px solid var(--border);
-      border-radius: 999px;
+      border-radius: 14px;
 
       font-size: 10.5px;
     }
@@ -2269,6 +2437,7 @@
     .genesis-owned-wallet-value {
       font-family: 'IBM Plex Mono', monospace;
       color: var(--muted);
+      word-break: break-all;
     }
 
     .genesis-mint-locked {
@@ -4060,6 +4229,81 @@
   </div>
 </div>
 
+<!-- GENESIS MINT SUCCESS MODAL -->
+<div id="genesisMintSuccessOverlay" class="mint-success-overlay">
+  <div class="mint-success-modal" role="dialog" aria-modal="true" aria-label="Genesis Pass minted successfully">
+
+    <div class="mint-success-confetti" id="genesisMintSuccessConfetti" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
+
+    <button type="button" class="mint-success-close" id="genesisMintSuccessClose" aria-label="Close">✕</button>
+
+    <div class="mint-success-kicker">Confirmed on-chain</div>
+    <div class="mint-success-title">Genesis Pass Minted!</div>
+
+    <div class="genesis-ticket-wrap genesis-ticket-wrap--owned mint-success-ticket-wrap">
+      <div class="genesis-ticket">
+        <svg class="genesis-ticket-icon" viewBox="0 0 240 120" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="genesisCardGradSuccess" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#fffbea"/>
+              <stop offset="24%" stop-color="#ffe28a"/>
+              <stop offset="50%" stop-color="#f6b73c"/>
+              <stop offset="76%" stop-color="#c98f2b"/>
+              <stop offset="100%" stop-color="#7a4e12"/>
+            </linearGradient>
+            <linearGradient id="genesisBorderGradSuccess" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#8dffb7"/>
+              <stop offset="50%" stop-color="#ffe28a"/>
+              <stop offset="100%" stop-color="#8dffb7"/>
+            </linearGradient>
+            <linearGradient id="genesisShineGradSuccess" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+              <stop offset="45%" stop-color="#ffffff" stop-opacity="0.85"/>
+              <stop offset="55%" stop-color="#8dffb7" stop-opacity="0.7"/>
+              <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+            </linearGradient>
+            <radialGradient id="genesisGemGradSuccess" cx="35%" cy="30%" r="75%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="40%" stop-color="#8dffb7"/>
+              <stop offset="100%" stop-color="#1f8f57"/>
+            </radialGradient>
+            <clipPath id="genesisCardClipSuccess">
+              <rect x="8" y="14" width="224" height="92" rx="16"/>
+            </clipPath>
+          </defs>
+
+          <rect x="8" y="14" width="224" height="92" rx="16" fill="url(#genesisCardGradSuccess)" stroke="url(#genesisBorderGradSuccess)" stroke-width="1.6"/>
+
+          <g clip-path="url(#genesisCardClipSuccess)">
+            <ellipse cx="70" cy="32" rx="70" ry="20" fill="#ffffff" opacity="0.16"/>
+            <rect class="genesis-card-shine" x="-40" y="4" width="46" height="112" fill="url(#genesisShineGradSuccess)"/>
+          </g>
+
+          <line x1="172" y1="26" x2="172" y2="94" stroke="#fff3c4" stroke-width="1" opacity="0.35"/>
+
+          <g class="genesis-card-seal">
+            <path d="M202 44 L217 60 L202 76 L187 60 Z" fill="url(#genesisGemGradSuccess)" stroke="#0d3d26" stroke-width="1" opacity="0.95"/>
+            <path d="M195 55 L209 55 M202 48 L202 72" stroke="#ffffff" stroke-width="1" opacity="0.55"/>
+          </g>
+
+          <path class="genesis-card-spark spark-a" d="M26 30 l2 6 6 2 -6 2 -2 6 -2-6-6-2 6-2z" fill="#fff3c4"/>
+          <path class="genesis-card-spark spark-b" d="M40 84 l1.6 4.6 4.6 1.6 -4.6 1.6 -1.6 4.6 -1.6-4.6-4.6-1.6 4.6-1.6z" fill="#8dffb7"/>
+        </svg>
+        <span class="genesis-ticket-name" id="genesisMintSuccessTicketName"></span>
+      </div>
+    </div>
+
+    <p class="mint-success-copy">
+      Your Genesis Code is locked in — share it to start earning referral rewards.
+    </p>
+
+  </div>
+</div>
+
 <!-- VERUN APP DRAWER -->
 <div id="verunMenuOverlay" class="verun-menu-overlay"></div>
 
@@ -4487,9 +4731,20 @@
 
     <div class="genesis-wallet-pending-sign" id="genesisWalletPendingSign" style="display:none;">
       <div class="genesis-wallet-info">
-        <span class="genesis-wallet-chain-badge is-connected">
+        <span class="genesis-wallet-chain-badge genesis-wallet-address-badge is-connected">
           <span class="genesis-wallet-chain-dot"></span>
-          <span id="genesisWalletPendingAddress"></span>
+          <img
+            class="genesis-wallet-provider-icon"
+            id="genesisWalletPendingProviderIcon"
+            alt=""
+            style="display:none;"
+          />
+          <span
+            class="genesis-wallet-provider-icon genesis-wallet-provider-icon-fallback"
+            id="genesisWalletPendingProviderIconFallback"
+            style="display:none;"
+          ></span>
+          <span id="genesisWalletPendingAddress" class="genesis-wallet-address-full"></span>
         </span>
         <p class="genesis-wallet-copy" id="genesisWalletPendingCopy">Sign the message in your wallet to verify ownership.</p>
       </div>
@@ -4756,7 +5011,7 @@
           <button type="button" class="copy-button" id="genesisNameCopy">Copy</button>
         </div>
         <p class="genesis-name-display-hint">
-          Share it — earn 0.0005 ETH every time someone mints using it.
+          Share it — earn 0.00015 ETH every time someone mints using it.
         </p>
       </div>
 
@@ -7771,6 +8026,8 @@ async function loadVerunLeaderboard() {
       genesisProviderIcon: document.getElementById("genesisWalletProviderIcon"),
       genesisProviderIconFallback: document.getElementById("genesisWalletProviderIconFallback"),
       genesisPendingAddress: document.getElementById("genesisWalletPendingAddress"),
+      genesisPendingProviderIcon: document.getElementById("genesisWalletPendingProviderIcon"),
+      genesisPendingProviderIconFallback: document.getElementById("genesisWalletPendingProviderIconFallback"),
       genesisPendingCopy: document.getElementById("genesisWalletPendingCopy"),
       miningConnectBtn: document.getElementById("miningWalletConnectButton"),
       miningSignBtn: document.getElementById("miningWalletSignButton"),
@@ -7782,6 +8039,8 @@ async function loadVerunLeaderboard() {
       miningProviderIcon: document.getElementById("miningWalletProviderIcon"),
       miningProviderIconFallback: document.getElementById("miningWalletProviderIconFallback"),
       miningPendingAddress: document.getElementById("miningWalletPendingAddress"),
+      miningPendingProviderIcon: document.getElementById("miningWalletPendingProviderIcon"),
+      miningPendingProviderIconFallback: document.getElementById("miningWalletPendingProviderIconFallback"),
       miningPendingCopy: document.getElementById("miningWalletPendingCopy")
     };
   }
@@ -7981,14 +8240,23 @@ async function loadVerunLeaderboard() {
       if (el) el.textContent = fullAddress(walletState.address);
     });
 
-    // Wallet provider icon, to the left of the full address — the logo
-    // of whichever wallet app the user picked to connect (MetaMask,
-    // Trust Wallet, etc.), supplied by AppKit's getWalletInfo/
-    // subscribeWalletInfo. Falls back to a plain monogram chip if a
-    // wallet doesn't expose an icon, or if the icon URL fails to load.
+    // Address in pending-sign panel — also full form, so the wallet is
+    // fully identifiable before the user signs, not just after.
+    [e.genesisPendingAddress, e.miningPendingAddress].forEach(el => {
+      if (el) el.textContent = fullAddress(walletState.address);
+    });
+
+    // Wallet provider icon, to the left of the full address — shown in
+    // both the pending-sign and verified panels. The logo of whichever
+    // wallet app the user picked to connect (MetaMask, Trust Wallet,
+    // etc.), supplied by AppKit's getWalletInfo/subscribeWalletInfo.
+    // Falls back to a plain monogram chip if a wallet doesn't expose an
+    // icon, or if the icon URL fails to load.
     [
       [e.genesisProviderIcon, e.genesisProviderIconFallback],
-      [e.miningProviderIcon, e.miningProviderIconFallback]
+      [e.miningProviderIcon, e.miningProviderIconFallback],
+      [e.genesisPendingProviderIcon, e.genesisPendingProviderIconFallback],
+      [e.miningPendingProviderIcon, e.miningPendingProviderIconFallback]
     ].forEach(([icon, fallback]) => {
       if (!icon || !fallback) return;
 
@@ -8011,11 +8279,6 @@ async function loadVerunLeaderboard() {
         icon.style.display = "none";
         fallback.style.display = "flex";
       }
-    });
-
-    // Address in pending-sign panel
-    [e.genesisPendingAddress, e.miningPendingAddress].forEach(el => {
-      if (el) el.textContent = shortAddress(walletState.address);
     });
 
     // Connect button — when the wrong wallet is connected, this button
@@ -10017,9 +10280,13 @@ async function loadVerunLeaderboard() {
       // wallet is currently connected only if that hasn't loaded yet.
       const wallet = state.walletAddress ||
         (window.verunWallet ? window.verunWallet.getState().address : null);
-      e.ownedWalletValue.textContent = wallet
-        ? wallet.slice(0, 6) + "…" + wallet.slice(-4)
-        : "Not connected";
+      let displayWallet = wallet;
+      try {
+        if (wallet && window.ethers && typeof ethers.getAddress === "function") {
+          displayWallet = ethers.getAddress(wallet);
+        }
+      } catch (err) {}
+      e.ownedWalletValue.textContent = displayWallet || "Not connected";
     }
 
     if (e.ownedDate && state.mintedAt) {
@@ -10195,6 +10462,56 @@ async function loadVerunLeaderboard() {
   let minting = false;
   let claiming = false;
 
+  // Celebration popup shown right after the mint transaction confirms
+  // on-chain. Auto-closes on its own after a few seconds, but stays
+  // fully dismissible (✕ button or tap-outside) so it never blocks the
+  // user if they want to move on immediately.
+  let genesisMintSuccessTimer = null;
+
+  function openGenesisMintSuccess(code) {
+    const overlay = document.getElementById("genesisMintSuccessOverlay");
+    const nameEl = document.getElementById("genesisMintSuccessTicketName");
+    const confetti = document.getElementById("genesisMintSuccessConfetti");
+    if (!overlay) return;
+
+    if (nameEl) nameEl.textContent = code || "";
+
+    overlay.classList.add("open");
+    document.body.style.overflow = "hidden";
+
+    if (confetti) {
+      // Force a reflow between removing and re-adding the class so the
+      // confetti animation restarts from frame zero every time this
+      // opens, instead of only ever playing once (on page load).
+      confetti.classList.remove("mint-success-confetti-play");
+      void confetti.offsetWidth;
+      confetti.classList.add("mint-success-confetti-play");
+    }
+
+    if (genesisMintSuccessTimer) clearTimeout(genesisMintSuccessTimer);
+    genesisMintSuccessTimer = setTimeout(closeGenesisMintSuccess, 5000);
+  }
+
+  function closeGenesisMintSuccess() {
+    const overlay = document.getElementById("genesisMintSuccessOverlay");
+    if (!overlay) return;
+    overlay.classList.remove("open");
+    document.body.style.overflow = "";
+    if (genesisMintSuccessTimer) {
+      clearTimeout(genesisMintSuccessTimer);
+      genesisMintSuccessTimer = null;
+    }
+  }
+
+  (function setupGenesisMintSuccessModal() {
+    const overlay = document.getElementById("genesisMintSuccessOverlay");
+    const closeBtn = document.getElementById("genesisMintSuccessClose");
+    closeBtn?.addEventListener("click", closeGenesisMintSuccess);
+    overlay?.addEventListener("click", (event) => {
+      if (event.target === overlay) closeGenesisMintSuccess();
+    });
+  })();
+
   async function mintPass() {
     if (!MINTING_ENABLED || !currentUserId || minting) return;
     // Defense in depth: the mint button is already disabled without a
@@ -10271,6 +10588,12 @@ async function loadVerunLeaderboard() {
 
       if (e.mintButton) e.mintButton.textContent = "Confirming on-chain…";
       await tx.wait();
+
+      // Transaction is confirmed on-chain at this point — fire the
+      // celebration popup now, with the exact code the user just
+      // minted with, rather than waiting on the (best-effort) server
+      // record below.
+      openGenesisMintSuccess(code);
 
       // Pull the freshly-minted tokenId back from the contract rather
       // than guessing from a local counter.
