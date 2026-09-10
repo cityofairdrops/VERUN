@@ -5909,11 +5909,16 @@ async function loadReferralDashboard() {
       `${window.location.origin}${window.location.pathname}?ref=${encodeURIComponent(profile.referral_code)}`;
   }
 
-  // Genesis Pass holders earn ALL XP — including referral XP — at 2x
-  // server-side. This block is a display-only estimate (it always has
-  // been, per the note above: a flat rate assumption, not a ledger
-  // read), so it mirrors the account's *current* rate rather than
-  // reconstructing exactly when each past referral was credited.
+  // Genesis Pass holders earn NEW XP — including referral XP — at 2x
+  // server-side, applied at the moment each referral is actually
+  // credited. This panel has no ledger of *when* each past referral
+  // was credited relative to the mint date, so it must never multiply
+  // the historical count by the account's *current* rate — doing so
+  // would retroactively double referrals that were really paid out at
+  // 1x before the pass existed, which is exactly the "existing XP
+  // multiplied" bug this fix removes. The badge below still reflects
+  // the current rate as a forward-looking indicator for the *next*
+  // referral, but the number itself is always the plain 1x estimate.
   // profiles.xp itself (shown on the balance card) remains the real,
   // backend-computed total — this is never used to calculate it.
   let hasGenesisPass = false;
@@ -5925,17 +5930,16 @@ async function loadReferralDashboard() {
   } catch (err) {
     console.error("Failed to check Genesis Pass status:", err);
   }
-  const xpMultiplier = hasGenesisPass ? 2 : 1;
 
   // XP earned so far: a flat 100 XP per referral, plus any
   // milestone bonus XP already reached (the 100-referral milestone
-  // pays $VERUN, not XP, so it never adds to this total) — both
-  // scaled by the account's current XP multiplier.
+  // pays $VERUN, not XP, so it never adds to this total). No
+  // client-side multiplier here — see note above.
   const milestoneBonusXp = REFERRAL_MILESTONES
     .filter(m => count >= m.threshold)
     .reduce((sum, m) => sum + m.bonusXp, 0);
 
-  const earnedXp = ((count * REFERRAL_XP_PER_REFERRAL) + milestoneBonusXp) * xpMultiplier;
+  const earnedXp = (count * REFERRAL_XP_PER_REFERRAL) + milestoneBonusXp;
 
   if (referralXpEl) {
     referralXpEl.textContent = `${earnedXp.toLocaleString()} XP`;
@@ -6754,6 +6758,24 @@ async function loadTasks() {
 
   if (!container) return;
 
+  // Genesis Pass holders get every NEW task reward at 2x, applied by
+  // claim_task_xp itself. This is only used to preview that same rate
+  // on the task card before claiming — it never touches profile.xp or
+  // any stored balance, and it never re-scales an already-claimed
+  // reward (isDone rows below always render task.xp_reward as-is).
+  let hasGenesisPass = false;
+  if (session) {
+    try {
+      const { data: passState, error: passError } =
+        await supabaseClient.rpc("get_my_genesis_pass");
+      if (passError) throw passError;
+      hasGenesisPass = !!(passState && passState.owned);
+    } catch (err) {
+      console.error("Failed to check Genesis Pass status:", err);
+    }
+  }
+  const taskXpMultiplier = hasGenesisPass ? 2 : 1;
+
   let verifications = [];
 
   // Load this user's verification status
@@ -6822,6 +6844,14 @@ tasks.sort((a, b) => {
       verification &&
       verification.status === "approved" &&
       verification.claimed_at;
+
+    // Preview reward: current rate for anything not yet claimed. A
+    // completed task always shows its plain base reward — its actual
+    // credited amount was whatever rate applied at claim time, which
+    // this list has no record of and must never re-guess.
+    const previewXpReward = isDone
+      ? Number(task.xp_reward || 0)
+      : Number(task.xp_reward || 0) * taskXpMultiplier;
 
     taskElement.className = isDone ? "task done" : "task";
 
@@ -6982,7 +7012,7 @@ tasks.sort((a, b) => {
       <div class="task-actions">
 
         <div class="task-reward">
-          +${task.xp_reward} XP
+          +${previewXpReward.toLocaleString()} XP
         </div>
 
         <div class="task-buttons">
@@ -7544,7 +7574,8 @@ async function refreshTodaysReward(userId) {
     const [
       { data: verifications },
       { data: taskList },
-      { data: todayLogin }
+      { data: todayLogin },
+      passResult
     ] = await Promise.all([
       supabaseClient
         .from("task_verifications")
@@ -7559,10 +7590,21 @@ async function refreshTodaysReward(userId) {
         .select("xp_awarded,weekly_bonus")
         .eq("user_id", userId)
         .eq("login_date", todayStr)
-        .maybeSingle()
+        .maybeSingle(),
+      supabaseClient.rpc("get_my_genesis_pass")
     ]);
 
     if (requestId !== todaysRewardRequestId) return;
+
+    // claim_task_xp credits each of today's task claims at whatever
+    // rate the account holds right now (1x, or 2x for a Genesis Pass
+    // holder) — the account's rate essentially never changes mid-day,
+    // so re-applying the current rate here mirrors what was actually
+    // credited, instead of always assuming 1x and under-reporting
+    // every Genesis Pass holder's real total. This never touches
+    // profile.xp itself, only this same-day summary.
+    const hasGenesisPass = !!(passResult && !passResult.error && passResult.data && passResult.data.owned);
+    const todaysTaskMultiplier = hasGenesisPass ? 2 : 1;
 
     let total = 0;
 
@@ -7579,7 +7621,7 @@ async function refreshTodaysReward(userId) {
           verification.claimed_at &&
           verification.claimed_at.slice(0, 10) === todayStr
         ) {
-          total += xpByTaskId[verification.task_id] || 0;
+          total += (xpByTaskId[verification.task_id] || 0) * todaysTaskMultiplier;
         }
       });
 
@@ -10922,6 +10964,14 @@ async function loadVerunLeaderboard() {
         // elevated styling appear immediately instead of on next reload.
         if (typeof loadUserProfile === "function") {
           loadUserProfile();
+        }
+
+        // Also refresh the task list so each card's "+XP" preview
+        // immediately reflects the new 2x rate — existing xp_reward
+        // values on the tasks table are untouched, only the preview
+        // multiplier applied when rendering changes.
+        if (typeof loadTasks === "function") {
+          loadTasks();
         }
       } catch (recordErr) {
         // The mint itself already succeeded on-chain — a backend
