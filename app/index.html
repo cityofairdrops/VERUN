@@ -403,29 +403,6 @@
       border-color: rgba(255,205,110,0.16);
     }
 
-    .balance-card-elite-tag {
-      display: none;
-      align-items: center;
-      gap: 5px;
-
-      font-size: 9px;
-      font-weight: 800;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-
-      color: #f6cc6e;
-      background: rgba(255,205,110,0.12);
-      border: 1px solid rgba(255,205,110,0.3);
-      border-radius: 999px;
-      padding: 3px 8px;
-
-      margin-left: 8px;
-    }
-
-    .balance-card.is-elite .balance-card-elite-tag {
-      display: inline-flex;
-    }
-
     .balance-label {
       color: var(--muted2);
       font-size: 10px;
@@ -435,13 +412,6 @@
     }
 
     .balance {
-      display: flex;
-      align-items: baseline;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      column-gap: 14px;
-      row-gap: 4px;
-
       font-size: clamp(45px, 7vw, 70px);
       line-height: 1;
       letter-spacing: -4px;
@@ -450,35 +420,69 @@
       margin: 10px 0 4px;
     }
 
-    .balance-figure {
-      display: inline-flex;
-      align-items: baseline;
-      gap: 6px;
-    }
-
-    .balance span {
+    .balance .balance-unit {
       color: var(--green);
       font-size: 18px;
       letter-spacing: 0;
     }
 
     /* #xpBalance carries the actual number and needs the big balance
-       font — .balance span above is meant only for the small green
-       "XP" unit label next to it, not the figure itself. */
+       font — .balance-unit above is meant only for the small green
+       "XP" label next to it, not the figure itself. */
     .balance #xpBalance {
       color: inherit;
       font-size: inherit;
       letter-spacing: inherit;
     }
 
-    /* Genesis Pass holders' server-side 2x XP rate, surfaced next to
-       the amount — sits on the balance's own baseline via the flex
-       row above, so it never wraps under the figure on narrow screens
-       unless space genuinely runs out. */
+    /* Genesis Pass holders' server-side 2x XP rate, surfaced as a
+       small animated pill right after the amount. Deliberately kept
+       out of the big number's own font/flex context above so the
+       balance figure always renders at full, undiminished size —
+       this is a small accent next to it, not an equal-weight sibling. */
+    @keyframes xpBadgeShine {
+      0%   { left: -60%; }
+      55%  { left: 130%; }
+      100% { left: 130%; }
+    }
+
     .xp-multiplier-badge {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      overflow: hidden;
+      vertical-align: middle;
+
+      font-size: 10px;
       font-weight: 800;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
       white-space: nowrap;
-      align-self: center;
+
+      color: var(--green);
+      background: var(--green-soft);
+      border: 1px solid var(--green-border);
+      border-radius: 999px;
+      padding: 3px 9px;
+      margin-left: 6px;
+    }
+
+    .xp-multiplier-badge::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -60%;
+      width: 40%;
+      height: 100%;
+
+      background: linear-gradient(
+        120deg,
+        transparent 0%,
+        rgba(255,255,255,0.6) 50%,
+        transparent 100%
+      );
+      transform: skewX(-20deg);
+      animation: xpBadgeShine 2.6s ease-in-out infinite;
     }
 
     .bal-top {
@@ -1134,26 +1138,20 @@
 
     .referral-stat-value-row {
       display: flex;
+      flex-wrap: wrap;
       align-items: baseline;
       gap: 6px;
+      row-gap: 4px;
       min-width: 0;
     }
 
-    /* Two classes here (vs. the single-class .xp-multiplier-badge on
-       the balance card) so this beats the ".referral-stat span"
-       descendant rule above, which would otherwise mute this tag's
-       color/size to match the plain stat labels. */
-    .referral-stat .referral-xp-multiplier-tag {
-      flex-shrink: 0;
-      font-size: 9px;
-      font-weight: 800;
-      letter-spacing: 0.3px;
+    /* .referral-stat span above would otherwise mute the shared
+       badge's color/size to match the plain stat labels — this beats
+       it on specificity so the referral card's badge looks identical
+       to the balance card's. */
+    .referral-stat .xp-multiplier-badge {
       color: var(--green);
-      background: var(--green-soft);
-      border: 1px solid var(--green-border);
-      border-radius: 999px;
-      padding: 1px 6px;
-      white-space: nowrap;
+      font-size: 9px;
     }
 
     .referral-progress {
@@ -4473,12 +4471,6 @@
         <div class="bal-top">
           <div class="balance-label">
             Your Balance
-            <span class="balance-card-elite-tag">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M13 2 3 14h9l-1 8 10-12h-9z" fill="currentColor" stroke="none"/>
-              </svg>
-              Genesis
-            </span>
           </div>
 
           <div class="bal-top-right">
@@ -4498,8 +4490,7 @@
           </div>
         </div>
             <div class="balance">
-  <span class="balance-figure"><span id="xpBalance" style="visibility:hidden;">0</span> <span>XP</span></span>
-  <span id="xpMultiplierBadge" class="xp-multiplier-badge" style="display:none;">(2X Multiplier)</span>
+  <span id="xpBalance" style="visibility:hidden;">0</span> <span class="balance-unit">XP</span><span id="xpMultiplierBadge" class="xp-multiplier-badge" style="display:none;">2X Multiplier</span>
 </div>
 
 <div class="balance-note">
@@ -5240,7 +5231,7 @@
         <span>Referral XP</span>
         <div class="referral-stat-value-row">
           <strong id="referralXp">0 XP</strong>
-          <span id="referralXpMultiplierTag" class="referral-xp-multiplier-tag" style="display:none;">2X</span>
+          <span id="referralXpMultiplierTag" class="xp-multiplier-badge" style="display:none;">2X Multiplier</span>
         </div>
       </div>
 
@@ -6439,8 +6430,8 @@ async function markAllNotificationsRead() {
 
     if (balance) {
       balance.innerHTML =
-        `<span class="balance-figure"><span id="xpBalance">${profile.xp || 0}</span> <span>XP</span></span>` +
-        `<span id="xpMultiplierBadge" class="xp-multiplier-badge"${hasGenesisPass ? "" : ' style="display:none;"'}>(2X Multiplier)</span>`;
+        `<span id="xpBalance">${profile.xp || 0}</span> <span class="balance-unit">XP</span>` +
+        `<span id="xpMultiplierBadge" class="xp-multiplier-badge"${hasGenesisPass ? "" : ' style="display:none;"'}>2X Multiplier</span>`;
     }
 
     // Genesis Pass holders get a visibly elevated balance card — this
