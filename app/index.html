@@ -2405,6 +2405,54 @@
       max-width: 320px;
     }
 
+    /* Verified-state badge needs to fit a full 42-char address plus a
+       provider icon, unlike the short pill used before/while connecting —
+       so it's allowed to grow and wrap instead of staying fit-content. */
+    .genesis-wallet-address-badge,
+    .mining-wallet-address-badge {
+      width: auto;
+      max-width: 100%;
+      padding: 6px 14px 6px 8px;
+    }
+
+    .genesis-wallet-provider-icon,
+    .mining-wallet-provider-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      flex-shrink: 0;
+      object-fit: cover;
+      background: var(--avatar-bg);
+    }
+
+    .genesis-wallet-provider-icon-fallback,
+    .mining-wallet-provider-icon-fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--green-border);
+      background: var(--green-soft);
+      color: var(--green);
+      font-size: 9px;
+      font-weight: 800;
+    }
+
+    .genesis-wallet-address-full,
+    .mining-wallet-address-full {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10.5px;
+      letter-spacing: 0.2px;
+      word-break: break-all;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 480px) {
+      .genesis-wallet-address-badge,
+      .mining-wallet-address-badge {
+        width: 100%;
+      }
+    }
+
     .genesis-wallet-btn,
     .mining-wallet-btn {
       flex-shrink: 0;
@@ -4152,7 +4200,7 @@
               <div class="task-info">
 
                 <div class="task-name">
-                  Follow a VERUN account
+                  Follow VERUN on X
                 </div>
 
                 <div class="task-description">
@@ -4189,7 +4237,7 @@
               <div class="task-info">
 
                 <div class="task-name">
-                  Repost a VERUN post
+                  Repost on X
                 </div>
 
                 <div class="task-description">
@@ -4226,7 +4274,7 @@
               <div class="task-info">
 
                 <div class="task-name">
-                  Like a VERUN post
+                  Like the post
                 </div>
 
                 <div class="task-description">
@@ -4263,7 +4311,7 @@
               <div class="task-info">
 
                 <div class="task-name">
-                  Join a VERUN campaign
+                  Join the campaign
                 </div>
 
                 <div class="task-description">
@@ -4452,9 +4500,20 @@
 
     <div class="genesis-wallet-connected" id="genesisWalletConnected" style="display:none;">
       <div class="genesis-wallet-info">
-        <span class="genesis-wallet-chain-badge is-connected">
+        <span class="genesis-wallet-chain-badge genesis-wallet-address-badge is-connected">
           <span class="genesis-wallet-chain-dot"></span>
-          <span id="genesisWalletAddressValue"></span>
+          <img
+            class="genesis-wallet-provider-icon"
+            id="genesisWalletProviderIcon"
+            alt=""
+            style="display:none;"
+          />
+          <span
+            class="genesis-wallet-provider-icon genesis-wallet-provider-icon-fallback"
+            id="genesisWalletProviderIconFallback"
+            style="display:none;"
+          ></span>
+          <span id="genesisWalletAddressValue" class="genesis-wallet-address-full"></span>
         </span>
       </div>
       <button type="button" class="genesis-wallet-btn genesis-wallet-disconnect-btn" id="genesisWalletDisconnectButton">
@@ -7689,7 +7748,9 @@ async function loadVerunLeaderboard() {
     verified: false,
     connecting: false,
     signed: false,
-    signing: false
+    signing: false,
+    walletName: null,
+    walletIcon: null
   };
 
   // The wallet an account is permanently bound to, once the user has
@@ -7707,6 +7768,8 @@ async function loadVerunLeaderboard() {
       genesisPendingWrap: document.getElementById("genesisWalletPendingSign"),
       genesisConnectedWrap: document.getElementById("genesisWalletConnected"),
       genesisAddress: document.getElementById("genesisWalletAddressValue"),
+      genesisProviderIcon: document.getElementById("genesisWalletProviderIcon"),
+      genesisProviderIconFallback: document.getElementById("genesisWalletProviderIconFallback"),
       genesisPendingAddress: document.getElementById("genesisWalletPendingAddress"),
       genesisPendingCopy: document.getElementById("genesisWalletPendingCopy"),
       miningConnectBtn: document.getElementById("miningWalletConnectButton"),
@@ -7716,6 +7779,8 @@ async function loadVerunLeaderboard() {
       miningPendingWrap: document.getElementById("miningWalletPendingSign"),
       miningConnectedWrap: document.getElementById("miningWalletConnected"),
       miningAddress: document.getElementById("miningWalletAddressValue"),
+      miningProviderIcon: document.getElementById("miningWalletProviderIcon"),
+      miningProviderIconFallback: document.getElementById("miningWalletProviderIconFallback"),
       miningPendingAddress: document.getElementById("miningWalletPendingAddress"),
       miningPendingCopy: document.getElementById("miningWalletPendingCopy")
     };
@@ -7723,6 +7788,21 @@ async function loadVerunLeaderboard() {
 
   function shortAddress(address) {
     return address ? address.slice(0, 6) + "…" + address.slice(-4) : "";
+  }
+
+  // Full, un-truncated address for the verified/connected badge.
+  // Runs it through ethers' checksum formatter when available so it
+  // renders in standard EIP-55 mixed-case form instead of the all-
+  // lowercase form we normalize to internally for comparisons; falls
+  // back to the raw address if ethers hasn't loaded yet.
+  function fullAddress(address) {
+    if (!address) return "";
+    try {
+      if (window.ethers && typeof ethers.getAddress === "function") {
+        return ethers.getAddress(address);
+      }
+    } catch (e) {}
+    return address;
   }
 
   async function getCurrentUserId() {
@@ -7895,9 +7975,42 @@ async function loadVerunLeaderboard() {
       if (el) el.style.display = showVerified ? "" : "none";
     });
 
-    // Address in verified panel
+    // Address in verified panel — full form, not shortened, per the
+    // wallet-identity redesign of this box.
     [e.genesisAddress, e.miningAddress].forEach(el => {
-      if (el) el.textContent = shortAddress(walletState.address);
+      if (el) el.textContent = fullAddress(walletState.address);
+    });
+
+    // Wallet provider icon, to the left of the full address — the logo
+    // of whichever wallet app the user picked to connect (MetaMask,
+    // Trust Wallet, etc.), supplied by AppKit's getWalletInfo/
+    // subscribeWalletInfo. Falls back to a plain monogram chip if a
+    // wallet doesn't expose an icon, or if the icon URL fails to load.
+    [
+      [e.genesisProviderIcon, e.genesisProviderIconFallback],
+      [e.miningProviderIcon, e.miningProviderIconFallback]
+    ].forEach(([icon, fallback]) => {
+      if (!icon || !fallback) return;
+
+      const label = walletState.walletName || "Connected wallet";
+      fallback.textContent = label.trim().charAt(0).toUpperCase();
+      fallback.title = label;
+      icon.alt = label;
+      icon.title = label;
+
+      if (walletState.walletIcon) {
+        if (icon.src !== walletState.walletIcon) icon.src = walletState.walletIcon;
+        icon.onerror = () => {
+          icon.style.display = "none";
+          fallback.style.display = "flex";
+        };
+        icon.style.display = "";
+        fallback.style.display = "none";
+      } else {
+        icon.removeAttribute("src");
+        icon.style.display = "none";
+        fallback.style.display = "flex";
+      }
     });
 
     // Address in pending-sign panel
@@ -8108,7 +8221,7 @@ async function loadVerunLeaderboard() {
     if (_disconnectDebounceTimer) clearTimeout(_disconnectDebounceTimer);
     _disconnectDebounceTimer = setTimeout(function () {
       _disconnectDebounceTimer = null;
-      setWalletState({ address: null, chainId: null, connecting: false });
+      setWalletState({ address: null, chainId: null, connecting: false, walletName: null, walletIcon: null });
     }, 400);
   }
 
@@ -8141,6 +8254,29 @@ async function loadVerunLeaderboard() {
           handleProviderEvent(address, chainId, isConnected);
         });
       }
+
+      // Wallet identity (name + icon) for the connected-wallet badge.
+      // This is separate from subscribeAccount/subscribeProvider above,
+      // which only ever report the address/chain — not which wallet
+      // app the user picked to connect with.
+      function reportWalletInfo(info) {
+        setWalletState({
+          walletName: (info && info.name) || null,
+          walletIcon: (info && info.icon) || null
+        });
+      }
+
+      if (typeof appKit.subscribeWalletInfo === "function") {
+        appKit.subscribeWalletInfo(reportWalletInfo);
+      }
+
+      // Synchronous snapshot, same reasoning as getIsConnected() below —
+      // an already-restored session won't re-fire the subscription.
+      try {
+        if (typeof appKit.getWalletInfo === "function") {
+          reportWalletInfo(appKit.getWalletInfo());
+        }
+      } catch (e) {}
 
       // Synchronous snapshot — works when AppKit already has the session
       // in memory (e.g. injected wallets that report instantly).
