@@ -5410,6 +5410,7 @@
     <div id="leaderboardTabs" class="leaderboard-tabs">
       <button type="button" class="leaderboard-tab active" data-sort="xp">XP Leaderboard</button>
       <button type="button" class="leaderboard-tab" data-sort="referrals">Referral Leaderboard</button>
+      <button type="button" class="leaderboard-tab" data-sort="mining">Mining Leaderboard</button>
     </div>
 
     <div id="leaderboardLoading" style="text-align:center;padding:15px;">
@@ -5421,6 +5422,24 @@
     </div>
 
     <div id="leaderboardList"></div>
+
+    <!-- Mining Leaderboard has its own loading/error/list elements
+         (rather than sharing the XP/Referral ones above) so that
+         switching into or out of the mining tab can never clobber
+         the XP/Referral loading state, error message, or rendered
+         rows. It is fetched from a separate paginated RPC
+         (get_mining_leaderboard), so it also gets its own hidden
+         containers, toggled by setVerunLeaderboardSort(). -->
+    <div id="miningLeaderboardLoading"
+         style="display:none;text-align:center;padding:15px;">
+      Loading mining leaderboard...
+    </div>
+
+    <div id="miningLeaderboardError"
+         style="display:none;color:#ff6b6b;text-align:center;padding:15px;">
+    </div>
+
+    <div id="miningLeaderboardList" style="display:none;"></div>
 
   </div>
 
@@ -8151,7 +8170,38 @@ function renderVerunLeaderboardList() {
 function setVerunLeaderboardSort(sortKey) {
   verunLeaderboardSort = sortKey;
   renderVerunLeaderboardTabs();
-  renderVerunLeaderboardList();
+
+  // The XP/Referral pair and the Mining tab render into two entirely
+  // separate sets of elements (own loading/error/list nodes, own data,
+  // own pagination state — see the Mining Leaderboard block below), so
+  // switching tabs is just a visibility swap between the two groups.
+  // XP/Referral's own render function and state are untouched here.
+  const xpReferralLoading = document.getElementById("leaderboardLoading");
+  const xpReferralError = document.getElementById("leaderboardError");
+  const xpReferralList = document.getElementById("leaderboardList");
+  const miningLoading = document.getElementById("miningLeaderboardLoading");
+  const miningError = document.getElementById("miningLeaderboardError");
+  const miningList = document.getElementById("miningLeaderboardList");
+
+  if (sortKey === "mining") {
+    if (xpReferralLoading) xpReferralLoading.style.display = "none";
+    if (xpReferralError) xpReferralError.style.display = "none";
+    if (xpReferralList) xpReferralList.style.display = "none";
+    if (miningList) miningList.style.display = "";
+
+    if (verunMiningLeaderboardLoaded) {
+      renderMiningLeaderboardList();
+    } else if (typeof loadMiningLeaderboard === "function") {
+      loadMiningLeaderboard();
+    }
+  } else {
+    if (miningLoading) miningLoading.style.display = "none";
+    if (miningError) miningError.style.display = "none";
+    if (miningList) miningList.style.display = "none";
+    if (xpReferralList) xpReferralList.style.display = "";
+
+    renderVerunLeaderboardList();
+  }
 }
 
 document.addEventListener("click", event => {
@@ -8224,6 +8274,184 @@ async function loadVerunLeaderboard() {
     // session is known — an unconditional call here (with no session
     // check at all) was one of the sources of the "loads multiple
     // times" flicker on reload, so it's been removed.
+
+// ============================================
+// MINING LEADERBOARD (SEPARATE RPC + PAGINATION)
+// ============================================
+// This tab is intentionally independent of the XP/Referral leaderboard
+// above: it has its own data array, its own page state, and it talks
+// to a different RPC (get_mining_leaderboard) that already accepts
+// p_limit/p_offset. Rather than pulling one big list and slicing it
+// client-side (like XP/Referral do), each page here is fetched fresh
+// from the server, since a mined-balance leaderboard can span far more
+// rows than the two client-sorted tabs above.
+//
+// Ranking uses the `total_mined` field returned by the RPC only — the
+// already-credited, recorded balance — never the live/projected
+// mining balance shown elsewhere in the app (see projectedBalance() in
+// the mining module), which ticks up in real time between sessions and
+// would make rankings shift on their own and disagree with what's
+// actually been credited server-side.
+
+const VERUN_MINING_LEADERBOARD_PER_PAGE = 25;
+
+let verunMiningLeaderboardData = [];
+let verunMiningLeaderboardPage = 1;
+let verunMiningLeaderboardHasMore = false;
+let verunMiningLeaderboardLoading = false;
+let verunMiningLeaderboardLoaded = false;
+
+// Matches formatVerun()'s formatting (6 decimal places) used elsewhere
+// in the app for $VERUN amounts, kept local since that helper lives in
+// the mining module's own closure and isn't exposed globally.
+function formatMinedAmount(amount) {
+  return Number(amount || 0).toFixed(6);
+}
+
+function renderMiningLeaderboardList() {
+
+  const list = document.getElementById("miningLeaderboardList");
+  const error = document.getElementById("miningLeaderboardError");
+
+  if (!list) return;
+
+  if (error) error.style.display = "none";
+
+  if (!verunMiningLeaderboardData || verunMiningLeaderboardData.length === 0) {
+    list.innerHTML = `
+      <div style="text-align:center;padding:20px;">
+        No mining leaderboard users yet.
+      </div>
+    `;
+    return;
+  }
+
+  const start = (verunMiningLeaderboardPage - 1) * VERUN_MINING_LEADERBOARD_PER_PAGE;
+
+  const rowsHtml = verunMiningLeaderboardData.map((user, index) => {
+
+    // Always the recorded total_mined balance from the RPC — never a
+    // live/projected figure — so the rank and the number shown always
+    // agree with each other and with what's actually been credited.
+    const mined = formatMinedAmount(user.total_mined);
+
+    return `
+      <div class="leaderboard-row"
+           style="
+             display:flex;
+             align-items:center;
+             justify-content:space-between;
+             gap:12px;
+             padding:12px;
+             margin-bottom:8px;
+             border-radius:10px;
+             background:rgba(255,255,255,0.05);
+           ">
+
+        <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1;">
+          <strong style="min-width:35px;flex-shrink:0;">
+            #${start + index + 1}
+          </strong>
+
+          <div style="min-width:0;overflow:hidden;">
+            <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              @${escapeHtml(user.x_username)}
+            </div>
+
+            <div style="font-size:12px;opacity:0.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              ${mined} $VERUN mined
+            </div>
+          </div>
+        </div>
+
+        <strong style="flex-shrink:0;white-space:nowrap;">
+          ${mined} $VERUN
+        </strong>
+
+      </div>
+    `;
+  }).join("");
+
+  // "Has more" is inferred the standard way for offset pagination
+  // against an RPC that doesn't also return a total count: a full page
+  // (p_limit rows) means there may be another page; a short page means
+  // this was the last one.
+  const paginationHtml = (verunMiningLeaderboardPage > 1 || verunMiningLeaderboardHasMore) ? `
+    <div class="verun-pagination">
+      <button type="button" class="verun-page-btn" data-page-action="prev" data-pagination-for="miningLeaderboard" ${(verunMiningLeaderboardPage <= 1 || verunMiningLeaderboardLoading) ? "disabled" : ""}>‹ Prev</button>
+      <span class="verun-page-info">Page ${verunMiningLeaderboardPage}</span>
+      <button type="button" class="verun-page-btn" data-page-action="next" data-pagination-for="miningLeaderboard" ${(!verunMiningLeaderboardHasMore || verunMiningLeaderboardLoading) ? "disabled" : ""}>Next ›</button>
+    </div>
+  ` : "";
+
+  list.innerHTML = rowsHtml + paginationHtml;
+
+}
+
+document.addEventListener("click", event => {
+
+  const pageBtn = event.target.closest(
+    '.verun-page-btn[data-pagination-for="miningLeaderboard"]'
+  );
+
+  if (!pageBtn || pageBtn.disabled || verunMiningLeaderboardLoading) return;
+
+  const nextPage = verunMiningLeaderboardPage +
+    (pageBtn.dataset.pageAction === "next" ? 1 : -1);
+
+  if (nextPage < 1) return;
+
+  loadMiningLeaderboard(nextPage);
+
+});
+
+async function loadMiningLeaderboard(page) {
+
+  const targetPage = Math.max(1, page || verunMiningLeaderboardPage || 1);
+
+  const loading = document.getElementById("miningLeaderboardLoading");
+  const error = document.getElementById("miningLeaderboardError");
+  const list = document.getElementById("miningLeaderboardList");
+
+  if (!loading || !error || !list) return;
+  if (verunMiningLeaderboardLoading) return;
+
+  verunMiningLeaderboardLoading = true;
+  loading.style.display = "block";
+  error.style.display = "none";
+
+  try {
+    const { data, error: dbError } = await supabaseClient.rpc(
+      "get_mining_leaderboard",
+      {
+        p_limit: VERUN_MINING_LEADERBOARD_PER_PAGE,
+        p_offset: (targetPage - 1) * VERUN_MINING_LEADERBOARD_PER_PAGE
+      }
+    );
+
+    if (dbError) throw dbError;
+
+    const rows = data || [];
+
+    loading.style.display = "none";
+
+    verunMiningLeaderboardData = rows;
+    verunMiningLeaderboardPage = targetPage;
+    verunMiningLeaderboardHasMore = rows.length === VERUN_MINING_LEADERBOARD_PER_PAGE;
+    verunMiningLeaderboardLoaded = true;
+
+    renderMiningLeaderboardList();
+
+  } catch (err) {
+    console.error("Mining leaderboard error:", err);
+
+    loading.style.display = "none";
+    error.style.display = "block";
+    error.textContent = "Mining leaderboard error: " + (err.message || err);
+  } finally {
+    verunMiningLeaderboardLoading = false;
+  }
+}
     
 
 // ============================================================
