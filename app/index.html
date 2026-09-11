@@ -16,6 +16,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.8.23/dist/appkit.min.js">
 <link rel="preconnect" href="https://lhfgozlkeotxyzqowijz.supabase.co" crossorigin>
+<link rel="preconnect" href="https://rpc.testnet.chain.robinhood.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
     :root {
@@ -5689,8 +5690,20 @@
 
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<!-- ethers.js and html2canvas are both large, and neither is needed for
+     the first paint or for the code that runs immediately after this
+     point (that code only touches window.supabase). Every place in
+     this file that uses `ethers` or `html2canvas` already does so
+     from inside a function body or an event handler — never at the
+     top level while the page is still parsing — and the ethers call
+     sites already guard on `window.ethers` being present. So it's
+     safe to mark these two `defer`: the browser keeps parsing and
+     rendering the rest of the page immediately instead of stalling on
+     these two downloads, which was the main reason the app could feel
+     "stuck" on a slow/flaky mobile connection. defer preserves
+     execution order and still finishes before DOMContentLoaded. -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
 <script>
 
   // ============================================
@@ -5762,6 +5775,46 @@
   // Expose so other independently-scoped modules (e.g. the wallet
   // verification module) can reach the same client / auth session.
   window.supabaseClient = supabaseClient;
+
+  // ============================================
+  // NETWORK TIMEOUT GUARD
+  // ============================================
+  // On a slow or flaky mobile connection, a Supabase call can sit
+  // pending for a long time instead of quickly failing — and since
+  // several things on load (the profile fetch, each section's own
+  // loader) are `await`ed in sequence, one stalled call was enough to
+  // make the whole app look frozen ("stuck", "doesn't reload") even
+  // though nothing had actually errored. This races a promise against
+  // a timer: if the real call wins, its value is used as normal and
+  // the timer never matters; if the timer wins first, callers get
+  // `fallback` instead of hanging forever, and the underlying call is
+  // left to finish/log in the background on its own. Never rejects,
+  // so it's a drop-in wrapper around existing awaits.
+  window.withTimeout = function withTimeout(promise, ms, fallback) {
+    return new Promise(resolve => {
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        resolve(fallback);
+      }, ms);
+
+      Promise.resolve(promise).then(
+        value => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          resolve(value);
+        },
+        () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          resolve(fallback);
+        }
+      );
+    });
+  };
 
   // ============================================
   // VERUN REFERRAL TRACKING
@@ -11705,11 +11758,19 @@ async function loadMiningLeaderboard(page) {
     guestGate?.classList.remove("visible");
     authApp?.classList.remove("locked");
 
-    const { data: profile } = await supabaseClient
-      .from("profiles")
-      .select("x_username")
-      .eq("id", session.user.id)
-      .maybeSingle();
+    // A stalled network call here used to freeze the entire app (guest
+    // gate already hidden, but nothing behind it ever loads). If this
+    // doesn't come back within 8s, proceed with no profile rather than
+    // hang — setDrawerUser() already has to handle a missing username.
+    const { data: profile } = await window.withTimeout(
+      supabaseClient
+        .from("profiles")
+        .select("x_username")
+        .eq("id", session.user.id)
+        .maybeSingle(),
+      8000,
+      { data: null }
+    );
 
     setDrawerUser(session.user, profile);
     const savedSection = localStorage.getItem("verunCurrentSection");
@@ -11725,21 +11786,28 @@ showSection(
     // Run them at the same time instead of one after another — each one
     // was waiting for the previous to finish even though they don't
     // depend on each other, which added up to a noticeable delay.
+    //
+    // Each is also wrapped in withTimeout: previously, if any single
+    // loader's Supabase call stalled on a bad connection, Promise.all
+    // below would never resolve and every OTHER section — even ones
+    // whose data had already arrived — would stay stuck behind it.
+    // Now a slow one just times out on its own after 12s while the
+    // rest of the app continues to render normally.
     const sectionLoaders = [];
-    if (typeof loadTasks === "function") sectionLoaders.push(loadTasks());
-    if (typeof loadDailyLoginStatus === "function") sectionLoaders.push(loadDailyLoginStatus());
-    if (typeof loadVerunLeaderboard === "function") sectionLoaders.push(loadVerunLeaderboard());
+    if (typeof loadTasks === "function") sectionLoaders.push(window.withTimeout(loadTasks(), 12000));
+    if (typeof loadDailyLoginStatus === "function") sectionLoaders.push(window.withTimeout(loadDailyLoginStatus(), 12000));
+    if (typeof loadVerunLeaderboard === "function") sectionLoaders.push(window.withTimeout(loadVerunLeaderboard(), 12000));
     // Referral was missing from this list entirely — every other
     // section preloads on page load/reload regardless of which tab
     // is active, but referral only ever loaded on an explicit click.
     // That's why reloading while already on the Referral tab showed
     // nothing but the static zero-state placeholder: nothing had
     // fetched real data yet.
-    if (typeof loadReferralDashboard === "function") sectionLoaders.push(loadReferralDashboard());
-    if (typeof loadNotifications === "function") sectionLoaders.push(loadNotifications());
-    if (typeof loadWalletModule === "function") sectionLoaders.push(loadWalletModule());
-    if (typeof loadMiningSection === "function") sectionLoaders.push(loadMiningSection());
-    if (typeof loadGenesisPassSection === "function") sectionLoaders.push(loadGenesisPassSection());
+    if (typeof loadReferralDashboard === "function") sectionLoaders.push(window.withTimeout(loadReferralDashboard(), 12000));
+    if (typeof loadNotifications === "function") sectionLoaders.push(window.withTimeout(loadNotifications(), 12000));
+    if (typeof loadWalletModule === "function") sectionLoaders.push(window.withTimeout(loadWalletModule(), 12000));
+    if (typeof loadMiningSection === "function") sectionLoaders.push(window.withTimeout(loadMiningSection(), 12000));
+    if (typeof loadGenesisPassSection === "function") sectionLoaders.push(window.withTimeout(loadGenesisPassSection(), 12000));
     await Promise.all(sectionLoaders);
   }
 
@@ -11754,7 +11822,16 @@ showSection(
     link.addEventListener("click", async event => {
       event.preventDefault();
 
-      const { data: { session } } = await supabaseClient.auth.getSession();
+      // If this stalls, fall back to "still logged in" rather than
+      // silently closing the drawer and doing nothing — a slow
+      // network call here isn't proof the user signed out, and
+      // verunLastProcessedUserId already reflects the last confirmed
+      // auth state from updateAppAccess().
+      const { data: { session } } = await window.withTimeout(
+        supabaseClient.auth.getSession(),
+        4000,
+        { data: { session: verunLastProcessedUserId ? {} : null } }
+      );
       if (!session) {
         closeDrawer();
         return;
@@ -11765,19 +11842,19 @@ showSection(
       closeDrawer();
 
       if (section === "referral" && typeof loadReferralDashboard === "function") {
-        await loadReferralDashboard();
+        await window.withTimeout(loadReferralDashboard(), 12000);
       }
 
       if (section === "leaderboard" && typeof loadVerunLeaderboard === "function") {
-        await loadVerunLeaderboard();
+        await window.withTimeout(loadVerunLeaderboard(), 12000);
       }
 
       if (section === "mining" && typeof loadMiningSection === "function") {
-        await loadMiningSection();
+        await window.withTimeout(loadMiningSection(), 12000);
       }
 
       if (section === "genesisPass" && typeof loadGenesisPassSection === "function") {
-        await loadGenesisPassSection();
+        await window.withTimeout(loadGenesisPassSection(), 12000);
       }
 
       // Re-assert scroll-to-top now that the section's content has
