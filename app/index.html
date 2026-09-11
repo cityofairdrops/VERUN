@@ -1390,7 +1390,21 @@
       display: flex;
       gap: 8px;
       margin-bottom: 14px;
-      flex-wrap: wrap;
+
+      /* Single row, always — instead of wrapping onto a second line
+         (which crowded the third Mining tab underneath the other two
+         on narrow phones), the tab strip scrolls horizontally like
+         the tokenomics table below does. Tab size/text never shrinks
+         to "fit"; the row just becomes scrollable when it doesn't. */
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-bottom: 2px;
+    }
+
+    .leaderboard-tabs::-webkit-scrollbar {
+      display: none;
     }
 
     .leaderboard-tab {
@@ -1408,6 +1422,11 @@
 
       cursor: pointer;
       transition: 0.2s ease;
+
+      /* Never shrink or wrap internally — full label always readable,
+         the tabs row scrolls instead. */
+      flex: 0 0 auto;
+      white-space: nowrap;
     }
 
     .leaderboard-tab:hover {
@@ -1419,6 +1438,51 @@
       border: 1px solid var(--green-border);
       color: var(--green);
       background: var(--green-soft);
+    }
+
+    /* Same left-right scroll technique as .token-table-scroll further
+       down: the row itself keeps a comfortable minimum width so the
+       username and value are never clipped or forced to overlap on a
+       narrow phone — the container scrolls sideways instead of the
+       text shrinking or truncating. */
+    .leaderboard-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .leaderboard-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .leaderboard-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+
+      min-width: 380px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .leaderboard-rank {
+      min-width: 34px;
+      flex-shrink: 0;
+    }
+
+    .leaderboard-user {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: visible;
+    }
+
+    .leaderboard-value {
+      flex-shrink: 0;
+      white-space: nowrap;
+      margin-left: 16px;
     }
 
     /* ================= MOBILE ================= */
@@ -8110,47 +8174,16 @@ function renderVerunLeaderboardList() {
 
   const rowsHtml = pageEntries.map((user, index) => {
 
+    const valueText =
+      verunLeaderboardSort === "referrals"
+        ? `${user.referral_count || 0} referrals`
+        : `${Number(user.xp || 0).toLocaleString()} XP`;
+
     return `
-      <div class="leaderboard-row"
-           style="
-             display:flex;
-             align-items:center;
-             justify-content:space-between;
-             gap:12px;
-             padding:12px;
-             margin-bottom:8px;
-             border-radius:10px;
-             background:rgba(255,255,255,0.05);
-           ">
-
-        <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1;">
-          <strong style="min-width:35px;flex-shrink:0;">
-            #${start + index + 1}
-          </strong>
-
-          <div style="min-width:0;overflow:hidden;">
-            <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-              @${escapeHtml(user.x_username)}
-            </div>
-
-            <div style="font-size:12px;opacity:0.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-              ${
-                verunLeaderboardSort === "referrals"
-                  ? `${user.referral_count || 0} referrals`
-                  : `${Number(user.xp || 0).toLocaleString()} XP`
-              }
-            </div>
-          </div>
-        </div>
-
-        <strong style="flex-shrink:0;white-space:nowrap;">
-          ${
-            verunLeaderboardSort === "referrals"
-              ? `${user.referral_count || 0} referrals`
-              : `${Number(user.xp || 0).toLocaleString()} XP`
-          }
-        </strong>
-
+      <div class="leaderboard-row">
+        <strong class="leaderboard-rank">#${start + index + 1}</strong>
+        <div class="leaderboard-user">@${escapeHtml(user.x_username)}</div>
+        <strong class="leaderboard-value">${valueText}</strong>
       </div>
     `;
   }).join("");
@@ -8163,7 +8196,7 @@ function renderVerunLeaderboardList() {
     </div>
   ` : "";
 
-  list.innerHTML = rowsHtml + paginationHtml;
+  list.innerHTML = `<div class="leaderboard-scroll">${rowsHtml}</div>` + paginationHtml;
 
 }
 
@@ -8301,11 +8334,12 @@ let verunMiningLeaderboardHasMore = false;
 let verunMiningLeaderboardLoading = false;
 let verunMiningLeaderboardLoaded = false;
 
-// Matches formatVerun()'s formatting (6 decimal places) used elsewhere
-// in the app for $VERUN amounts, kept local since that helper lives in
-// the mining module's own closure and isn't exposed globally.
+// $VERUN amounts here are shown to 2 decimal places (e.g. 5.00, 0.50,
+// 10.50) rather than formatVerun()'s 6-decimal precision elsewhere in
+// the app — a ranking list reads better short, and it's still backed
+// by the exact recorded total_mined value underneath.
 function formatMinedAmount(amount) {
-  return Number(amount || 0).toFixed(6);
+  return Number(amount || 0).toFixed(2);
 }
 
 function renderMiningLeaderboardList() {
@@ -8336,38 +8370,10 @@ function renderMiningLeaderboardList() {
     const mined = formatMinedAmount(user.total_mined);
 
     return `
-      <div class="leaderboard-row"
-           style="
-             display:flex;
-             align-items:center;
-             justify-content:space-between;
-             gap:12px;
-             padding:12px;
-             margin-bottom:8px;
-             border-radius:10px;
-             background:rgba(255,255,255,0.05);
-           ">
-
-        <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1;">
-          <strong style="min-width:35px;flex-shrink:0;">
-            #${start + index + 1}
-          </strong>
-
-          <div style="min-width:0;overflow:hidden;">
-            <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-              @${escapeHtml(user.x_username)}
-            </div>
-
-            <div style="font-size:12px;opacity:0.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-              ${mined} $VERUN mined
-            </div>
-          </div>
-        </div>
-
-        <strong style="flex-shrink:0;white-space:nowrap;">
-          ${mined} $VERUN
-        </strong>
-
+      <div class="leaderboard-row">
+        <strong class="leaderboard-rank">#${start + index + 1}</strong>
+        <div class="leaderboard-user">@${escapeHtml(user.x_username)}</div>
+        <strong class="leaderboard-value">${mined} $VERUN</strong>
       </div>
     `;
   }).join("");
@@ -8384,7 +8390,7 @@ function renderMiningLeaderboardList() {
     </div>
   ` : "";
 
-  list.innerHTML = rowsHtml + paginationHtml;
+  list.innerHTML = `<div class="leaderboard-scroll">${rowsHtml}</div>` + paginationHtml;
 
 }
 
