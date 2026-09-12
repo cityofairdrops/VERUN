@@ -9667,7 +9667,7 @@ async function loadMiningLeaderboard(page) {
     throw verificationError;
   }
 
-  if (!verificationData?.verified) {
+  if (!verificationData?.success) {
     throw new Error(
       verificationData?.error ||
       "Purchase could not be verified."
