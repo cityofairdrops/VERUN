@@ -1672,6 +1672,14 @@
       margin-bottom: 15px;
     }
 
+    .mining-locked-icon--spinner svg {
+      animation: mining-status-spin 0.9s linear infinite;
+      transform-origin: center;
+    }
+    @keyframes mining-status-spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
     .mining-locked-icon {
       position: relative;
       width: 52px;
@@ -5538,6 +5546,22 @@
 
   </div>
 
+  <!-- Loading state: shown only while we're confirming pass ownership
+       with Supabase on boot — deliberately neutral so a Genesis Pass
+       holder never sees the "you need a pass" messaging for the split
+       second before we actually know their status. -->
+  <div class="mining-locked" id="miningStatusLoading" style="display:none;">
+    <div class="mining-locked-icon mining-locked-icon--spinner">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.7" stroke-linecap="round">
+        <path d="M12 3a9 9 0 1 0 9 9" />
+      </svg>
+    </div>
+    <div class="mining-locked-title">Checking your mining status…</div>
+    <p class="mining-locked-text">
+      One moment while we confirm your Genesis Pass.
+    </p>
+  </div>
+
   <!-- Locked state: shown without a Genesis Pass -->
   <div class="mining-locked" id="miningLocked" style="display:none;">
     <div class="mining-locked-icon">
@@ -5568,7 +5592,7 @@
   </div>
 
   <!-- Mining dashboard: shown once mining is unlocked -->
-  <div class="mining-dashboard" id="miningDashboard">
+  <div class="mining-dashboard" id="miningDashboard" style="display:none;">
 
     <div class="mining-hashrate-badge" id="miningHashrateBadge">
       <span class="mining-hashrate-dot"></span>
@@ -5603,7 +5627,7 @@
   </div>
 
   <!-- Hashrate tiers -->
-  <div class="mining-tiers">
+  <div class="mining-tiers" style="display:none;">
 
     <h4 class="mining-tiers-heading">Hashrate Tiers</h4>
 
@@ -9697,6 +9721,25 @@ async function loadMiningLeaderboard(page) {
 
       await refreshHashrateChainState();
       await fetchStatus();
+
+      // The edge function has already confirmed this purchase was
+      // written to mining_accounts — but a status read made
+      // *immediately* after that write can momentarily still see the
+      // old row (read-after-write lag). Rather than show a stale
+      // "Upgrade" state that only corrects itself on the next manual
+      // reload, briefly poll until this fetch actually reflects the
+      // tier we just paid for.
+      let statusPollAttempts = 0;
+      while (
+        status &&
+        status.plan !== tierKey &&
+        statusPollAttempts < 5
+      ) {
+        statusPollAttempts++;
+        await new Promise(r => setTimeout(r, 800));
+        await fetchStatus();
+      }
+
       if (status && status.plan === tierKey && typeof insertSelfNotification === "function") {
         const tierLabel = TIER_LABELS[tierKey] || tierKey;
         insertSelfNotification(
@@ -9760,6 +9803,7 @@ async function loadMiningLeaderboard(page) {
       poolFill: document.getElementById("miningPoolFill"),
       poolPercent: document.getElementById("miningPoolPercent"),
       locked: document.getElementById("miningLocked"),
+      statusLoading: document.getElementById("miningStatusLoading"),
       dashboard: document.getElementById("miningDashboard"),
       goToGenesis: document.getElementById("miningGoToGenesisButton"),
       badge: document.getElementById("miningHashrateBadge"),
@@ -10017,9 +10061,26 @@ async function loadMiningLeaderboard(page) {
   // race between that module's own async load and this one's.
   function applyAccessGate(unlocked) {
     const e = cacheEls();
+    // Any real gate decision (locked or unlocked) supersedes the
+    // "still checking" placeholder — always clear it here so it can
+    // never linger behind the real state.
+    if (e.statusLoading) e.statusLoading.style.display = "none";
     if (e.locked) e.locked.style.display = unlocked ? "none" : "";
     if (e.dashboard) e.dashboard.style.display = unlocked ? "" : "none";
     if (e.tiersSection) e.tiersSection.style.display = unlocked ? "" : "none";
+  }
+
+  // Boot-time-only placeholder: we don't yet know if this account has a
+  // Genesis Pass, so keep the dashboard hidden (same as applyAccessGate(false))
+  // but show a neutral "checking" message instead of "you need a pass" —
+  // existing pass holders shouldn't see a false locked-out message during
+  // the moment it takes getSession()/fetchStatus() to resolve on page load.
+  function applyLoadingGate() {
+    const e = cacheEls();
+    if (e.locked) e.locked.style.display = "none";
+    if (e.statusLoading) e.statusLoading.style.display = "";
+    if (e.dashboard) e.dashboard.style.display = "none";
+    if (e.tiersSection) e.tiersSection.style.display = "none";
   }
 
   function isUnlocked() {
@@ -10223,8 +10284,11 @@ async function loadMiningLeaderboard(page) {
     bindEventsOnce();
 
     // Safe default while we confirm pass ownership with Supabase — never
-    // flashes the unlocked dashboard before we actually know.
-    applyAccessGate(false);
+    // flashes the unlocked dashboard before we actually know. Uses the
+    // neutral "checking status" placeholder rather than the real locked
+    // gate, so a Genesis Pass holder doesn't see a false "you need a
+    // pass" message during the moment this takes to resolve.
+    applyLoadingGate();
 
     const { data: { session } } = await supabaseClient.auth.getSession();
     currentUserId = session ? session.user.id : null;
