@@ -4899,7 +4899,7 @@
     <div class="genesis-pool-top">
       <span class="genesis-pool-label">Genesis Passes Minted</span>
       <span class="genesis-pool-amount">
-        <strong id="genesisMintedCount">0</strong> / <span id="genesisTotalSupply">11,000</span>
+        <strong id="genesisMintedCount">0</strong> / <span id="genesisTotalSupply">11,111</span>
       </span>
     </div>
 
@@ -4909,7 +4909,7 @@
 
     <div class="genesis-pool-caption">
       <span id="genesisPoolPercent">0.00% minted</span>
-      <span id="genesisPoolRemainingCaption">11,000 remaining</span>
+      <span id="genesisPoolRemainingCaption">11,111 remaining</span>
     </div>
 
   </div>
@@ -9490,6 +9490,12 @@ async function loadMiningLeaderboard(page) {
   let tickInterval = null;
   let els = null;
   let status = null; // last get_mining_status() response
+  // Fixed $VERUN mining pool size — a protocol constant, not a value
+  // that should ever vary per status read. Used as the source of
+  // truth for the pool total (see renderPool()) so a status response
+  // that's missing/misnamed the total field can't blank the display
+  // to 0 — only "pool_remaining" is treated as live/backend-driven.
+  const MINING_POOL_TOTAL = 200000;
   let serverOffsetMs = 0; // (server_time - Date.now()) at last fetch, so the
                            // countdown tracks the server clock, not the device's
   let completing = false; // guards against double process_completed_mining calls
@@ -9898,9 +9904,19 @@ async function loadMiningLeaderboard(page) {
 
   function renderPool(s) {
     const e = cacheEls();
-    const remaining = Number(s.pool_remaining) || 0;
-    const total = Number(s.pool_total) || 0;
-    const pct = Math.max(0, Math.min(100, Number(s.pool_remaining_percentage) || 0));
+    const rawRemaining = Number(s.pool_remaining);
+    // total is always the fixed protocol constant — never trust a
+    // per-read backend value for it, so a status response that's
+    // missing/misnamed that field can't collapse the display to 0.
+    const total = MINING_POOL_TOTAL;
+    // Only treat "remaining" as live/backend-driven when it's an
+    // actual valid number. A missing/misnamed field on the response
+    // (NaN here) is the signature of a bad read, not a real "fully
+    // mined" state — default to "nothing mined yet" instead of 0/0.
+    const remaining = Number.isFinite(rawRemaining) && rawRemaining >= 0
+      ? Math.min(rawRemaining, total)
+      : total;
+    const pct = total > 0 ? Math.max(0, Math.min(100, (remaining / total) * 100)) : 0;
 
     if (e.poolRemaining) e.poolRemaining.textContent = formatIndian(remaining, remaining % 1 !== 0 ? 2 : 0);
     if (e.poolTotal) e.poolTotal.textContent = formatIndian(total);
@@ -10329,7 +10345,7 @@ async function loadMiningLeaderboard(page) {
 // Mining module reads to decide whether to unlock.
 (function () {
 
-  const TOTAL_SUPPLY = 11000;
+  const TOTAL_SUPPLY = 11111;
   const BASE_PRICE_ETH = 0.0015;        // NORMAL_PRICE fallback — live value is read from the contract
   const DISCOUNTED_PRICE_ETH = 0.00075; // DISCOUNTED_PRICE fallback (50% off) — live value is read from the contract
 
@@ -10401,6 +10417,30 @@ async function loadMiningLeaderboard(page) {
     referralCount: null
   };
 
+  // ── On-chain referral history (replaces the legacy Supabase stats
+  // RPC for the "recent referrals" list) ──────────────────────────
+  // Set this to the Referral Claim contract's actual deployment block
+  // once known — it bounds the very first scan for any wallet instead
+  // of relying on the fallback lookback below. Safe to leave null.
+  const REFERRAL_CLAIM_DEPLOY_BLOCK = null;
+
+  // Bootstrap-only safety net: used solely if REFERRAL_CLAIM_DEPLOY_BLOCK
+  // is still null AND this wallet has no persisted scan checkpoint yet.
+  // Once REFERRAL_CLAIM_DEPLOY_BLOCK is set, this is never consulted.
+  const REFERRAL_HISTORY_FALLBACK_LOOKBACK_BLOCKS = 500000;
+
+  const REFERRAL_HISTORY_MAX_ITEMS = 5;
+  const REFERRAL_HISTORY_INITIAL_CHUNK = 10000;
+  const REFERRAL_HISTORY_MIN_CHUNK = 500;
+  const REFERRAL_HISTORY_MAX_CHUNK = 50000;
+
+  // Hardcoded to mainnet chain ID + this exact contract address, so an
+  // old Robinhood testnet checkpoint can never be read as if it were
+  // mainnet history — a future address/chain change naturally gets a
+  // brand-new cache key instead of silently reusing stale data.
+  const REFERRAL_HISTORY_CACHE_PREFIX =
+    "verunReferralHistoryScan:4663:0x6a529DC0A9843579cc36C4000bB523a676C40B84:";
+
   function getEthers() {
     return window.ethers || null;
   }
@@ -10441,6 +10481,184 @@ async function loadMiningLeaderboard(page) {
       getReadContract._provider = new ethers.JsonRpcProvider(ROBINHOOD_TESTNET_RPC);
     }
     return new ethers.Contract(REFERRAL_CLAIM_CONTRACT_ADDRESS, REFERRAL_CLAIM_ABI, getReadContract._provider);
+  }
+
+  // ── Persisted per-wallet scan checkpoint ────────────────────────
+  // Keeps only the current top-N raw log identifiers + their resolved
+  // display data, plus where the next scan should resume — so a
+  // returning wallet never re-scans blocks already covered.
+  function loadReferralHistoryCache(address) {
+    try {
+      const raw = localStorage.getItem(REFERRAL_HISTORY_CACHE_PREFIX + address.toLowerCase());
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed.nextFromBlock !== "number" ||
+          !Array.isArray(parsed.topRaw) || !Array.isArray(parsed.topResolved)) {
+        return null;
+      }
+      return parsed;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function saveReferralHistoryCache(address, cacheObj) {
+    try {
+      localStorage.setItem(
+        REFERRAL_HISTORY_CACHE_PREFIX + address.toLowerCase(),
+        JSON.stringify(cacheObj)
+      );
+    } catch (err) {
+      // Storage full/unavailable — non-fatal; next connect just
+      // re-derives nextFromBlock from the fallback lookback instead.
+    }
+  }
+
+  // ── Adaptive-chunk eth_getLogs ───────────────────────────────────
+  // Starts at REFERRAL_HISTORY_INITIAL_CHUNK blocks per call. On any
+  // error from a chunk, halves the window and retries the same start
+  // point; on a clean chunk, doubles the window back up (capped) for
+  // the next one. This avoids needing to know the RPC's exact
+  // getLogs range limit ahead of time.
+  async function fetchReferralLogsAdaptive(contract, filter, fromBlock, toBlock) {
+    let chunk = REFERRAL_HISTORY_INITIAL_CHUNK;
+    let cursor = fromBlock;
+    const logs = [];
+
+    while (cursor <= toBlock) {
+      const end = Math.min(cursor + chunk - 1, toBlock);
+      try {
+        const result = await contract.queryFilter(filter, cursor, end);
+        logs.push(...result);
+        cursor = end + 1;
+        chunk = Math.min(chunk * 2, REFERRAL_HISTORY_MAX_CHUNK);
+      } catch (err) {
+        if (chunk <= REFERRAL_HISTORY_MIN_CHUNK) throw err;
+        chunk = Math.max(Math.floor(chunk / 2), REFERRAL_HISTORY_MIN_CHUNK);
+      }
+    }
+
+    return logs;
+  }
+
+  function dedupeReferralRawLogs(rawItems) {
+    const seen = new Set();
+    const out = [];
+    for (const item of rawItems) {
+      const key = item.txHash + ":" + item.logIndex;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(item);
+    }
+    return out;
+  }
+
+  // Resolves one raw ReferralRecorded log into the exact shape the
+  // existing UI already expects: { token_number, minted_at }.
+  async function resolveReferralRawItem(rawItem, genesisRead, provider) {
+    let tokenNumber = null;
+    let mintedAt = null;
+    try {
+      tokenNumber = Number(await genesisRead.tokenIdOf(rawItem.referee));
+    } catch (err) {
+      return null; // can't resolve — caller skips this item
+    }
+    try {
+      const block = await provider.getBlock(rawItem.blockNumber);
+      mintedAt = block ? new Date(block.timestamp * 1000).toISOString() : null;
+    } catch (err) {
+      return null;
+    }
+    if (tokenNumber === null || mintedAt === null) return null;
+    return { token_number: tokenNumber, minted_at: mintedAt };
+  }
+
+  // Loads (and caches) this wallet's referral history from on-chain
+  // ReferralRecorded events, merging with the persisted per-wallet
+  // checkpoint so only new blocks are ever scanned after the first
+  // successful load.
+  let cachedReferralHistory = null; // { address, items }
+
+  async function loadOnChainReferralHistory(walletAddress) {
+    if (!walletAddress) return [];
+    const addr = walletAddress.toLowerCase();
+
+    if (cachedReferralHistory && cachedReferralHistory.address === addr) {
+      return cachedReferralHistory.items;
+    }
+
+    try {
+      const claimRead = getReadClaimContract();
+      const genesisRead = getReadContract();
+      if (!claimRead || !genesisRead) return [];
+      const provider = claimRead.runner;
+
+      const latestBlock = await provider.getBlockNumber();
+      const cache = loadReferralHistoryCache(addr);
+      const fromBlock = cache
+        ? cache.nextFromBlock
+        : (REFERRAL_CLAIM_DEPLOY_BLOCK !== null
+            ? REFERRAL_CLAIM_DEPLOY_BLOCK
+            : Math.max(0, latestBlock - REFERRAL_HISTORY_FALLBACK_LOOKBACK_BLOCKS));
+
+      const filter = claimRead.filters.ReferralRecorded(walletAddress);
+      const newLogs = fromBlock <= latestBlock
+        ? await fetchReferralLogsAdaptive(claimRead, filter, fromBlock, latestBlock)
+        : [];
+
+      const newRaw = newLogs.map(function (log) {
+        return {
+          txHash: log.transactionHash,
+          logIndex: log.index,
+          blockNumber: log.blockNumber,
+          referee: log.args.referee
+        };
+      });
+
+      const priorRaw = (cache && cache.topRaw) || [];
+      const priorResolved = (cache && cache.topResolved) || [];
+      const priorByKey = {};
+      priorRaw.forEach(function (item, i) {
+        priorByKey[item.txHash + ":" + item.logIndex] = priorResolved[i];
+      });
+
+      const mergedRaw = dedupeReferralRawLogs(priorRaw.concat(newRaw))
+        .sort(function (a, b) { return b.blockNumber - a.blockNumber; })
+        .slice(0, REFERRAL_HISTORY_MAX_ITEMS);
+
+      const mergedResolved = [];
+      const finalRaw = [];
+      for (const item of mergedRaw) {
+        const key = item.txHash + ":" + item.logIndex;
+        const resolved = priorByKey[key] || await resolveReferralRawItem(item, genesisRead, provider);
+        if (!resolved) continue; // skip unresolvable entries rather than show bad data
+        mergedResolved.push(resolved);
+        finalRaw.push(item);
+      }
+
+      saveReferralHistoryCache(addr, {
+        nextFromBlock: latestBlock + 1,
+        topRaw: finalRaw,
+        topResolved: mergedResolved
+      });
+
+      cachedReferralHistory = { address: addr, items: mergedResolved };
+      return mergedResolved;
+    } catch (err) {
+      console.error("VERUN Genesis Pass: failed to load on-chain referral history", err);
+      // Don't let a transient RPC failure blank out history we already
+      // know is good — prefer this session's cache, then the
+      // persisted per-wallet checkpoint, only falling back to [] if
+      // neither has anything yet.
+      if (cachedReferralHistory && cachedReferralHistory.address === addr) {
+        return cachedReferralHistory.items;
+      }
+      const persisted = loadReferralHistoryCache(addr);
+      if (persisted && Array.isArray(persisted.topResolved) && persisted.topResolved.length) {
+        return persisted.topResolved;
+      }
+      return [];
+    }
   }
 
   async function getWriteClaimContract() {
@@ -10575,30 +10793,21 @@ async function loadMiningLeaderboard(page) {
     localStorage.setItem("verunGenesisMintedCount", String(Math.min(value, TOTAL_SUPPLY)));
   }
 
-  // ── Referral stats (server-side) ────────────────────────────────────
-  // Every mint that used this owner's genesis code as a referral is
-  // logged server-side in genesis_referrals (populated by
-  // record_genesis_pass_mint) — read the aggregate for the signed-in
-  // owner instead of a same-device-only local log.
+  // ── Referral stats ───────────────────────────────────────────────
+  // Count and earnings are authoritative on-chain (claimChain, read
+  // in renderReferralPanel()); "recent" is sourced from on-chain
+  // ReferralRecorded history via loadOnChainReferralHistory() below.
+  // cachedReferralStats.count/earnings are left at 0 and are only
+  // ever used as a brief pre-claimChain-load fallback.
   let cachedReferralStats = { count: 0, earnings: 0, recent: [] };
 
   async function loadReferralStats() {
-    if (!currentUserId || !cachedState.owned) {
+    if (!currentUserId || !cachedState.owned || !cachedState.walletAddress) {
       cachedReferralStats = { count: 0, earnings: 0, recent: [] };
       return cachedReferralStats;
     }
-    try {
-      const { data, error } = await supabaseClient.rpc("get_my_genesis_referral_stats");
-      if (error) throw error;
-      cachedReferralStats = {
-        count: (data && data.count) || 0,
-        earnings: (data && data.earnings_bnb) || 0,
-        recent: (data && data.recent) || []
-      };
-    } catch (err) {
-      console.error("VERUN Genesis Pass: failed to load referral stats", err);
-      cachedReferralStats = { count: 0, earnings: 0, recent: [] };
-    }
+    const recent = await loadOnChainReferralHistory(cachedState.walletAddress);
+    cachedReferralStats = { count: 0, earnings: 0, recent: recent };
     return cachedReferralStats;
   }
 
@@ -10979,7 +11188,13 @@ async function loadMiningLeaderboard(page) {
     const displayCount = (claimChain.ready && claimChain.referralCount !== null)
       ? claimChain.referralCount
       : stats.count;
-    if (e.referralCount) e.referralCount.textContent = formatIndian(displayCount);
+    // Only write once the authoritative on-chain read is in — leaves
+    // whatever's already on screen (a prior real value, or the
+    // markup's static "0" before first load) alone otherwise, instead
+    // of forcing a false zero during the brief loading window.
+    if (e.referralCount && claimChain.ready && claimChain.referralCount !== null) {
+      e.referralCount.textContent = formatIndian(displayCount);
+    }
 
     if (e.referralList) {
       if (!stats.recent || stats.recent.length === 0) {
@@ -10994,8 +11209,8 @@ async function loadMiningLeaderboard(page) {
           return '<div class="genesis-referral-item">Genesis Pass #' +
             formatPadded(r.token_number, 5) + " · " + dateStr + "</div>";
         }).join("");
-        if (stats.count > stats.recent.length) {
-          html += '<div class="genesis-referral-more">+' + (stats.count - stats.recent.length) + " more</div>";
+        if (displayCount > stats.recent.length) {
+          html += '<div class="genesis-referral-more">+' + (displayCount - stats.recent.length) + " more</div>";
         }
         e.referralList.innerHTML = html;
       }
@@ -11008,7 +11223,9 @@ async function loadMiningLeaderboard(page) {
     const claimableEth = (claimChain.ready && ethers && claimChain.claimableWei !== null)
       ? parseFloat(ethers.formatEther(claimChain.claimableWei))
       : stats.earnings;
-    if (e.earningsAmount) e.earningsAmount.textContent = formatEth(claimableEth);
+    if (e.earningsAmount && claimChain.ready && claimChain.claimableWei !== null) {
+      e.earningsAmount.textContent = formatEth(claimableEth);
+    }
 
     const minimumEth = (claimChain.ready && ethers && claimChain.minimumClaimWei !== null)
       ? parseFloat(ethers.formatEther(claimChain.minimumClaimWei))
