@@ -9733,6 +9733,26 @@ async function loadMiningLeaderboard(page) {
     return new ethers.Contract(HASHRATE_CONTRACT_ADDRESS, HASHRATE_CONTRACT_ABI, signer);
   }
 
+  // Read-only native balance check against the same RPC used for the
+  // price/pause reads above. Lets buyTier() show a clear "insufficient
+  // balance" message *before* ever prompting the wallet, instead of the
+  // wallet silently failing to open (or opening only to revert) on an
+  // underfunded account. Never throws — a failed read just returns null,
+  // which callers treat as "unknown" and never block the transaction on.
+  async function getNativeBalanceWei(address) {
+    const ethers = getEthers();
+    if (!ethers || !address) return null;
+    try {
+      if (!getHashrateReadContract._provider) {
+        getHashrateReadContract._provider = new ethers.JsonRpcProvider(ROBINHOOD_TESTNET_RPC);
+      }
+      return await getHashrateReadContract._provider.getBalance(address);
+    } catch (err) {
+      console.error("VERUN Mining: balance read failed:", err);
+      return null;
+    }
+  }
+
   // Pulls paused state, live prices, and the connected wallet's current
   // plan straight from the chain. Safe to call with no wallet connected
   // (skips the per-wallet getPlan() read in that case) and safe to call
@@ -9831,6 +9851,16 @@ async function loadMiningLeaderboard(page) {
       const priceWei = tierKey === "pro" ? hashrateChain.proPriceWei : hashrateChain.ultraPriceWei;
       if (priceWei === null || priceWei === undefined) {
         throw new Error("Price unavailable — try again in a moment.");
+      }
+
+      // Check the wallet's native balance before ever prompting it to
+      // sign — a clear message here beats the wallet opening just to
+      // reject an underfunded purchase. balanceWei === null means the
+      // read itself failed, in which case we don't block: the wallet
+      // is still the final arbiter.
+      const balanceWei = await getNativeBalanceWei(walletState.address);
+      if (balanceWei !== null && balanceWei < priceWei) {
+        throw new Error("Insufficient balance to complete this purchase.");
       }
 
       const write = await getHashrateWriteContract();
@@ -10693,6 +10723,26 @@ async function loadMiningLeaderboard(page) {
     const browserProvider = new ethers.BrowserProvider(rawProvider);
     const signer = await browserProvider.getSigner();
     return new ethers.Contract(GENESIS_CONTRACT_ADDRESS, GENESIS_CONTRACT_ABI, signer);
+  }
+
+  // Read-only native balance check against the same RPC used for the
+  // pool/price reads above. Lets mintPass() show a clear "insufficient
+  // balance" message *before* ever prompting the wallet, instead of the
+  // wallet silently failing to open (or opening only to revert) on an
+  // underfunded account. Never throws — a failed read just returns null,
+  // which callers treat as "unknown" and never block the transaction on.
+  async function getNativeBalanceWei(address) {
+    const ethers = getEthers();
+    if (!ethers || !address) return null;
+    try {
+      if (!getReadContract._provider) {
+        getReadContract._provider = new ethers.JsonRpcProvider(ROBINHOOD_TESTNET_RPC);
+      }
+      return await getReadContract._provider.getBalance(address);
+    } catch (err) {
+      console.error("VERUN Genesis Pass: balance read failed:", err);
+      return null;
+    }
   }
 
   // Same pattern as getReadContract()/getWriteContract() above, but
@@ -11754,6 +11804,20 @@ async function loadMiningLeaderboard(page) {
         throw new Error("That genesis code is already taken. Choose another.");
       }
 
+      // Whitelist mints are free (no msg.value) — only paid mints need
+      // the balance check. Check before ever prompting the wallet, so
+      // an underfunded wallet gets a clear message instead of the
+      // wallet opening just to reject the transaction. balanceWei ===
+      // null means the read itself failed, in which case we don't
+      // block: the wallet is still the final arbiter.
+      if (!whitelistEligible) {
+        const requiredWei = computePriceWei();
+        const balanceWei = await getNativeBalanceWei(walletAddress);
+        if (balanceWei !== null && balanceWei < requiredWei) {
+          throw new Error("Insufficient balance to mint. Add funds to your wallet and try again.");
+        }
+      }
+
       const read = getReadContract();
       const write = await getWriteContract();
 
@@ -11907,6 +11971,12 @@ async function loadMiningLeaderboard(page) {
   // the button is already gated on claimChain.canClaim, but re-check
   // before spending gas on a call the contract would revert anyway
   // (NothingToClaim / MinimumClaimNotReached).
+  //
+  // Deliberately NOT gated on the wallet's native balance: claim() is
+  // nonpayable (no msg.value), so it only ever costs gas. As long as
+  // there's something to claim, this goes straight to the wallet for
+  // signing — the wallet itself is the right place to surface a
+  // can't-afford-gas problem, not a client-side precheck here.
   async function claimReferralRewards() {
     if (claiming || !currentUserId) return;
     const walletVerified = !!(window.verunWallet && window.verunWallet.getState().verified);
