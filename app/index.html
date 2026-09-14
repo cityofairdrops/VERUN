@@ -10279,6 +10279,11 @@ async function loadMiningLeaderboard(page) {
   // reaching applyAccessGate/render), show the public pool card
   // (already static in the HTML) plus the Hashrate Tiers pricing
   // grid, with every purchase control clearly requiring X first.
+  // Reflects live on-chain "paused" state (hashrateChain, refreshed by
+  // refreshHashrateChainState() — a public contract read, safe to call
+  // for guests) the same way the authenticated view does in
+  // renderTierCards(), rather than a purchase button that can never be
+  // accurate about whether purchases are actually open right now.
   function applyGuestGate() {
     const e = cacheEls();
     if (e.statusLoading) e.statusLoading.style.display = "none";
@@ -10288,9 +10293,15 @@ async function loadMiningLeaderboard(page) {
 
     if (e.tiersGrid) {
       e.tiersGrid.querySelectorAll("[data-tier-buy]").forEach(buyButton => {
-        buyButton.dataset.tierAction = "guest";
-        buyButton.disabled = false;
-        buyButton.textContent = "Connect X to Upgrade";
+        if (hashrateChain.paused) {
+          buyButton.dataset.tierAction = "none";
+          buyButton.disabled = true;
+          buyButton.textContent = "Purchases Paused";
+        } else {
+          buyButton.dataset.tierAction = "guest";
+          buyButton.disabled = false;
+          buyButton.textContent = "Connect X to Upgrade";
+        }
       });
     }
   }
@@ -10510,9 +10521,14 @@ async function loadMiningLeaderboard(page) {
     const { data: { session } } = await supabaseClient.auth.getSession();
     currentUserId = session ? session.user.id : null;
     if (!currentUserId) {
-      // Guest read-only mode: show the public pool/tiers info instead
-      // of leaving the section on the loading placeholder. No
-      // per-account RPCs are called here.
+      // Guest read-only mode: no per-account RPCs are called here
+      // (get_mining_status/get_or_create_mining_account both need a
+      // real session). refreshHashrateChainState() is a public
+      // on-chain read (contract price/rate/paused state, no wallet
+      // required), so it's safe to pull live for guests too —
+      // otherwise applyGuestGate() would be working off nothing but
+      // the page's static defaults.
+      await refreshHashrateChainState();
       applyGuestGate();
       return;
     }
@@ -12491,21 +12507,13 @@ showSection(
     link.addEventListener("click", async event => {
       event.preventDefault();
 
-      // If this stalls, fall back to "still logged in" rather than
-      // silently closing the drawer and doing nothing — a slow
-      // network call here isn't proof the user signed out, and
-      // verunLastProcessedUserId already reflects the last confirmed
-      // auth state from updateAppAccess().
-      const { data: { session } } = await window.withTimeout(
-        supabaseClient.auth.getSession(),
-        4000,
-        { data: { session: verunLastProcessedUserId ? {} : null } }
-      );
-      if (!session) {
-        closeDrawer();
-        return;
-      }
-
+      // Navigation itself needs no session check — guests can move
+      // freely between sections in read-only mode, same as an
+      // authenticated user. Each section's own loader (referral/
+      // leaderboard/mining/genesisPass, called below) independently
+      // checks the real session and renders the guest-safe public
+      // view when there isn't one; state-changing actions inside
+      // those sections stay gated on their own, separately.
       const section = link.dataset.section;
       showSection(section);
       closeDrawer();
