@@ -5300,8 +5300,18 @@
       <div class="genesis-name-setup" id="genesisNameSetup">
         <p class="genesis-name-setup-label">Set your unique pass name</p>
         <p class="genesis-name-setup-hint">
-          This becomes the permanent name of your Genesis Pass. Lowercase letters, numbers and hyphens only — it can't be changed once set.
+          This becomes the permanent name of your Genesis Pass. We also need the transaction hash from your mint to verify it on-chain. Lowercase letters, numbers and hyphens only for the name — it can't be changed once set.
         </p>
+        <div class="genesis-discount-row">
+          <input
+            type="text"
+            id="genesisNameTxHashInput"
+            class="genesis-discount-input"
+            placeholder="Mint transaction hash (0x…)"
+            autocomplete="off"
+            maxlength="66"
+          >
+        </div>
         <div class="genesis-discount-row">
           <input
             type="text"
@@ -10986,6 +10996,7 @@ async function loadMiningLeaderboard(page) {
       ownedWalletValue: document.getElementById("genesisOwnedWalletValue"),
       nameSetup: document.getElementById("genesisNameSetup"),
       nameInput: document.getElementById("genesisNameInput"),
+      nameTxHashInput: document.getElementById("genesisNameTxHashInput"),
       nameConfirm: document.getElementById("genesisNameConfirm"),
       nameFeedback: document.getElementById("genesisNameFeedback"),
       nameDisplay: document.getElementById("genesisNameDisplay"),
@@ -11766,28 +11777,56 @@ async function loadMiningLeaderboard(page) {
     });
   })();
 
-  // Retries record_genesis_pass_mint_v2 a few times with backoff before
-  // giving up. This is the one write that makes an on-chain mint show up
-  // anywhere server-side — the owned card, referral credit, AND mining
-  // unlock (get_mining_status() reads genesis_pass_id from this same
-  // table, with no on-chain fallback of its own). Previously this call
-  // fired exactly once right after the mint's wallet round-trip; a single
-  // transient Supabase hiccup there left the pass "on-chain only"
-  // forever, with the user stuck looking like they'd never minted at
-  // all. setPassName() remains as a manual fallback if every retry here
-  // still fails.
-  async function recordGenesisMintWithRetry(params, attempts) {
+  // Retries the reconcile-genesis-pass-mint Edge Function a few times with
+  // backoff before giving up. This is the durable reconciliation layer that
+  // makes an on-chain mint show up anywhere server-side — the owned card,
+  // referral credit, AND mining unlock (get_mining_status() reads
+  // genesis_pass_id from this same table, with no on-chain fallback of its
+  // own). The Edge Function independently re-verifies the supplied
+  // transaction on Robinhood Chain (sender, destination contract, the
+  // GenesisPassMinted event, and on-chain ownership) before calling
+  // record_genesis_pass_mint_v2() itself using this authenticated Supabase
+  // session, so auth.uid() inside that RPC still resolves to this user. It
+  // also checks whether the tx/wallet is already recorded first, so it's
+  // safe to retry. Previously the frontend called record_genesis_pass_mint_v2
+  // directly exactly once right after the mint's wallet round-trip; a single
+  // transient hiccup there left the pass "on-chain only" forever, with the
+  // user stuck looking like they'd never minted at all. setPassName() remains
+  // as a manual fallback if every retry here still fails.
+  async function reconcileGenesisPassMintWithRetry(params, attempts) {
     const maxAttempts = attempts || 4;
     let lastError = null;
     for (let i = 0; i < maxAttempts; i++) {
       try {
-        const { data, error } = await supabaseClient.rpc("record_genesis_pass_mint_v2", params);
-        if (error) throw error;
+        const { data, error } = await supabaseClient.functions.invoke(
+          "reconcile-genesis-pass-mint",
+          { body: params }
+        );
+        if (error) {
+          // Supabase functions.invoke surfaces non-2xx responses as `error`
+          // with the parsed body (when JSON) on error.context — pull out a
+          // human-readable message if the function provided one.
+          let message = "Couldn't confirm this mint right now.";
+          let body = null;
+          try {
+            const ctx = error.context;
+            body = ctx && typeof ctx.json === "function" ? await ctx.json() : null;
+            if (body && (body.error || body.message)) message = body.error || body.message;
+          } catch (parseErr) {
+            // ignore — fall back to the generic message above
+          }
+          console.error("VERUN Genesis Pass: reconcile-genesis-pass-mint rejected the request", {
+            status: error.context && error.context.status,
+            body: body,
+            request: params
+          });
+          throw new Error(message);
+        }
         return data;
       } catch (err) {
         lastError = err;
         console.error(
-          "VERUN Genesis Pass: record_genesis_pass_mint_v2 attempt " + (i + 1) + "/" + maxAttempts + " failed",
+          "VERUN Genesis Pass: reconcile-genesis-pass-mint attempt " + (i + 1) + "/" + maxAttempts + " failed",
           err
         );
         if (i < maxAttempts - 1) {
@@ -11939,15 +11978,17 @@ async function loadMiningLeaderboard(page) {
       // Persist the mint server-side — this is what makes the pass
       // (and its referral credit) survive a cleared browser and show
       // up the moment the minting wallet is reconnected on any device.
-      // Retried a few times (see recordGenesisMintWithRetry above) since
-      // this single write is also what unlocks mining server-side.
+      // Routed through the reconcile-genesis-pass-mint Edge Function
+      // (retried a few times — see reconcileGenesisPassMintWithRetry
+      // above) rather than calling record_genesis_pass_mint_v2 directly,
+      // so the mint is independently re-verified on-chain before the
+      // database write — this single write is also what unlocks mining
+      // server-side.
       try {
-        const recordData = await recordGenesisMintWithRetry({
-          p_wallet_address: walletAddress,
-          p_genesis_code: code,
-          p_token_number: tokenNumber,
-          p_tx_hash: tx.hash,
-          p_referral_code: usedReferralCode
+        const recordData = await reconcileGenesisPassMintWithRetry({
+          tx_hash: tx.hash,
+          genesis_code: code,
+          referral_code: usedReferralCode || null
         });
         console.log("VERUN Genesis Pass: mint recorded to database successfully", recordData);
 
@@ -11985,7 +12026,7 @@ async function loadMiningLeaderboard(page) {
         // owned card whenever passName is still empty) to get a
         // server-side record — and, downstream of that, get mining
         // unlocked.
-        console.error("VERUN Genesis Pass: record_genesis_pass_mint_v2 failed after retries", recordErr);
+        console.error("VERUN Genesis Pass: reconcile-genesis-pass-mint failed after retries", recordErr);
       }
 
       cachedState = {
@@ -12065,14 +12106,15 @@ async function loadMiningLeaderboard(page) {
 
   // Recovers the server-side record for a pass that has no row in
   // genesis_passes yet (e.g. minted before this flow existed, or a
-  // record_genesis_pass_mint call that failed after a successful mint).
-  // This contract never stores the genesis code on-chain at all — not
-  // even hashed — so there's no on-chain value left to check the typed
-  // code against. Proof instead rests on two things we CAN still verify:
-  // the wallet demonstrably owns a Genesis Pass on-chain (chain.owned,
-  // required below) and the code isn't already claimed by a different
-  // wallet in our own registry (checked server-side by record_genesis_pass_mint
-  // itself, which rejects a code already tied to another wallet).
+  // reconciliation call that never went through after a successful mint).
+  // Routed through the reconcile-genesis-pass-mint Edge Function, which
+  // independently re-verifies the supplied transaction on-chain (sender,
+  // destination contract, the GenesisPassMinted event, and on-chain
+  // ownership) before it will call record_genesis_pass_mint_v2 — so this
+  // now needs the mint's transaction hash from the user, not just the
+  // desired name. The code-availability pre-check below stays purely as a
+  // fast, friendly failure before that on-chain round trip; the Edge
+  // Function's own uniqueness check is still what's authoritative.
   async function setPassName() {
     const e = cacheEls();
     if (!e.nameInput || !e.nameFeedback || !currentUserId) return;
@@ -12084,6 +12126,14 @@ async function loadMiningLeaderboard(page) {
     if (!/^[a-z0-9-]{3,20}$/.test(name)) {
       e.nameFeedback.textContent =
         "Enter 3–20 lowercase letters, numbers or hyphens.";
+      e.nameFeedback.className = "genesis-discount-feedback is-error";
+      return;
+    }
+
+    const rawTxHash = e.nameTxHashInput ? e.nameTxHashInput.value.trim() : "";
+    const normalizedTxHash = rawTxHash.toLowerCase();
+    if (!/^0x[a-f0-9]{64}$/.test(normalizedTxHash)) {
+      e.nameFeedback.textContent = "Enter the transaction hash from your mint (starts with 0x).";
       e.nameFeedback.className = "genesis-discount-feedback is-error";
       return;
     }
@@ -12107,12 +12157,10 @@ async function loadMiningLeaderboard(page) {
         return;
       }
 
-      const recordData = await recordGenesisMintWithRetry({
-        p_wallet_address: walletAddress,
-        p_genesis_code: name,
-        p_token_number: chain.tokenId,
-        p_tx_hash: null,
-        p_referral_code: null
+      const recordData = await reconcileGenesisPassMintWithRetry({
+        tx_hash: normalizedTxHash,
+        genesis_code: name,
+        referral_code: null
       });
 
       cachedState = {
@@ -12128,11 +12176,11 @@ async function loadMiningLeaderboard(page) {
       await loadReferralStats();
       render();
     } catch (err) {
-      console.error("VERUN Genesis Pass: recovery record_genesis_pass_mint failed", err);
+      console.error("VERUN Genesis Pass: recovery reconcile-genesis-pass-mint failed", err);
       const msg = err && err.message ? String(err.message) : "";
-      e.nameFeedback.textContent = msg.includes("already taken")
-        ? "That code is already recorded under a different wallet."
-        : "Couldn't save that right now — please try again.";
+      e.nameFeedback.textContent = msg.toLowerCase().includes("already")
+        ? "That code or transaction is already recorded under a different wallet."
+        : (msg || "Couldn't save that right now — please try again.");
       e.nameFeedback.className = "genesis-discount-feedback is-error";
     }
   }
