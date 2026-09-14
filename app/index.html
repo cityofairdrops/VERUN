@@ -9746,7 +9746,9 @@ async function loadMiningLeaderboard(page) {
       if (!getHashrateReadContract._provider) {
         getHashrateReadContract._provider = new ethers.JsonRpcProvider(ROBINHOOD_TESTNET_RPC);
       }
-      return await getHashrateReadContract._provider.getBalance(address);
+      const balance = await getHashrateReadContract._provider.getBalance(address);
+      console.log("VERUN Mining: balance check", { address, balanceWei: balance.toString() });
+      return balance;
     } catch (err) {
       console.error("VERUN Mining: balance read failed:", err);
       return null;
@@ -9821,14 +9823,23 @@ async function loadMiningLeaderboard(page) {
   // Genesis Pass mint flow's error handling (never surface a backend
   // sync hiccup as a failed purchase once the on-chain tx succeeded).
   async function buyTier(tierKey) {
-    if (buying || !currentUserId) return;
+    if (buying || !currentUserId) {
+      console.warn("VERUN Mining: buyTier() blocked", { buying, currentUserId });
+      return;
+    }
     const walletState = window.verunWallet ? window.verunWallet.getState() : null;
     const walletVerified = !!(walletState && walletState.verified);
     // Defense in depth: the button is already gated on this, but never
     // trust client UI state alone as the only gate on an action that
     // moves real testnet funds.
-    if (!walletVerified) return;
-    if (hashrateChain.paused) return;
+    if (!walletVerified) {
+      console.warn("VERUN Mining: buyTier() blocked — wallet not verified");
+      return;
+    }
+    if (hashrateChain.paused) {
+      console.warn("VERUN Mining: buyTier() blocked — contract paused");
+      return;
+    }
     if (status && status.plan === tierKey) return; // already the active tier
 
     const fnName = TIER_BUY_FN[tierKey];
@@ -9860,6 +9871,7 @@ async function loadMiningLeaderboard(page) {
       // is still the final arbiter.
       const balanceWei = await getNativeBalanceWei(walletState.address);
       if (balanceWei !== null && balanceWei < priceWei) {
+        console.warn("VERUN Mining: blocking purchase — balance", balanceWei.toString(), "< price", priceWei.toString());
         throw new Error("Insufficient balance to complete this purchase.");
       }
 
@@ -10738,7 +10750,9 @@ async function loadMiningLeaderboard(page) {
       if (!getReadContract._provider) {
         getReadContract._provider = new ethers.JsonRpcProvider(ROBINHOOD_TESTNET_RPC);
       }
-      return await getReadContract._provider.getBalance(address);
+      const balance = await getReadContract._provider.getBalance(address);
+      console.log("VERUN Genesis Pass: balance check", { address, balanceWei: balance.toString() });
+      return balance;
     } catch (err) {
       console.error("VERUN Genesis Pass: balance read failed:", err);
       return null;
@@ -11752,6 +11766,38 @@ async function loadMiningLeaderboard(page) {
     });
   })();
 
+  // Retries record_genesis_pass_mint_v2 a few times with backoff before
+  // giving up. This is the one write that makes an on-chain mint show up
+  // anywhere server-side — the owned card, referral credit, AND mining
+  // unlock (get_mining_status() reads genesis_pass_id from this same
+  // table, with no on-chain fallback of its own). Previously this call
+  // fired exactly once right after the mint's wallet round-trip; a single
+  // transient Supabase hiccup there left the pass "on-chain only"
+  // forever, with the user stuck looking like they'd never minted at
+  // all. setPassName() remains as a manual fallback if every retry here
+  // still fails.
+  async function recordGenesisMintWithRetry(params, attempts) {
+    const maxAttempts = attempts || 4;
+    let lastError = null;
+    for (let i = 0; i < maxAttempts; i++) {
+      try {
+        const { data, error } = await supabaseClient.rpc("record_genesis_pass_mint_v2", params);
+        if (error) throw error;
+        return data;
+      } catch (err) {
+        lastError = err;
+        console.error(
+          "VERUN Genesis Pass: record_genesis_pass_mint_v2 attempt " + (i + 1) + "/" + maxAttempts + " failed",
+          err
+        );
+        if (i < maxAttempts - 1) {
+          await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i))); // 1s, 2s, 4s
+        }
+      }
+    }
+    throw lastError;
+  }
+
   async function mintPass() {
     if (!currentUserId) {
       // Guest read-only mode: mint button is disabled without a
@@ -11760,13 +11806,22 @@ async function loadMiningLeaderboard(page) {
       if (typeof window.verunConnectX === "function") window.verunConnectX();
       return;
     }
-    if (!MINTING_ENABLED || minting) return;
+    if (!MINTING_ENABLED || minting) {
+      console.warn("VERUN Genesis Pass: mintPass() blocked", { MINTING_ENABLED, minting });
+      return;
+    }
     // Defense in depth: the mint button is already disabled without a
     // verified wallet, but never trust client UI state alone as the
     // only gate on an action that moves real testnet funds.
     const walletVerified = !!(window.verunWallet && window.verunWallet.getState().verified);
-    if (!walletVerified) return;
-    if (cachedState.owned || chain.owned) return;
+    if (!walletVerified) {
+      console.warn("VERUN Genesis Pass: mintPass() blocked — wallet not verified");
+      return;
+    }
+    if (cachedState.owned || chain.owned) {
+      console.warn("VERUN Genesis Pass: mintPass() blocked — already owns a pass");
+      return;
+    }
 
     const e = cacheEls();
     const code = e.codeInput ? e.codeInput.value.trim().toLowerCase() : "";
@@ -11780,7 +11835,10 @@ async function loadMiningLeaderboard(page) {
 
     const totalSupply = chain.ready && chain.maxSupply !== null ? chain.maxSupply : TOTAL_SUPPLY;
     const minted = chain.ready && chain.totalMinted !== null ? chain.totalMinted : readMintedCount();
-    if (minted >= totalSupply) return; // sold out
+    if (minted >= totalSupply) {
+      console.warn("VERUN Genesis Pass: mintPass() blocked — sold out", { minted, totalSupply });
+      return; // sold out
+    }
 
     const walletAddress = window.verunWallet.getState().address;
     const whitelistEligible = isWhitelistEligible();
@@ -11814,6 +11872,7 @@ async function loadMiningLeaderboard(page) {
         const requiredWei = computePriceWei();
         const balanceWei = await getNativeBalanceWei(walletAddress);
         if (balanceWei !== null && balanceWei < requiredWei) {
+          console.warn("VERUN Genesis Pass: blocking mint — balance", balanceWei.toString(), "< required", requiredWei.toString());
           throw new Error("Insufficient balance to mint. Add funds to your wallet and try again.");
         }
       }
@@ -11880,30 +11939,16 @@ async function loadMiningLeaderboard(page) {
       // Persist the mint server-side — this is what makes the pass
       // (and its referral credit) survive a cleared browser and show
       // up the moment the minting wallet is reconnected on any device.
+      // Retried a few times (see recordGenesisMintWithRetry above) since
+      // this single write is also what unlocks mining server-side.
       try {
-        const { data: recordData, error: recordError } = await supabaseClient.rpc(
-          "record_genesis_pass_mint_v2",
-          {
-            p_wallet_address: walletAddress,
-            p_genesis_code: code,
-            p_token_number: tokenNumber,
-            p_tx_hash: tx.hash,
-            p_referral_code: usedReferralCode
-          }
-        );
-        if (recordError) {
-          console.error("VERUN Genesis Pass: record_genesis_pass_mint_v2 RPC failed", {
-            error: recordError,
-            request: {
-              p_wallet_address: walletAddress,
-              p_genesis_code: code,
-              p_token_number: tokenNumber,
-              p_tx_hash: tx.hash,
-              p_referral_code: usedReferralCode
-            }
-          });
-          throw recordError;
-        }
+        const recordData = await recordGenesisMintWithRetry({
+          p_wallet_address: walletAddress,
+          p_genesis_code: code,
+          p_token_number: tokenNumber,
+          p_tx_hash: tx.hash,
+          p_referral_code: usedReferralCode
+        });
         console.log("VERUN Genesis Pass: mint recorded to database successfully", recordData);
 
         if (typeof insertSelfNotification === "function") {
@@ -11935,9 +11980,12 @@ async function loadMiningLeaderboard(page) {
         // The mint itself already succeeded on-chain — a backend
         // hiccup here must never be shown to the user as a failed
         // mint. On-chain ownership (chain.owned below) already
-        // reflects it; the name/referral record will catch up next
-        // time this RPC succeeds.
-        console.error("VERUN Genesis Pass: record_genesis_pass_mint_v2 failed", recordErr);
+        // reflects it. All retries above are now exhausted, so this
+        // pass needs the setPassName() recovery flow (shown on the
+        // owned card whenever passName is still empty) to get a
+        // server-side record — and, downstream of that, get mining
+        // unlocked.
+        console.error("VERUN Genesis Pass: record_genesis_pass_mint_v2 failed after retries", recordErr);
       }
 
       cachedState = {
@@ -12059,14 +12107,13 @@ async function loadMiningLeaderboard(page) {
         return;
       }
 
-      const { data, error } = await supabaseClient.rpc("record_genesis_pass_mint_v2", {
+      const recordData = await recordGenesisMintWithRetry({
         p_wallet_address: walletAddress,
         p_genesis_code: name,
         p_token_number: chain.tokenId,
         p_tx_hash: null,
         p_referral_code: null
       });
-      if (error) throw error;
 
       cachedState = {
         owned: true,
