@@ -2517,6 +2517,72 @@
       margin: 0 auto;
     }
 
+    /* ================= GENESIS SHARE-ON-X PROMPT ================= */
+    /* Reuses .mint-success-overlay / .mint-success-modal / .mint-success-close
+       / .mint-success-kicker / .mint-success-title / .mint-success-copy
+       from the mint-success modal above, so this reads as a natural
+       continuation of the same celebration flow rather than a
+       separate, unrelated popup. */
+
+    .genesis-share-x-preview {
+      margin: 4px auto 18px;
+      padding: 12px 14px;
+      max-width: 280px;
+      max-height: 170px;
+      overflow-y: auto;
+      text-align: left;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: inherit;
+      font-size: 10px;
+      line-height: 1.55;
+      color: var(--text);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .genesis-share-x-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 11px 16px;
+      margin-bottom: 10px;
+      border: 1px solid var(--green);
+      border-radius: 6px;
+      background: var(--green);
+      color: #071009;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: .15s ease;
+    }
+    .genesis-share-x-button:hover {
+      filter: brightness(1.08);
+    }
+    .genesis-share-x-button svg {
+      flex-shrink: 0;
+    }
+
+    .genesis-share-x-skip {
+      display: block;
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .genesis-share-x-skip:hover {
+      color: var(--text);
+    }
+
     /* Confetti burst — paused by default; the JS adds/re-adds the
        "-play" class (with a forced reflow in between) so the burst
        replays from frame zero every time the modal opens, instead of
@@ -4233,7 +4299,12 @@
   color:#071009;
 }
 .verun-auth-app { min-width: 0; }
-.verun-auth-app.locked { display:none; }
+/* Guest read-only mode: the app page itself is never fully hidden.
+   ".locked" is still toggled in JS (kept for any code/analytics that
+   reads the class) but no longer hides content — individual
+   state-changing controls handle their own guest-disabled state
+   instead. See verunGuestGate below: it's also no longer shown as a
+   full-page block; guests browse the real page read-only. */
 
 .verun-app-page,
 .section-card {
@@ -4245,6 +4316,11 @@
 }
 
 .balance-card { margin-top:0; }
+.guest-connect-card {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
 .section-card {
   background:var(--panel);
   border:1px solid var(--border);
@@ -4507,6 +4583,34 @@
   </div>
 </div>
 
+<!-- Genesis Pass share-on-X prompt — opens right after the mint
+     success celebration above is dismissed, so it never competes
+     with the confetti for attention. -->
+<div id="genesisShareXOverlay" class="mint-success-overlay">
+  <div class="mint-success-modal" role="dialog" aria-modal="true" aria-label="Share your Genesis Pass on X">
+
+    <button type="button" class="mint-success-close" id="genesisShareXClose" aria-label="Close">✕</button>
+
+    <div class="mint-success-kicker">Spread the word</div>
+    <div class="mint-success-title">Share Your Genesis Pass</div>
+
+    <p class="mint-success-copy">
+      Post your Genesis Code and personal referral link on X — every mint through it earns you rewards.
+    </p>
+
+    <pre class="genesis-share-x-preview" id="genesisShareXPreview"></pre>
+
+    <button type="button" class="genesis-share-x-button" id="genesisShareXPostButton">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      Post on X
+    </button>
+
+    <button type="button" class="genesis-share-x-skip" id="genesisShareXSkip">Maybe later</button>
+
+  </div>
+</div>
+
+
 <!-- VERUN APP DRAWER -->
 <div id="verunMenuOverlay" class="verun-menu-overlay"></div>
 
@@ -4618,6 +4722,12 @@
   <span id="xpTierNext"></span>
 </div>
 
+</div>
+
+<!-- Guest read-only mode: show the same Connect X button used
+     elsewhere in place of the personal balance card -->
+<div class="guest-connect-card" id="guestBalanceConnect" style="display:none;">
+  <button class="verun-connect-primary" type="button" id="balanceCardConnectButton">Connect X</button>
 </div>
 
 <section class="section app-section" id="tasks">
@@ -5799,6 +5909,12 @@
   // Expose so other independently-scoped modules (e.g. the wallet
   // verification module) can reach the same client / auth session.
   window.supabaseClient = supabaseClient;
+
+  // Conservative default until the first real auth check resolves —
+  // treated as "guest" so nothing protected can be assumed available
+  // during that brief window. updateAppAccess() sets the real value
+  // as soon as getSession()/onAuthStateChange fires.
+  if (typeof window.verunIsGuest === "undefined") window.verunIsGuest = true;
 
   // ============================================
   // NETWORK TIMEOUT GUARD
@@ -7020,7 +7136,24 @@ tasks.sort((a, b) => {
 
     let buttonHtml = "";
 
-    if (!verification) {
+    if (!session) {
+
+      // Guest read-only mode: the task itself (title/description/
+      // reward) is public and already rendered above, but starting
+      // or claiming a task is a personal, state-changing action, so
+      // guests get one clear disabled indicator instead of the
+      // interactive Start/Claim controls.
+      buttonHtml = `
+        <button
+          class="task-status"
+          disabled
+          style="opacity: 0.7; cursor: not-allowed;"
+        >
+          Connect X to Start
+        </button>
+      `;
+
+    } else if (!verification) {
 
       // No verification started yet
       buttonHtml = task.task_type === "share_progress" ? `
@@ -7201,6 +7334,19 @@ tasks.sort((a, b) => {
   container.style.visibility = "visible";
 }
     async function claimTaskXP(button, taskId) {
+
+  // Frontend guard for guests: the claim_task_xp RPC already rejects
+  // an unauthenticated call server-side (auth.uid() based), but check
+  // here too so a guest gets an immediate "connect X" prompt instead
+  // of a round-trip to the backend just to be told no.
+  const {
+    data: { session: claimSession }
+  } = await supabaseClient.auth.getSession();
+
+  if (!claimSession) {
+    if (typeof window.verunConnectX === "function") window.verunConnectX();
+    return;
+  }
 
   button.disabled = true;
   button.textContent = "Claiming...";
@@ -8009,6 +8155,19 @@ console.log("COUNTDOWN STARTED");
 async function claimDailyLogin() {
 
   if (!dailyLoginButton) return;
+
+  // Frontend guard for guests, mirroring the "Connect X First" state
+  // loadDailyLoginStatus() already puts the button in. Defense in
+  // depth only — claim_daily_login already rejects an unauthenticated
+  // call server-side.
+  const {
+    data: { session: dailyLoginSession }
+  } = await supabaseClient.auth.getSession();
+
+  if (!dailyLoginSession) {
+    if (typeof window.verunConnectX === "function") window.verunConnectX();
+    return;
+  }
 
   dailyLoginButton.disabled = true;
   dailyLoginButton.textContent =
@@ -9135,6 +9294,13 @@ async function loadMiningLeaderboard(page) {
   }
 
   async function connectWallet() {
+    // Wallet connection is account state and must stay gated behind X
+    // auth — this module isn't even loaded for guests today, but this
+    // guard is a deliberate second layer in case that ever changes.
+    if (window.verunIsGuest) {
+      if (typeof window.verunConnectX === "function") window.verunConnectX();
+      return;
+    }
     try {
       // "Switch Wallet" and "Connect Wallet" are the same button — when
       // a wrong wallet is already connected, AppKit's modal won't offer
@@ -9230,6 +9396,12 @@ async function loadMiningLeaderboard(page) {
   }
 
   async function signWallet() {
+    // Same gate as connectWallet() — signing is account state and
+    // must stay behind X auth.
+    if (window.verunIsGuest) {
+      if (typeof window.verunConnectX === "function") window.verunConnectX();
+      return;
+    }
     const address = walletState.address;
     if (!address || !appKit) return;
 
@@ -10099,6 +10271,30 @@ async function loadMiningLeaderboard(page) {
     if (e.tiersSection) e.tiersSection.style.display = "none";
   }
 
+  // Guest read-only state: get_mining_status() is a per-account RPC
+  // (it reads/creates this user's mining_accounts row), so it's never
+  // called for a guest. Instead of leaving the section stuck on the
+  // "Checking your mining status…" spinner forever (the previous
+  // behavior — loadMiningSection() used to just return before ever
+  // reaching applyAccessGate/render), show the public pool card
+  // (already static in the HTML) plus the Hashrate Tiers pricing
+  // grid, with every purchase control clearly requiring X first.
+  function applyGuestGate() {
+    const e = cacheEls();
+    if (e.statusLoading) e.statusLoading.style.display = "none";
+    if (e.locked) e.locked.style.display = "none";
+    if (e.dashboard) e.dashboard.style.display = "none";
+    if (e.tiersSection) e.tiersSection.style.display = "";
+
+    if (e.tiersGrid) {
+      e.tiersGrid.querySelectorAll("[data-tier-buy]").forEach(buyButton => {
+        buyButton.dataset.tierAction = "guest";
+        buyButton.disabled = false;
+        buyButton.textContent = "Connect X to Upgrade";
+      });
+    }
+  }
+
   function isUnlocked() {
     return !!(status && status.genesis_pass_id);
   }
@@ -10279,6 +10475,11 @@ async function loadMiningLeaderboard(page) {
           const action = buyButton.dataset.tierAction || "buy";
           if (action === "none") {
             return; // already the active tier — nothing to do
+          } else if (action === "guest") {
+            // Guest read-only mode: buying/upgrading is a
+            // wallet+account state change, so it requires X first —
+            // wallet connect only becomes available after that.
+            if (typeof window.verunConnectX === "function") window.verunConnectX();
           } else if (action === "connect") {
             if (window.verunWallet && typeof window.verunWallet.open === "function") {
               window.verunWallet.open();
@@ -10308,7 +10509,13 @@ async function loadMiningLeaderboard(page) {
 
     const { data: { session } } = await supabaseClient.auth.getSession();
     currentUserId = session ? session.user.id : null;
-    if (!currentUserId) return;
+    if (!currentUserId) {
+      // Guest read-only mode: show the public pool/tiers info instead
+      // of leaving the section on the loading placeholder. No
+      // per-account RPCs are called here.
+      applyGuestGate();
+      return;
+    }
 
     await Promise.all([fetchStatus(), refreshHashrateChainState()]);
     render();
@@ -10711,7 +10918,11 @@ async function loadMiningLeaderboard(page) {
       earningsAmount: document.getElementById("genesisEarningsAmount"),
       earningsNote: document.getElementById("genesisEarningsNote"),
       claimButton: document.getElementById("genesisClaimButton"),
-      goToMining: document.getElementById("genesisGoToMiningButton")
+      goToMining: document.getElementById("genesisGoToMiningButton"),
+      // Referenced directly here (not just via the Wallet module) so
+      // guest read-only mode can clearly label + gate this button
+      // behind X auth even before the Wallet module has ever loaded.
+      walletConnectBtn: document.getElementById("genesisWalletConnectButton")
     };
     if (els.totalSupply) els.totalSupply.textContent = formatIndian(TOTAL_SUPPLY);
     return els;
@@ -11254,9 +11465,8 @@ async function loadMiningLeaderboard(page) {
   }
 
   function render() {
-    if (!currentUserId) return;
     const e = cacheEls();
-    const state = cachedState;
+    const state = currentUserId ? cachedState : defaultState();
     const totalSupply = chain.ready && chain.maxSupply !== null ? chain.maxSupply : TOTAL_SUPPLY;
     const minted = chain.ready && chain.totalMinted !== null ? chain.totalMinted : readMintedCount();
     const soldOut = minted >= totalSupply;
@@ -11302,27 +11512,39 @@ async function loadMiningLeaderboard(page) {
       if (e.discountFeedback) e.discountFeedback.style.display = whitelistEligible ? "none" : "";
 
       if (e.mintButton) {
-        e.mintButton.disabled = soldOut || contractMintOff || !walletVerified || !codeValid;
-        e.mintButton.textContent = soldOut
-          ? "Sold Out"
-          : (contractMintOff
-              ? "Minting Paused"
-              : (!walletVerified
-                  ? "Connect Wallet to Mint"
-                  : (whitelistEligible ? "Mint Genesis Pass (Free)" : "Mint Genesis Pass")));
+        e.mintButton.disabled = !currentUserId || soldOut || contractMintOff || !walletVerified || !codeValid;
+        e.mintButton.textContent = !currentUserId
+          ? "Connect X to Mint"
+          : (soldOut
+              ? "Sold Out"
+              : (contractMintOff
+                  ? "Minting Paused"
+                  : (!walletVerified
+                      ? "Connect Wallet to Mint"
+                      : (whitelistEligible ? "Mint Genesis Pass (Free)" : "Mint Genesis Pass"))));
       }
       if (e.mintNote) {
-        e.mintNote.textContent = soldOut
-          ? ("All " + formatIndian(totalSupply) + " Genesis Passes have been minted.")
-          : contractMintOff
-            ? "Minting is currently paused on the contract."
-            : (!walletVerified
-                ? "Connect and verify your Robinhood Chain wallet above to enable minting."
-                : (codeValid
-                    ? (whitelistEligible
-                        ? "Your wallet is whitelisted for a free mint — confirm the transaction in your wallet (no ETH required)."
-                        : "This sends a real transaction on Robinhood Chain — confirm the price shown in your wallet.")
-                    : "Choose a genesis code (3–20 lowercase letters, numbers or hyphens) to enable minting."));
+        e.mintNote.textContent = !currentUserId
+          ? "Connect your X account to mint a Genesis Pass."
+          : (soldOut
+              ? ("All " + formatIndian(totalSupply) + " Genesis Passes have been minted.")
+              : contractMintOff
+                ? "Minting is currently paused on the contract."
+                : (!walletVerified
+                    ? "Connect and verify your Robinhood Chain wallet above to enable minting."
+                    : (codeValid
+                        ? (whitelistEligible
+                            ? "Your wallet is whitelisted for a free mint — confirm the transaction in your wallet (no ETH required)."
+                            : "This sends a real transaction on Robinhood Chain — confirm the price shown in your wallet.")
+                        : "Choose a genesis code (3–20 lowercase letters, numbers or hyphens) to enable minting.")));
+      }
+      if (e.walletConnectBtn && !currentUserId) {
+        // Guest read-only mode: wallet connect is itself an
+        // account-state action, so it stays gated behind X auth —
+        // the Wallet module (which normally owns this button's label)
+        // is never loaded for guests, so set a clear guest label here.
+        e.walletConnectBtn.disabled = false;
+        e.walletConnectBtn.textContent = "Connect X First";
       }
     }
   }
@@ -11336,8 +11558,10 @@ async function loadMiningLeaderboard(page) {
   // Celebration popup shown right after the mint transaction confirms
   // on-chain. Auto-closes on its own after a few seconds, but stays
   // fully dismissible (✕ button or tap-outside) so it never blocks the
-  // user if they want to move on immediately.
+  // user if they want to move on immediately. Whichever way it closes,
+  // the share-on-X prompt opens right after — see closeGenesisMintSuccess().
   let genesisMintSuccessTimer = null;
+  let genesisMintSuccessCode = null; // set on open, consumed on close
 
   function openGenesisMintSuccess(code) {
     const overlay = document.getElementById("genesisMintSuccessOverlay");
@@ -11345,6 +11569,7 @@ async function loadMiningLeaderboard(page) {
     const confetti = document.getElementById("genesisMintSuccessConfetti");
     if (!overlay) return;
 
+    genesisMintSuccessCode = code || null;
     if (nameEl) nameEl.textContent = code || "";
 
     overlay.classList.add("open");
@@ -11372,6 +11597,13 @@ async function loadMiningLeaderboard(page) {
       clearTimeout(genesisMintSuccessTimer);
       genesisMintSuccessTimer = null;
     }
+    // Hand off straight to the share-on-X prompt — auto-timeout, ✕,
+    // and tap-outside all land here, so all three paths lead to it.
+    if (genesisMintSuccessCode) {
+      const codeToShare = genesisMintSuccessCode;
+      genesisMintSuccessCode = null;
+      openGenesisShareX(codeToShare);
+    }
   }
 
   (function setupGenesisMintSuccessModal() {
@@ -11383,8 +11615,86 @@ async function loadMiningLeaderboard(page) {
     });
   })();
 
+  // Builds the ready-made X post: the two dynamic pieces are the
+  // owner's own Genesis Code (exactly what they just minted with) and
+  // their personal referral link (reads the same value already shown
+  // on the Referral panel, so it's always the current one). Max
+  // supply is pulled from TOTAL_SUPPLY rather than hardcoded, so the
+  // copy can't drift from what the rest of the page shows.
+  function buildGenesisShareText(code, referralLink) {
+    return "Just minted my VERUN Genesis Pass \ud83d\udd25\n\n" +
+      "\u26a1 2\u00d7 Multiplier\n" +
+      "\ud83c\udf81  Guaranteed airdrop eligibility\n" +
+      "\ud83d\udd13 2\u00d7 TGE vesting unlock\n" +
+      "\u26cf\ufe0f $VERUN Mining access\n\n" +
+      "And you can mint yours with 50% OFF using my personal Genesis Code:\n\n" +
+      "\ud83c\udf9f\ufe0f " + code + "\n\n" +
+      "Don\u2019t wait too long \u2014 only " + formatIndian(TOTAL_SUPPLY) + " passes exist.\n\n" +
+      "I secured mine. Will you? \ud83d\udc40\n\n" +
+      "\ud83d\udc49 " + referralLink + "\n\n" +
+      "#VERUN #GenesisPass #Crypto #Airdrop #Web3\n\n" +
+      "#RobinhoodCrypto #RobinhoodNfts";
+  }
+
+  function openGenesisShareX(code) {
+    const overlay = document.getElementById("genesisShareXOverlay");
+    const preview = document.getElementById("genesisShareXPreview");
+    if (!overlay) return;
+
+    // Reuse the exact link already computed for the Referral panel
+    // instead of re-deriving it, so this always matches what's shown
+    // elsewhere in the app. Falls back to the bare domain only if
+    // that hasn't been populated yet (shouldn't happen post-mint,
+    // since minting already requires a signed-in, X-connected user).
+    const referralLinkInput = document.getElementById("referralLinkInput");
+    const referralLink = (referralLinkInput && referralLinkInput.value &&
+      !referralLinkInput.value.startsWith("Connect X"))
+      ? referralLinkInput.value
+      : "https://veruncrypto.xyz";
+
+    const shareText = buildGenesisShareText(code || "", referralLink);
+    if (preview) preview.textContent = shareText;
+    overlay.dataset.shareText = shareText;
+
+    overlay.classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeGenesisShareX() {
+    const overlay = document.getElementById("genesisShareXOverlay");
+    if (!overlay) return;
+    overlay.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  (function setupGenesisShareXModal() {
+    const overlay = document.getElementById("genesisShareXOverlay");
+    const closeBtn = document.getElementById("genesisShareXClose");
+    const skipBtn = document.getElementById("genesisShareXSkip");
+    const postBtn = document.getElementById("genesisShareXPostButton");
+
+    closeBtn?.addEventListener("click", closeGenesisShareX);
+    skipBtn?.addEventListener("click", closeGenesisShareX);
+    overlay?.addEventListener("click", (event) => {
+      if (event.target === overlay) closeGenesisShareX();
+    });
+    postBtn?.addEventListener("click", () => {
+      const shareText = (overlay && overlay.dataset.shareText) || "";
+      const intentUrl = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(shareText);
+      window.open(intentUrl, "_blank", "noopener,noreferrer");
+      closeGenesisShareX();
+    });
+  })();
+
   async function mintPass() {
-    if (!MINTING_ENABLED || !currentUserId || minting) return;
+    if (!currentUserId) {
+      // Guest read-only mode: mint button is disabled without a
+      // session anyway, but if it's ever reached, send the guest into
+      // the X connect flow instead of silently doing nothing.
+      if (typeof window.verunConnectX === "function") window.verunConnectX();
+      return;
+    }
+    if (!MINTING_ENABLED || minting) return;
     // Defense in depth: the mint button is already disabled without a
     // verified wallet, but never trust client UI state alone as the
     // only gate on an action that moves real testnet funds.
@@ -11734,6 +12044,21 @@ async function loadMiningLeaderboard(page) {
 
   function bindEventsOnce() {
     const e = cacheEls();
+    if (e.walletConnectBtn && !e.walletConnectBtn.dataset.genesisGuestBound) {
+      e.walletConnectBtn.dataset.genesisGuestBound = "1";
+      // Capture phase + stopImmediatePropagation so this always runs
+      // before the Wallet module's own connect handler (bound
+      // separately, only once authenticated). For a logged-in user
+      // window.verunIsGuest is false, so this is a no-op and the
+      // normal wallet-connect click proceeds untouched.
+      e.walletConnectBtn.addEventListener("click", function (event) {
+        if (window.verunIsGuest) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          if (typeof window.verunConnectX === "function") window.verunConnectX();
+        }
+      }, true);
+    }
     if (e.mintButton && !e.mintButton.dataset.genesisBound) {
       e.mintButton.dataset.genesisBound = "1";
       e.mintButton.addEventListener("click", mintPass);
@@ -11818,22 +12143,29 @@ async function loadMiningLeaderboard(page) {
       }
     }
     currentUserId = userId;
-    if (!currentUserId) return;
 
-    // Pull this user's mint record (if any) from the server first, so
-    // a returning user on a fresh browser sees their pass immediately
-    // instead of only after reconnecting the wallet that minted it.
-    await loadServerGenesisState(currentUserId);
-    await loadReferralStats();
+    if (currentUserId) {
+      // Pull this user's mint record (if any) from the server first, so
+      // a returning user on a fresh browser sees their pass immediately
+      // instead of only after reconnecting the wallet that minted it.
+      await loadServerGenesisState(currentUserId);
+      await loadReferralStats();
 
-    const saved = localStorage.getItem(discountCodeStorageKey(currentUserId));
-    if (saved && !appliedCode) {
-      const e = cacheEls();
-      if (e.discountInput) e.discountInput.value = saved;
-      // Re-verify against the contract rather than trusting the saved
-      // value outright — applyDiscountCode() sets appliedCode itself
-      // once the on-chain check resolves.
-      applyDiscountCode();
+      const saved = localStorage.getItem(discountCodeStorageKey(currentUserId));
+      if (saved && !appliedCode) {
+        const e = cacheEls();
+        if (e.discountInput) e.discountInput.value = saved;
+        // Re-verify against the contract rather than trusting the saved
+        // value outright — applyDiscountCode() sets appliedCode itself
+        // once the on-chain check resolves.
+        applyDiscountCode();
+      }
+    } else {
+      // Guest read-only mode: skip every personal/per-account lookup
+      // (server mint record, referral stats, saved discount code) —
+      // render() below still paints the public supply/price/mint-card
+      // info instead of leaving the section on a stale or blank state.
+      cachedState = defaultState();
     }
 
     render();
@@ -11879,6 +12211,7 @@ async function loadMiningLeaderboard(page) {
 
   const drawerConnect = document.getElementById("drawerConnectXButton");
   const guestConnect = document.getElementById("guestConnectXButton");
+  const balanceCardConnect = document.getElementById("balanceCardConnectButton");
   const disconnectButton = document.getElementById("disconnectXButton");
 
   const guestDrawer = document.getElementById("verunGuestDrawer");
@@ -11952,7 +12285,7 @@ async function loadMiningLeaderboard(page) {
   }
 
   async function connectX() {
-    const buttons = [drawerConnect, guestConnect].filter(Boolean);
+    const buttons = [drawerConnect, guestConnect, balanceCardConnect].filter(Boolean);
     buttons.forEach(button => {
       button.disabled = true;
       button.textContent = "Connecting...";
@@ -12024,10 +12357,50 @@ async function loadMiningLeaderboard(page) {
     const force = opts && opts.force;
 
     if (!session) {
-      verunLastProcessedUserId = null;
-      guestGate?.classList.add("visible");
-      authApp?.classList.add("locked");
+      // Guest read-only mode: the app page itself stays visible and
+      // browsable. We no longer show the full-page "Connect X to
+      // enter" gate — that used to block Tasks/Genesis Pass/
+      // Referral/Leaderboard/Mining/Airdrop entirely. Individual
+      // state-changing controls (claim/mint/start/claim ETH/wallet
+      // connect, etc.) handle their own "Connect X" gating instead;
+      // Supabase RLS/RPCs remain the real enforcement either way.
+      if (!force && verunLastProcessedUserId === "guest") {
+        return;
+      }
+      verunLastProcessedUserId = "guest";
+      window.verunIsGuest = true;
+
+      guestGate?.classList.remove("visible");
+      authApp?.classList.remove("locked");
       setDrawerGuest();
+
+      // Show the guest-mode balance card prompt instead of the
+      // personal XP balance for unauthenticated visitors.
+      const balanceCardEl = document.querySelector(".balance-card");
+      const guestBalanceConnect = document.getElementById("guestBalanceConnect");
+      if (balanceCardEl) balanceCardEl.style.display = "none";
+      if (guestBalanceConnect) guestBalanceConnect.style.display = "";
+
+      const savedGuestSection = localStorage.getItem("verunCurrentSection");
+      showSection(
+        savedGuestSection && pages[savedGuestSection]
+          ? savedGuestSection
+          : "tasks"
+      );
+
+      // Guest-safe loaders only: public/informational data. No
+      // personal profile, no notifications, and no wallet module —
+      // wallet connect/sign stays gated behind X auth (see
+      // connectWallet()/signWallet() guards), so there's no reason to
+      // even load the wallet connector for an unauthenticated visitor.
+      const guestSectionLoaders = [];
+      if (typeof loadTasks === "function") guestSectionLoaders.push(window.withTimeout(loadTasks(), 12000));
+      if (typeof loadDailyLoginStatus === "function") guestSectionLoaders.push(window.withTimeout(loadDailyLoginStatus(), 12000));
+      if (typeof loadVerunLeaderboard === "function") guestSectionLoaders.push(window.withTimeout(loadVerunLeaderboard(), 12000));
+      if (typeof loadReferralDashboard === "function") guestSectionLoaders.push(window.withTimeout(loadReferralDashboard(), 12000));
+      if (typeof loadMiningSection === "function") guestSectionLoaders.push(window.withTimeout(loadMiningSection(), 12000));
+      if (typeof loadGenesisPassSection === "function") guestSectionLoaders.push(window.withTimeout(loadGenesisPassSection(), 12000));
+      await Promise.all(guestSectionLoaders);
       return;
     }
 
@@ -12035,6 +12408,7 @@ async function loadMiningLeaderboard(page) {
       return;
     }
     verunLastProcessedUserId = session.user.id;
+    window.verunIsGuest = false;
 
     guestGate?.classList.remove("visible");
     authApp?.classList.remove("locked");
@@ -12054,6 +12428,13 @@ async function loadMiningLeaderboard(page) {
     );
 
     setDrawerUser(session.user, profile);
+
+    // Authenticated: show the real balance card, hide the guest connect prompt.
+    const balanceCardEl = document.querySelector(".balance-card");
+    const guestBalanceConnect = document.getElementById("guestBalanceConnect");
+    if (balanceCardEl) balanceCardEl.style.display = "";
+    if (guestBalanceConnect) guestBalanceConnect.style.display = "none";
+
     const savedSection = localStorage.getItem("verunCurrentSection");
 
 showSection(
@@ -12098,6 +12479,13 @@ showSection(
 
   drawerConnect?.addEventListener("click", connectX);
   guestConnect?.addEventListener("click", connectX);
+  balanceCardConnect?.addEventListener("click", connectX);
+
+  // Exposed so any protected action elsewhere on the page (task
+  // claim, daily login, mint, mining start/buy, referral claim,
+  // wallet connect/sign) can trigger the same X OAuth flow when a
+  // guest clicks it, instead of silently no-op'ing.
+  window.verunConnectX = connectX;
 
   drawerLinks.forEach(link => {
     link.addEventListener("click", async event => {
