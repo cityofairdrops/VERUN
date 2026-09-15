@@ -10625,6 +10625,14 @@ async function loadMiningLeaderboard(page) {
   // Live on Robinhood Chain Testnet — real transactions against this contract.
   const GENESIS_CONTRACT_ADDRESS = "0x92f6a18290408a18A582420f44Fe2fafB1e43F72";
   const ROBINHOOD_TESTNET_RPC = "https://rpc.mainnet.chain.robinhood.com";
+  const ROBINHOOD_READ_RPCS = [
+    "https://rpc-robinhood.blockmachine.io",
+    "https://robinhood-mainnet-rpc.blockreq.com/v1/rpc/public",
+    "https://robinhood.drpc.org",
+    "https://rpc.solidrpc.io/public/evm/4663",
+    "https://rpc.mainnet.chain.robinhood.com"
+  ];
+  const REFERRAL_REWARD_ETH = 0.00015;
 
   // Separate contract the Genesis Pass mint forwards referral rewards
   // into (see referralClaim() on the Genesis Pass contract) — referrers
@@ -10710,16 +10718,44 @@ async function loadMiningLeaderboard(page) {
     return window.ethers || null;
   }
 
-  // Read-only contract instance against the public testnet RPC — used
-  // for pool/price/eligibility reads that don't require a connected
-  // wallet.
-  function getReadContract() {
+  function getReadProvider() {
     const ethers = getEthers();
     if (!ethers) return null;
-    if (!getReadContract._provider) {
-      getReadContract._provider = new ethers.JsonRpcProvider(ROBINHOOD_TESTNET_RPC);
+    try {
+      const raw = window.verunWallet && typeof window.verunWallet.getProvider === "function"
+        ? window.verunWallet.getProvider()
+        : null;
+      if (raw) return new ethers.BrowserProvider(raw, 4663);
+    } catch (err) {}
+    if (getReadProvider._fallback) return getReadProvider._fallback;
+    try {
+      if (typeof ethers.FallbackProvider === "function") {
+        getReadProvider._fallback = new ethers.FallbackProvider(
+          ROBINHOOD_READ_RPCS.map(function (url, i) {
+            return {
+              provider: new ethers.JsonRpcProvider(url, 4663, { staticNetwork: true }),
+              priority: i,
+              stallTimeout: 1800,
+              weight: 1
+            };
+          })
+        );
+      } else {
+        getReadProvider._fallback = new ethers.JsonRpcProvider(ROBINHOOD_READ_RPCS[0], 4663, { staticNetwork: true });
+      }
+    } catch (err) {
+      getReadProvider._fallback = new ethers.JsonRpcProvider(ROBINHOOD_READ_RPCS[0], 4663);
     }
-    return new ethers.Contract(GENESIS_CONTRACT_ADDRESS, GENESIS_CONTRACT_ABI, getReadContract._provider);
+    return getReadProvider._fallback;
+  }
+
+  // Read-only contract instance — prefer the connected wallet's RPC so
+  // we are not stuck on the rate-limited public node.
+  function getReadContract() {
+    const ethers = getEthers();
+    const provider = getReadProvider();
+    if (!ethers || !provider) return null;
+    return new ethers.Contract(GENESIS_CONTRACT_ADDRESS, GENESIS_CONTRACT_ABI, provider);
   }
 
   // Signer-backed contract instance for the actual mint transaction —
@@ -10747,10 +10783,9 @@ async function loadMiningLeaderboard(page) {
     const ethers = getEthers();
     if (!ethers || !address) return null;
     try {
-      if (!getReadContract._provider) {
-        getReadContract._provider = new ethers.JsonRpcProvider(ROBINHOOD_TESTNET_RPC);
-      }
-      const balance = await getReadContract._provider.getBalance(address);
+      const provider = getReadProvider();
+      if (!provider) return null;
+      const balance = await provider.getBalance(address);
       console.log("VERUN Genesis Pass: balance check", { address, balanceWei: balance.toString() });
       return balance;
     } catch (err) {
@@ -10763,11 +10798,9 @@ async function loadMiningLeaderboard(page) {
   // against the separate Referral Claim contract.
   function getReadClaimContract() {
     const ethers = getEthers();
-    if (!ethers) return null;
-    if (!getReadContract._provider) {
-      getReadContract._provider = new ethers.JsonRpcProvider(ROBINHOOD_TESTNET_RPC);
-    }
-    return new ethers.Contract(REFERRAL_CLAIM_CONTRACT_ADDRESS, REFERRAL_CLAIM_ABI, getReadContract._provider);
+    const provider = getReadProvider();
+    if (!ethers || !provider) return null;
+    return new ethers.Contract(REFERRAL_CLAIM_CONTRACT_ADDRESS, REFERRAL_CLAIM_ABI, provider);
   }
 
   // ── Persisted per-wallet scan checkpoint ────────────────────────
@@ -11100,11 +11133,14 @@ async function loadMiningLeaderboard(page) {
     const wallet = (claimChain && claimChain.wallet) || cachedState.walletAddress;
     const recent = await loadOnChainReferralHistory(wallet);
     const ethersLib = getEthers();
+    const fromChain = (claimChain && claimChain.referralCount) || 0;
+    const fromHistory = recent && recent.length ? recent.length : 0;
+    const count = Math.max(Number(fromChain) || 0, fromHistory);
     const earnings = (claimChain && claimChain.claimableWei && ethersLib)
       ? parseFloat(ethersLib.formatEther(claimChain.claimableWei))
-      : 0;
+      : count * REFERRAL_REWARD_ETH;
     cachedReferralStats = {
-      count: (claimChain && claimChain.referralCount) || 0,
+      count: count,
       earnings: earnings,
       recent: recent
     };
@@ -11515,20 +11551,12 @@ async function loadMiningLeaderboard(page) {
     const e = cacheEls();
     const stats = cachedReferralStats;
     const ethers = getEthers();
-
-    // The Referral Claim contract's own referralCount(wallet) is the
-    // authoritative count of mints that used this wallet as a referrer —
-    // prefer it once loaded, falling back to the Supabase aggregate
-    // (which also seeds the "recent" list below, since the claim
-    // contract doesn't track individual mint details).
+    const historyCount = (stats.recent && stats.recent.length) ? stats.recent.length : 0;
     const displayCount = (claimChain.ready && claimChain.referralCount !== null)
       ? claimChain.referralCount
-      : stats.count;
-    // Only write once the authoritative on-chain read is in — leaves
-    // whatever's already on screen (a prior real value, or the
-    // markup's static "0" before first load) alone otherwise, instead
-    // of forcing a false zero during the brief loading window.
-    if (e.referralCount && claimChain.ready && claimChain.referralCount !== null) {
+      : Math.max(stats.count || 0, historyCount);
+
+    if (e.referralCount) {
       e.referralCount.textContent = formatIndian(displayCount);
     }
 
@@ -11558,23 +11586,26 @@ async function loadMiningLeaderboard(page) {
     // before the on-chain read resolves.
     const claimableEth = (claimChain.ready && ethers && claimChain.claimableWei !== null)
       ? parseFloat(ethers.formatEther(claimChain.claimableWei))
-      : stats.earnings;
-    if (e.earningsAmount && claimChain.ready && claimChain.claimableWei !== null) {
+      : (stats.earnings || displayCount * REFERRAL_REWARD_ETH);
+    if (e.earningsAmount) {
       e.earningsAmount.textContent = formatEth(claimableEth);
     }
 
     const minimumEth = (claimChain.ready && ethers && claimChain.minimumClaimWei !== null)
       ? parseFloat(ethers.formatEther(claimChain.minimumClaimWei))
-      : null;
+      : 0.0003;
 
     if (e.earningsNote) {
-      if (!claimChain.ready) {
-        e.earningsNote.textContent = "Loading your claimable balance…";
-      } else if (claimChain.canClaim) {
+      if (claimChain.ready && claimChain.canClaim) {
         e.earningsNote.textContent = "You have " + formatEth(claimableEth) + " ready to claim.";
-      } else if (minimumEth !== null) {
+      } else if (claimChain.ready && minimumEth !== null) {
         e.earningsNote.textContent = "Minimum claim is " + formatEth(minimumEth) +
           " — keep earning referrals to unlock claiming.";
+      } else if (displayCount > 0) {
+        e.earningsNote.textContent = formatIndian(displayCount) +
+          " referral mints on-chain · " + formatEth(claimableEth) + " earned.";
+      } else if (!claimChain.ready) {
+        e.earningsNote.textContent = "Loading your claimable balance…";
       } else {
         e.earningsNote.textContent = "Referral rewards are tracked on-chain for every mint that used your code.";
       }
