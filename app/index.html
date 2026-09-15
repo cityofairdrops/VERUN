@@ -9984,6 +9984,42 @@ async function loadMiningLeaderboard(page) {
   let buying = null; // tier key currently mid-purchase ("pro"/"ultra"), guards double-submit
   const tierErrors = {}; // tierKey -> last failure message, shown until the next attempt on that tier
 
+  // supabaseClient.functions.invoke() surfaces any non-2xx response from an
+  // edge function as a generic FunctionsHttpError whose .message is always
+  // "Edge Function returned a non-2xx status code" — the actual reason the
+  // function sent back (e.g. "Transaction receipt not found") only lives in
+  // the response body, reachable via error.context. Same extraction the
+  // Genesis Pass flow already uses for genesis-sign (see
+  // requestGenesisAuthorization above); pulled out here so the mining
+  // verification call can show the real reason too, instead of the
+  // meaningless wrapper text.
+  async function extractFunctionErrorMessage(error, fallback) {
+    let message = fallback;
+    let body = null;
+    try {
+      const ctx = error && error.context;
+      body = ctx && typeof ctx.json === "function" ? await ctx.clone().json() : null;
+      if (body && (body.error || body.message)) message = body.error || body.message;
+    } catch (parseErr) {
+      // ignore — fall back to the generic message above
+    }
+    return { message, body };
+  }
+
+  // ethers only tags an error ACTION_REJECTED / code 4001 when the wallet's
+  // rejection response matches the exact JSON-RPC shape it expects. Some
+  // wallets return a slightly different shape on rejection, which ethers
+  // can't reconcile and instead throws its own generic
+  // "could not coalesce error" — a real rejection, just not one that hits
+  // the checks below on its own, so string-match the message as a fallback.
+  function isWalletRejection(err) {
+    if (!err) return false;
+    const codes = [err.code, err.info && err.info.error && err.info.error.code, err.error && err.error.code, err.cause && err.cause.code];
+    if (codes.some((c) => c === "ACTION_REJECTED" || c === 4001)) return true;
+    const msg = String((err && err.message) || err).toLowerCase();
+    return /user rejected|user denied|denied transaction|rejected the request|rejected by user/.test(msg);
+  }
+
   // ── VERUNHashrate contract (Robinhood Chain Testnet) ────────────────
   const HASHRATE_CONTRACT_ADDRESS = "0xdE734960Cfdd9937bB0a9dc50E630Ed10BB34df0";
   const ROBINHOOD_TESTNET_RPC = "https://rpc.mainnet.chain.robinhood.com";
@@ -10196,59 +10232,81 @@ async function loadMiningLeaderboard(page) {
       // process_completed_mining pick up the boosted rate. On-chain
       // ownership already reflects the purchase regardless of whether
       // this call succeeds — see the module header comment above.
-      try {
-  if (buyButton) {
-    buyButton.textContent = "Verifying purchase…";
-  }
+      //
+      // The wallet already confirmed the transaction (tx.wait() above),
+      // so a failure past this point is a server-sync problem, not a
+      // failed purchase. Retry verify-mining-purchase a few times
+      // (it can hit transient RPC lag on the backend), and if it still
+      // hasn't come back clean, don't show a scary raw error — show a
+      // reassuring status instead and fall through to the status poll
+      // below, plus the tab's ongoing 60s background refresh, either of
+      // which will pick up the confirmed purchase (or reconcile-mining-
+      // purchase backfilling it) without the user reloading the page.
+      let verificationData = null;
+      let lastVerificationMessage = null;
+      const VERIFY_ATTEMPTS = 3;
 
-  const {
-    data: verificationData,
-    error: verificationError
-  } = await supabaseClient.functions.invoke(
-    "verify-mining-purchase",
-    {
-      body: {
-        tx_hash: tx.hash
+      for (let attempt = 1; attempt <= VERIFY_ATTEMPTS; attempt++) {
+        if (buyButton) {
+          buyButton.textContent = attempt === 1 ? "Verifying purchase…" : "Confirming with server…";
+        }
+
+        const {
+          data,
+          error: verificationError
+        } = await supabaseClient.functions.invoke(
+          "verify-mining-purchase",
+          {
+            body: {
+              tx_hash: tx.hash,
+              plan: tierKey
+            }
+          }
+        );
+
+        if (!verificationError && data && data.success) {
+          verificationData = data;
+          lastVerificationMessage = null;
+          break;
+        }
+
+        if (verificationError) {
+          const extracted = await extractFunctionErrorMessage(
+            verificationError,
+            "Purchase could not be verified."
+          );
+          lastVerificationMessage = extracted.message;
+          console.error(
+            "VERUN Mining: verification request failed (attempt " + attempt + "/" + VERIFY_ATTEMPTS + ")",
+            verificationError,
+            extracted.body
+          );
+        } else {
+          lastVerificationMessage = (data && data.error) || "Purchase could not be verified.";
+          console.error(
+            "VERUN Mining: verification unsuccessful (attempt " + attempt + "/" + VERIFY_ATTEMPTS + ")",
+            data
+          );
+        }
+
+        if (attempt < VERIFY_ATTEMPTS) {
+          await new Promise(r => setTimeout(r, 2000));
+        }
       }
-    }
-  );
 
-  if (verificationError) {
-    console.error(
-      "VERUN Mining: verification request failed",
-      verificationError
-    );
-
-    throw verificationError;
-  }
-
-  if (!verificationData?.success) {
-    throw new Error(
-      verificationData?.error ||
-      "Purchase could not be verified."
-    );
-  }
-
-  console.log(
-    "VERUN Mining: purchase verified successfully",
-    verificationData
-  );
-
-} catch (verificationError) {
-
-  console.error(
-    "VERUN Mining: purchase verification failed",
-    verificationError
-  );
-
-  if (statusEl) {
-    statusEl.textContent =
-      verificationError?.message ||
-      "Purchase verification failed.";
-  }
-
-  throw verificationError;
-}
+      if (verificationData) {
+        console.log(
+          "VERUN Mining: purchase verified successfully",
+          verificationData
+        );
+      } else {
+        console.error(
+          "VERUN Mining: verification did not succeed after retries",
+          lastVerificationMessage
+        );
+        tierErrors[tierKey] = "Payment confirmed on-chain — finishing setup…";
+        if (statusEl) statusEl.textContent = tierErrors[tierKey];
+      }
 
       await refreshHashrateChainState();
       await fetchStatus();
@@ -10281,8 +10339,8 @@ async function loadMiningLeaderboard(page) {
       }
       render();
     } catch (err) {
-      const message = (err && (err.code === "ACTION_REJECTED" || err.code === 4001))
-        ? "Transaction rejected in wallet."
+      const message = isWalletRejection(err)
+        ? "Payment rejected in wallet."
         : (err && err.reason) || (err && err.shortMessage) || (err && err.message) || "Purchase failed. Please try again.";
       console.error("VERUN Mining: buy" + tierKey + " failed:", message);
       tierErrors[tierKey] = message;
@@ -10940,6 +10998,22 @@ async function loadMiningLeaderboard(page) {
   // be produced server-side (the private key never touches the browser).
   const GENESIS_SIGN_FUNCTION = "genesis-sign";
   const GENESIS_AUTH_VALIDITY_SECONDS = 600; // 10-minute signature validity window
+
+  // ethers only tags an error ACTION_REJECTED / code 4001 when the wallet's
+  // rejection response matches the exact JSON-RPC shape it expects. Some
+  // wallets return a slightly different shape on rejection, which ethers
+  // can't reconcile and instead throws its own generic
+  // "could not coalesce error" — a real rejection, just not one that hits
+  // the checks below on its own, so string-match the message as a fallback.
+  // (Mirrors the same helper in the Mining module — kept local since the
+  // two modules run as separate closures.)
+  function isWalletRejection(err) {
+    if (!err) return false;
+    const codes = [err.code, err.info && err.info.error && err.info.error.code, err.error && err.error.code, err.cause && err.cause.code];
+    if (codes.some((c) => c === "ACTION_REJECTED" || c === 4001)) return true;
+    const msg = String((err && err.message) || err).toLowerCase();
+    return /user rejected|user denied|denied transaction|rejected the request|rejected by user/.test(msg);
+  }
 
   // Live on Robinhood Chain Testnet — real transactions against this contract.
   const GENESIS_CONTRACT_ADDRESS = "0x92f6a18290408a18A582420f44Fe2fafB1e43F72";
@@ -12602,8 +12676,8 @@ async function loadMiningLeaderboard(page) {
       await refreshChainState(); // re-reads pool/price/whitelist and re-renders
     } catch (err) {
       minting = false;
-      const message = (err && (err.code === "ACTION_REJECTED" || err.code === 4001))
-        ? "Transaction rejected in wallet."
+      const message = isWalletRejection(err)
+        ? "Payment rejected in wallet."
         : (err && err.reason) || (err && err.shortMessage) || (err && err.message) || "Mint failed. Please try again.";
       console.error("VERUN Genesis Pass mint failed:", message);
       if (e.codeFeedback) {
@@ -12652,8 +12726,8 @@ async function loadMiningLeaderboard(page) {
       }
     } catch (err) {
       claiming = false;
-      const message = (err && (err.code === "ACTION_REJECTED" || err.code === 4001))
-        ? "Transaction rejected in wallet."
+      const message = isWalletRejection(err)
+        ? "Payment rejected in wallet."
         : (err && err.reason) || (err && err.shortMessage) || (err && err.message) || "Claim failed. Please try again.";
       console.error("VERUN Genesis Pass claim failed:", message);
       if (e.earningsNote) {
