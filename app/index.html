@@ -2247,6 +2247,15 @@
       overflow: hidden;
     }
 
+    /* Reload: keep last owned pass on screen so the mint card never
+       flashes while auth / RPC catch up. */
+    #genesis-pass.is-owned-cached #genesisMintCard {
+      display: none !important;
+    }
+    #genesis-pass.is-owned-cached #genesisOwnedCard {
+      display: block !important;
+    }
+
     .genesis-owned-block {
       padding: 24px 25px;
       border-top: 1px solid var(--border);
@@ -5176,7 +5185,7 @@
     </p>
 
     <!-- Shown once minting is live -->
-    <div id="genesisMintLiveArea" style="display:none;">
+    <div id="genesisMintLiveArea">
 
       <!-- Your own genesis code is no longer stored on-chain by this
            contract — it's saved server-side (record_genesis_pass_mint)
@@ -5205,7 +5214,7 @@
     </div>
 
     <!-- Shown while minting is locked -->
-    <div class="genesis-mint-locked" id="genesisMintLocked">
+    <div class="genesis-mint-locked" id="genesisMintLocked" style="display:none;">
       <div class="genesis-mint-locked-icon">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="5" y="11" width="14" height="9" rx="2"/>
@@ -5895,6 +5904,95 @@
     if (earlyDailyLogin) {
       earlyDailyLogin.style.display = initialSection === "tasks" ? "" : "none";
     }
+
+    // Paint the last owned Genesis Pass immediately so a reload never
+    // flashes the mint card / 0 mints / empty pool while Supabase and
+    // the chain catch up. Later JS replaces this with live data.
+    try {
+      var snapRaw = localStorage.getItem("verunGenesisUiSnapshot:v1");
+      var snap = snapRaw ? JSON.parse(snapRaw) : null;
+      if (snap && snap.owned) {
+        var authRaw = localStorage.getItem("sb-lhfgozlkeotxyzqowijz-auth-token");
+        var uid = null;
+        if (authRaw) {
+          var auth = JSON.parse(authRaw);
+          uid = (auth && auth.user && auth.user.id) ||
+            (auth && auth.currentSession && auth.currentSession.user && auth.currentSession.user.id) ||
+            null;
+        }
+        if (!snap.userId || !uid || snap.userId === uid) {
+          var genesisSection = document.getElementById("genesis-pass");
+          if (genesisSection) genesisSection.classList.add("is-owned-cached");
+          var mintCard = document.getElementById("genesisMintCard");
+          var ownedCard = document.getElementById("genesisOwnedCard");
+          if (mintCard) mintCard.style.display = "none";
+          if (ownedCard) ownedCard.style.display = "";
+          var nameSetup = document.getElementById("genesisNameSetup");
+          var nameDisplay = document.getElementById("genesisNameDisplay");
+          var referralPanel = document.getElementById("genesisReferralPanel");
+          if (snap.passName) {
+            if (nameSetup) nameSetup.style.display = "none";
+            if (nameDisplay) nameDisplay.style.display = "";
+            if (referralPanel) referralPanel.style.display = "";
+            var nameValue = document.getElementById("genesisNameValue");
+            var ticketName = document.getElementById("genesisTicketName");
+            if (nameValue) nameValue.textContent = snap.passName;
+            if (ticketName) ticketName.textContent = snap.passName;
+          }
+          if (snap.tokenNumber != null) {
+            var ownedId = document.getElementById("genesisOwnedId");
+            if (ownedId) ownedId.textContent = "#" + String(snap.tokenNumber).padStart(5, "0");
+          }
+          if (snap.mintedAt) {
+            var ownedDate = document.getElementById("genesisOwnedDate");
+            if (ownedDate) {
+              var d = new Date(snap.mintedAt);
+              ownedDate.textContent = d.toLocaleDateString(undefined, {
+                year: "numeric", month: "short", day: "numeric"
+              });
+            }
+          }
+          if (snap.walletAddress) {
+            var ownedWallet = document.getElementById("genesisOwnedWalletValue");
+            if (ownedWallet) ownedWallet.textContent = snap.walletAddress;
+          }
+          var minted = typeof snap.mintedCount === "number" ? snap.mintedCount : 0;
+          var maxSupply = typeof snap.maxSupply === "number" ? snap.maxSupply : 11111;
+          var pct = maxSupply ? Math.min(100, (minted / maxSupply) * 100) : 0;
+          var mintedEl = document.getElementById("genesisMintedCount");
+          var fillEl = document.getElementById("genesisPoolFill");
+          var pctEl = document.getElementById("genesisPoolPercent");
+          var remainEl = document.getElementById("genesisPoolRemainingCaption");
+          if (mintedEl) mintedEl.textContent = String(minted);
+          if (fillEl) fillEl.style.width = pct.toFixed(2) + "%";
+          if (pctEl) pctEl.textContent = pct.toFixed(2) + "% minted";
+          if (remainEl) remainEl.textContent = String(Math.max(0, maxSupply - minted)) + " remaining";
+          var countEl = document.getElementById("genesisReferralCount");
+          var earnEl = document.getElementById("genesisEarningsAmount");
+          var noteEl = document.getElementById("genesisEarningsNote");
+          var listEl = document.getElementById("genesisReferralList");
+          var refCount = typeof snap.referralCount === "number" ? snap.referralCount : 0;
+          var earnings = typeof snap.earnings === "number" ? snap.earnings : 0;
+          if (countEl) countEl.textContent = String(refCount);
+          if (earnEl) earnEl.textContent = (Math.round(earnings * 1e6) / 1e6) + " ETH";
+          if (noteEl && refCount > 0) {
+            noteEl.textContent = refCount + " referral mints on-chain · " +
+              (Math.round(earnings * 1e6) / 1e6) + " ETH earned.";
+          }
+          if (listEl && snap.recent && snap.recent.length) {
+            listEl.innerHTML = snap.recent.map(function (r) {
+              var rd = r && r.minted_at ? new Date(r.minted_at) : null;
+              var dateStr = rd ? rd.toLocaleDateString(undefined, {
+                year: "numeric", month: "short", day: "numeric"
+              }) : "";
+              var num = r && r.token_number != null ? String(r.token_number).padStart(5, "0") : "?????";
+              return '<div class="genesis-referral-item">Genesis Pass #' + num +
+                (dateStr ? " · " + dateStr : "") + "</div>";
+            }).join("");
+          }
+        }
+      }
+    } catch (e) {}
   })();
 
   const SUPABASE_URL = "https://lhfgozlkeotxyzqowijz.supabase.co";
@@ -11051,6 +11149,99 @@ async function loadMiningLeaderboard(page) {
     };
   }
 
+  const GENESIS_UI_SNAPSHOT_KEY = "verunGenesisUiSnapshot:v1";
+
+  function readCachedAuthUserId() {
+    try {
+      const raw = localStorage.getItem("sb-lhfgozlkeotxyzqowijz-auth-token");
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return (parsed && parsed.user && parsed.user.id) ||
+        (parsed && parsed.currentSession && parsed.currentSession.user && parsed.currentSession.user.id) ||
+        null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function readGenesisUiSnapshot() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(GENESIS_UI_SNAPSHOT_KEY) || "null");
+      if (!parsed || typeof parsed !== "object") return null;
+      return parsed;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function snapshotToState(snap) {
+    if (!snap || !snap.owned) return defaultState();
+    return {
+      owned: true,
+      tokenNumber: snap.tokenNumber != null ? snap.tokenNumber : null,
+      mintedAt: snap.mintedAt || null,
+      passName: snap.passName || null,
+      walletAddress: snap.walletAddress || null
+    };
+  }
+
+  function writeGenesisUiSnapshot() {
+    try {
+      const state = cachedState || defaultState();
+      const owned = !!(chain.owned || state.owned);
+      const section = document.getElementById("genesis-pass");
+      if (section) {
+        if (owned) section.classList.add("is-owned-cached");
+        else section.classList.remove("is-owned-cached");
+      }
+      const mintedCount = (chain.ready && chain.totalMinted !== null)
+        ? chain.totalMinted
+        : readMintedCount();
+      if (owned && typeof mintedCount === "number") writeMintedCount(mintedCount);
+      const payload = {
+        userId: currentUserId || readCachedAuthUserId(),
+        owned: owned,
+        tokenNumber: (chain.owned && chain.tokenId !== null) ? chain.tokenId : state.tokenNumber,
+        mintedAt: state.mintedAt,
+        passName: state.passName,
+        walletAddress: state.walletAddress || (claimChain && claimChain.wallet) || null,
+        mintedCount: mintedCount,
+        maxSupply: (chain.ready && chain.maxSupply !== null) ? chain.maxSupply : TOTAL_SUPPLY,
+        referralCount: (claimChain && claimChain.referralCount !== null)
+          ? claimChain.referralCount
+          : ((cachedReferralStats && cachedReferralStats.count) || 0),
+        earnings: (cachedReferralStats && cachedReferralStats.earnings) || 0,
+        recent: (cachedReferralStats && cachedReferralStats.recent) || [],
+        savedAt: Date.now()
+      };
+      localStorage.setItem(GENESIS_UI_SNAPSHOT_KEY, JSON.stringify(payload));
+    } catch (err) {}
+  }
+
+  function hydrateGenesisFromSnapshot() {
+    const snap = readGenesisUiSnapshot();
+    const uid = currentUserId || readCachedAuthUserId();
+    if (!snap || !snap.owned) return null;
+    if (snap.userId && uid && snap.userId !== uid) return null;
+    if (uid) currentUserId = uid;
+    cachedState = snapshotToState(snap);
+    if (typeof snap.mintedCount === "number") writeMintedCount(snap.mintedCount);
+    if (typeof snap.maxSupply === "number") {
+      chain.maxSupply = snap.maxSupply;
+    }
+    if (typeof snap.mintedCount === "number") {
+      chain.totalMinted = snap.mintedCount;
+    }
+    cachedReferralStats = {
+      count: snap.referralCount || (snap.recent && snap.recent.length) || 0,
+      earnings: snap.earnings || 0,
+      recent: Array.isArray(snap.recent) ? snap.recent : []
+    };
+    const section = document.getElementById("genesis-pass");
+    if (section) section.classList.add("is-owned-cached");
+    return snap;
+  }
+
   // ── Supabase-backed Genesis Pass record ─────────────────────────────
   // Per-user mint history (owned/tokenNumber/mintedAt/passName/wallet)
   // now lives server-side in the genesis_passes table (see the
@@ -11080,7 +11271,12 @@ async function loadMiningLeaderboard(page) {
         : defaultState();
     } catch (err) {
       console.error("VERUN Genesis Pass: failed to load server state", err);
-      cachedState = defaultState();
+      const snap = readGenesisUiSnapshot();
+      if (snap && snap.owned && (!snap.userId || snap.userId === userId)) {
+        cachedState = snapshotToState(snap);
+      } else if (!cachedState || !cachedState.owned) {
+        cachedState = defaultState();
+      }
     }
     return cachedState;
   }
@@ -11124,6 +11320,7 @@ async function loadMiningLeaderboard(page) {
   // cachedReferralStats.count/earnings are left at 0 and are only
   // ever used as a brief pre-claimChain-load fallback.
   let cachedReferralStats = { count: 0, earnings: 0, recent: [] };
+  hydrateGenesisFromSnapshot();
 
   async function loadReferralStats() {
     if (!currentUserId || !cachedState.owned || !cachedState.walletAddress) {
@@ -11216,6 +11413,7 @@ async function loadMiningLeaderboard(page) {
       chain.normalPriceWei = normalPriceWei;
       chain.discountedPriceWei = discountedPriceWei;
       chain.ready = true;
+      writeMintedCount(chain.totalMinted);
     } catch (err) {
       console.error("VERUN Genesis Pass: failed to read contract state", err);
     }
@@ -11557,13 +11755,18 @@ async function loadMiningLeaderboard(page) {
       : Math.max(stats.count || 0, historyCount);
 
     if (e.referralCount) {
-      e.referralCount.textContent = formatIndian(displayCount);
+      const painted = parseInt(String(e.referralCount.textContent).replace(/,/g, ""), 10);
+      if (displayCount > 0 || !painted) {
+        e.referralCount.textContent = formatIndian(displayCount);
+      }
     }
 
     if (e.referralList) {
       if (!stats.recent || stats.recent.length === 0) {
-        e.referralList.innerHTML =
-          '<p class="genesis-referral-empty">No mints yet — share your name to start earning.</p>';
+        if (!e.referralList.querySelector(".genesis-referral-item")) {
+          e.referralList.innerHTML =
+            '<p class="genesis-referral-empty">No mints yet — share your name to start earning.</p>';
+        }
       } else {
         let html = stats.recent.map(r => {
           const d = new Date(r.minted_at);
@@ -11588,7 +11791,10 @@ async function loadMiningLeaderboard(page) {
       ? parseFloat(ethers.formatEther(claimChain.claimableWei))
       : (stats.earnings || displayCount * REFERRAL_REWARD_ETH);
     if (e.earningsAmount) {
-      e.earningsAmount.textContent = formatEth(claimableEth);
+      const painted = parseFloat(String(e.earningsAmount.textContent));
+      if (claimableEth > 0 || !painted) {
+        e.earningsAmount.textContent = formatEth(claimableEth);
+      }
     }
 
     const minimumEth = (claimChain.ready && ethers && claimChain.minimumClaimWei !== null)
@@ -11622,7 +11828,13 @@ async function loadMiningLeaderboard(page) {
 
   function render() {
     const e = cacheEls();
-    const state = currentUserId ? cachedState : defaultState();
+    const snap = readGenesisUiSnapshot();
+    const authId = currentUserId || readCachedAuthUserId();
+    const state = currentUserId
+      ? cachedState
+      : (snap && snap.owned && (!snap.userId || snap.userId === authId)
+          ? snapshotToState(snap)
+          : defaultState());
     const totalSupply = chain.ready && chain.maxSupply !== null ? chain.maxSupply : TOTAL_SUPPLY;
     const minted = chain.ready && chain.totalMinted !== null ? chain.totalMinted : readMintedCount();
     const soldOut = minted >= totalSupply;
@@ -11641,6 +11853,12 @@ async function loadMiningLeaderboard(page) {
       renderOwnedCard(chain.owned && chain.tokenId !== null
         ? Object.assign({}, state, { tokenNumber: chain.tokenId, owned: true })
         : state);
+    } else if (snap && snap.owned && (!snap.userId || snap.userId === authId) && !currentUserId) {
+      // Session still loading — keep the snapshot owned card, don't
+      // flash the mint form over it.
+      if (e.mintCard) e.mintCard.style.display = "none";
+      if (e.ownedCard) e.ownedCard.style.display = "";
+      renderOwnedCard(snapshotToState(snap));
     } else {
       if (e.mintCard) e.mintCard.style.display = "";
       if (e.ownedCard) e.ownedCard.style.display = "none";
@@ -11703,6 +11921,7 @@ async function loadMiningLeaderboard(page) {
         e.walletConnectBtn.textContent = "Connect X First";
       }
     }
+    writeGenesisUiSnapshot();
   }
 
   // Guards against a double-submit while a transaction is in flight —
@@ -12336,6 +12555,8 @@ async function loadMiningLeaderboard(page) {
   async function loadGenesisPassSection() {
     cacheEls();
     bindEventsOnce();
+    hydrateGenesisFromSnapshot();
+    render();
 
     const { data: { session } } = await supabaseClient.auth.getSession();
     const userId = session ? session.user.id : null;
@@ -12371,10 +12592,17 @@ async function loadMiningLeaderboard(page) {
       }
     } else {
       // Guest read-only mode: skip every personal/per-account lookup
-      // (server mint record, referral stats, saved discount code) —
-      // render() below still paints the public supply/price/mint-card
-      // info instead of leaving the section on a stale or blank state.
-      cachedState = defaultState();
+      // unless a matching owned-pass snapshot is already on this device
+      // (session may still be resolving). Never wipe a real pass with
+      // the mint card during that window.
+      const snap = readGenesisUiSnapshot();
+      const uid = readCachedAuthUserId();
+      if (snap && snap.owned && uid && snap.userId === uid) {
+        currentUserId = uid;
+        cachedState = snapshotToState(snap);
+      } else {
+        cachedState = defaultState();
+      }
     }
 
     render();
