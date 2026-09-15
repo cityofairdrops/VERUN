@@ -10181,7 +10181,7 @@ async function loadMiningLeaderboard(page) {
       const balanceWei = await getNativeBalanceWei(walletState.address);
       if (balanceWei !== null && balanceWei < priceWei) {
         console.warn("VERUN Mining: blocking purchase — balance", balanceWei.toString(), "< price", priceWei.toString());
-        throw new Error("Insufficient balance to complete this purchase.");
+        throw new Error("Insufficient ETH balance for this purchase.");
       }
 
       const write = await getHashrateWriteContract();
@@ -12459,7 +12459,7 @@ async function loadMiningLeaderboard(page) {
         const balanceWei = await getNativeBalanceWei(walletAddress);
         if (balanceWei !== null && balanceWei < requiredWei) {
           console.warn("VERUN Genesis Pass: blocking mint — balance", balanceWei.toString(), "< required", requiredWei.toString());
-          throw new Error("Insufficient balance to mint. Add funds to your wallet and try again.");
+          throw new Error("Insufficient ETH balance for this mint.");
         }
       }
 
@@ -12596,6 +12596,10 @@ async function loadMiningLeaderboard(page) {
         ? "Transaction rejected in wallet."
         : (err && err.reason) || (err && err.shortMessage) || (err && err.message) || "Mint failed. Please try again.";
       console.error("VERUN Genesis Pass mint failed:", message);
+      if (e.codeFeedback) {
+        e.codeFeedback.textContent = message;
+        e.codeFeedback.className = "genesis-discount-feedback is-error";
+      }
       render();
     }
   }
