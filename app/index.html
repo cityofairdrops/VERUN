@@ -11097,8 +11097,17 @@ async function loadMiningLeaderboard(page) {
       cachedReferralStats = { count: 0, earnings: 0, recent: [] };
       return cachedReferralStats;
     }
-    const recent = await loadOnChainReferralHistory(cachedState.walletAddress);
-    cachedReferralStats = { count: 0, earnings: 0, recent: recent };
+    const wallet = (claimChain && claimChain.wallet) || cachedState.walletAddress;
+    const recent = await loadOnChainReferralHistory(wallet);
+    const ethersLib = getEthers();
+    const earnings = (claimChain && claimChain.claimableWei && ethersLib)
+      ? parseFloat(ethersLib.formatEther(claimChain.claimableWei))
+      : 0;
+    cachedReferralStats = {
+      count: (claimChain && claimChain.referralCount) || 0,
+      earnings: earnings,
+      recent: recent
+    };
     return cachedReferralStats;
   }
 
@@ -11217,38 +11226,74 @@ async function loadMiningLeaderboard(page) {
     render();
   }
 
-  // Pulls live claimable-balance/eligibility state from the Referral
-  // Claim contract for the connected wallet. Never throws — mirrors
-  // refreshChainState()'s fall-back-quietly behavior above.
+  // Pulls live claimable-balance/eligibility from the mint wallet that
+  // genesis-sign actually credited, not only the currently connected one.
   async function refreshClaimState(walletState) {
     const read = getReadClaimContract();
     if (!read) return;
 
     try {
-      const minimumClaimWei = await read.MINIMUM_CLAIM();
-      claimChain.minimumClaimWei = minimumClaimWei;
+      claimChain.minimumClaimWei = await read.MINIMUM_CLAIM();
       claimChain.ready = true;
     } catch (err) {
       console.error("VERUN Genesis Pass: failed to read referral claim contract state", err);
     }
 
-    const ws = walletState !== undefined
+    const connected = walletState !== undefined
       ? walletState
       : (window.verunWallet ? window.verunWallet.getState() : null);
 
-    if (ws && ws.verified && ws.address) {
+    const candidates = [];
+    if (cachedState && cachedState.walletAddress) {
+      candidates.push(cachedState.walletAddress);
+    }
+    if (connected && connected.verified && connected.address) {
+      candidates.push(connected.address);
+    }
+    if (typeof chain !== "undefined" && chain && chain.tokenId) {
       try {
-        const [claimableWei, canClaim, referralCount] = await Promise.all([
-          read.claimableBalance(ws.address),
-          read.canClaim(ws.address),
-          read.referralCount(ws.address)
+        const pass = getReadContract();
+        if (pass) {
+          const owner = await pass.ownerOf(chain.tokenId);
+          if (owner) candidates.push(owner);
+        }
+      } catch (err) {
+        console.error("VERUN Genesis Pass: ownerOf lookup failed", err);
+      }
+    }
+
+    const seen = new Set();
+    const unique = [];
+    for (const addr of candidates) {
+      const key = String(addr).toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      unique.push(addr);
+    }
+
+    let best = null;
+    for (const addr of unique) {
+      try {
+        const [claimableWei, canClaim, referralCount, referralsFn] = await Promise.all([
+          read.claimableBalance(addr),
+          read.canClaim(addr),
+          read.referralCount(addr),
+          read.referrals(addr)
         ]);
-        claimChain.claimableWei = claimableWei;
-        claimChain.canClaim = !!canClaim;
-        claimChain.referralCount = Number(referralCount);
+        const count = referralCount > referralsFn ? referralCount : referralsFn;
+        if (!best || count > best.count) {
+          best = { addr: addr, claimableWei: claimableWei, canClaim: !!canClaim, count: count };
+        }
       } catch (err) {
         console.error("VERUN Genesis Pass: failed to read wallet referral claim state", err);
       }
+    }
+
+    if (best) {
+      claimChain.claimableWei = best.claimableWei;
+      claimChain.canClaim = best.canClaim;
+      claimChain.referralCount = Number(best.count);
+      claimChain.wallet = best.addr;
     } else {
       claimChain.claimableWei = null;
       claimChain.canClaim = false;
