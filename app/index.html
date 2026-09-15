@@ -3336,13 +3336,19 @@
       white-space: nowrap;
     }
 
-    /* Mints / Earnings side-by-side stat row */
+    /* Mints / earnings stats */
     .genesis-stats-row {
       display: flex;
       align-items: stretch;
       justify-content: center;
       gap: 18px;
+      margin-bottom: 12px;
+    }
+
+    .genesis-stats-row--split {
       margin-bottom: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
     }
 
     .genesis-stat {
@@ -3373,8 +3379,14 @@
       font-weight: 800;
     }
 
-    #genesisEarningsAmount.genesis-stat-value {
+    #genesisTotalEarnedAmount.genesis-stat-value,
+    #genesisClaimableAmount.genesis-stat-value.is-live {
       color: var(--green);
+    }
+
+    #genesisClaimedAmount.genesis-stat-value,
+    #genesisClaimableAmount.genesis-stat-value.is-empty {
+      color: var(--muted);
     }
 
     .genesis-referral-list {
@@ -5349,8 +5361,20 @@
         </div>
         <div class="genesis-stat-divider"></div>
         <div class="genesis-stat">
-          <span class="genesis-stat-label">Earnings</span>
-          <strong class="genesis-stat-value" id="genesisEarningsAmount">0 ETH</strong>
+          <span class="genesis-stat-label">Total Earned</span>
+          <strong class="genesis-stat-value" id="genesisTotalEarnedAmount">0 ETH</strong>
+        </div>
+      </div>
+
+      <div class="genesis-stats-row genesis-stats-row--split">
+        <div class="genesis-stat">
+          <span class="genesis-stat-label">Claimable</span>
+          <strong class="genesis-stat-value is-empty" id="genesisClaimableAmount">0 ETH</strong>
+        </div>
+        <div class="genesis-stat-divider"></div>
+        <div class="genesis-stat">
+          <span class="genesis-stat-label">Claimed</span>
+          <strong class="genesis-stat-value" id="genesisClaimedAmount">0 ETH</strong>
         </div>
       </div>
 
@@ -5968,16 +5992,34 @@
           if (pctEl) pctEl.textContent = pct.toFixed(2) + "% minted";
           if (remainEl) remainEl.textContent = String(Math.max(0, maxSupply - minted)) + " remaining";
           var countEl = document.getElementById("genesisReferralCount");
-          var earnEl = document.getElementById("genesisEarningsAmount");
+          var totalEl = document.getElementById("genesisTotalEarnedAmount");
+          var claimableEl = document.getElementById("genesisClaimableAmount");
+          var claimedEl = document.getElementById("genesisClaimedAmount");
           var noteEl = document.getElementById("genesisEarningsNote");
           var listEl = document.getElementById("genesisReferralList");
           var refCount = typeof snap.referralCount === "number" ? snap.referralCount : 0;
-          var earnings = typeof snap.earnings === "number" ? snap.earnings : 0;
+          var totalEth = typeof snap.total === "number" ? snap.total
+            : (typeof snap.earnings === "number" ? snap.earnings : 0);
+          var claimableEth = typeof snap.claimable === "number" ? snap.claimable : null;
+          var claimedEth = typeof snap.claimed === "number" ? snap.claimed
+            : (claimableEth !== null ? Math.max(0, totalEth - claimableEth) : totalEth);
+          function fmtEth(n) { return (Math.round(n * 1e6) / 1e6) + " ETH"; }
           if (countEl) countEl.textContent = String(refCount);
-          if (earnEl) earnEl.textContent = (Math.round(earnings * 1e6) / 1e6) + " ETH";
-          if (noteEl && refCount > 0) {
-            noteEl.textContent = refCount + " referral mints on-chain · " +
-              (Math.round(earnings * 1e6) / 1e6) + " ETH earned.";
+          if (totalEl) totalEl.textContent = fmtEth(totalEth);
+          if (claimableEl) {
+            claimableEl.textContent = claimableEth === null ? "—" : fmtEth(claimableEth);
+            claimableEl.classList.toggle("is-live", !!(claimableEth && claimableEth > 0));
+            claimableEl.classList.toggle("is-empty", !(claimableEth && claimableEth > 0));
+          }
+          if (claimedEl) claimedEl.textContent = fmtEth(claimedEth || 0);
+          if (noteEl) {
+            if (claimableEth && claimableEth > 0) {
+              noteEl.textContent = fmtEth(claimableEth) + " ready to claim.";
+            } else if (claimedEth > 0) {
+              noteEl.textContent = "All earnings claimed.";
+            } else if (refCount > 0) {
+              noteEl.textContent = refCount + " referral mints on-chain · " + fmtEth(totalEth) + " earned.";
+            }
           }
           if (listEl && snap.recent && snap.recent.length) {
             listEl.innerHTML = snap.recent.map(function (r) {
@@ -11126,7 +11168,9 @@ async function loadMiningLeaderboard(page) {
       referralPanel: document.getElementById("genesisReferralPanel"),
       referralCount: document.getElementById("genesisReferralCount"),
       referralList: document.getElementById("genesisReferralList"),
-      earningsAmount: document.getElementById("genesisEarningsAmount"),
+      totalEarnedAmount: document.getElementById("genesisTotalEarnedAmount"),
+      claimableAmount: document.getElementById("genesisClaimableAmount"),
+      claimedAmount: document.getElementById("genesisClaimedAmount"),
       earningsNote: document.getElementById("genesisEarningsNote"),
       claimButton: document.getElementById("genesisClaimButton"),
       goToMining: document.getElementById("genesisGoToMiningButton"),
@@ -11210,7 +11254,13 @@ async function loadMiningLeaderboard(page) {
         referralCount: (claimChain && claimChain.referralCount !== null)
           ? claimChain.referralCount
           : ((cachedReferralStats && cachedReferralStats.count) || 0),
-        earnings: (cachedReferralStats && cachedReferralStats.earnings) || 0,
+        earnings: (cachedReferralStats && cachedReferralStats.total) ||
+          (cachedReferralStats && cachedReferralStats.earnings) || 0,
+        total: (cachedReferralStats && cachedReferralStats.total) || 0,
+        claimable: (cachedReferralStats && typeof cachedReferralStats.claimable === "number")
+          ? cachedReferralStats.claimable : null,
+        claimed: (cachedReferralStats && typeof cachedReferralStats.claimed === "number")
+          ? cachedReferralStats.claimed : null,
         recent: (cachedReferralStats && cachedReferralStats.recent) || [],
         savedAt: Date.now()
       };
@@ -11234,7 +11284,10 @@ async function loadMiningLeaderboard(page) {
     }
     cachedReferralStats = {
       count: snap.referralCount || (snap.recent && snap.recent.length) || 0,
-      earnings: snap.earnings || 0,
+      earnings: snap.total || snap.earnings || 0,
+      total: snap.total || snap.earnings || 0,
+      claimable: typeof snap.claimable === "number" ? snap.claimable : null,
+      claimed: typeof snap.claimed === "number" ? snap.claimed : null,
       recent: Array.isArray(snap.recent) ? snap.recent : []
     };
     const section = document.getElementById("genesis-pass");
@@ -11319,12 +11372,12 @@ async function loadMiningLeaderboard(page) {
   // ReferralRecorded history via loadOnChainReferralHistory() below.
   // cachedReferralStats.count/earnings are left at 0 and are only
   // ever used as a brief pre-claimChain-load fallback.
-  let cachedReferralStats = { count: 0, earnings: 0, recent: [] };
+  let cachedReferralStats = { count: 0, earnings: 0, total: 0, claimable: null, claimed: null, recent: [] };
   hydrateGenesisFromSnapshot();
 
   async function loadReferralStats() {
     if (!currentUserId || !cachedState.owned || !cachedState.walletAddress) {
-      cachedReferralStats = { count: 0, earnings: 0, recent: [] };
+      cachedReferralStats = { count: 0, earnings: 0, total: 0, claimable: null, claimed: null, recent: [] };
       return cachedReferralStats;
     }
     const wallet = (claimChain && claimChain.wallet) || cachedState.walletAddress;
@@ -11333,12 +11386,18 @@ async function loadMiningLeaderboard(page) {
     const fromChain = (claimChain && claimChain.referralCount) || 0;
     const fromHistory = recent && recent.length ? recent.length : 0;
     const count = Math.max(Number(fromChain) || 0, fromHistory);
-    const earnings = (claimChain && claimChain.claimableWei && ethersLib)
-      ? parseFloat(ethersLib.formatEther(claimChain.claimableWei))
-      : count * REFERRAL_REWARD_ETH;
+    const total = count * REFERRAL_REWARD_ETH;
+    let claimable = (typeof cachedReferralStats.claimable === "number") ? cachedReferralStats.claimable : null;
+    if (claimChain && claimChain.claimableWei !== null && claimChain.claimableWei !== undefined && ethersLib) {
+      claimable = parseFloat(ethersLib.formatEther(claimChain.claimableWei));
+    }
+    const claimed = claimable === null ? null : Math.max(0, total - claimable);
     cachedReferralStats = {
       count: count,
-      earnings: earnings,
+      earnings: total,
+      total: total,
+      claimable: claimable,
+      claimed: claimed,
       recent: recent
     };
     return cachedReferralStats;
@@ -11783,19 +11842,42 @@ async function loadMiningLeaderboard(page) {
       }
     }
 
-    // Claimable balance comes straight from the Referral Claim contract
-    // once it's loaded — that's real, spendable ETH, unlike the
-    // Supabase-side earnings estimate, which we only fall back to
-    // before the on-chain read resolves.
-    const claimableEth = (claimChain.ready && ethers && claimChain.claimableWei !== null)
-      ? parseFloat(ethers.formatEther(claimChain.claimableWei))
-      : (stats.earnings || displayCount * REFERRAL_REWARD_ETH);
-    if (e.earningsAmount) {
-      const painted = parseFloat(String(e.earningsAmount.textContent));
-      if (claimableEth > 0 || !painted) {
-        e.earningsAmount.textContent = formatEth(claimableEth);
+    // Lifetime total is mint-count × reward. Claimable is the contract
+    // balance still sitting there — never treat lifetime total as
+    // "still claimable" after a successful claim (0n is a real value).
+    const totalEth = displayCount * REFERRAL_REWARD_ETH;
+    let claimableEth = null;
+    if (claimChain.ready && ethers && claimChain.claimableWei !== null && claimChain.claimableWei !== undefined) {
+      claimableEth = parseFloat(ethers.formatEther(claimChain.claimableWei));
+    } else if (typeof stats.claimable === "number") {
+      claimableEth = stats.claimable;
+    }
+    const claimedEth = claimableEth === null
+      ? (typeof stats.claimed === "number" ? stats.claimed : null)
+      : Math.max(0, totalEth - claimableEth);
+
+    if (e.totalEarnedAmount) {
+      e.totalEarnedAmount.textContent = formatEth(totalEth);
+    }
+    if (e.claimableAmount) {
+      if (claimableEth === null) {
+        e.claimableAmount.textContent = "—";
+        e.claimableAmount.classList.add("is-empty");
+        e.claimableAmount.classList.remove("is-live");
+      } else {
+        e.claimableAmount.textContent = formatEth(claimableEth);
+        e.claimableAmount.classList.toggle("is-live", claimableEth > 0);
+        e.claimableAmount.classList.toggle("is-empty", claimableEth <= 0);
       }
     }
+    if (e.claimedAmount) {
+      e.claimedAmount.textContent = claimedEth === null ? "—" : formatEth(claimedEth);
+    }
+
+    cachedReferralStats.total = totalEth;
+    cachedReferralStats.earnings = totalEth;
+    if (claimableEth !== null) cachedReferralStats.claimable = claimableEth;
+    if (claimedEth !== null) cachedReferralStats.claimed = claimedEth;
 
     const minimumEth = (claimChain.ready && ethers && claimChain.minimumClaimWei !== null)
       ? parseFloat(ethers.formatEther(claimChain.minimumClaimWei))
@@ -11803,25 +11885,35 @@ async function loadMiningLeaderboard(page) {
 
     if (e.earningsNote) {
       if (claimChain.ready && claimChain.canClaim) {
-        e.earningsNote.textContent = "You have " + formatEth(claimableEth) + " ready to claim.";
-      } else if (claimChain.ready && minimumEth !== null) {
+        e.earningsNote.textContent = "You have " + formatEth(claimableEth || 0) + " ready to claim.";
+      } else if (claimableEth !== null && claimableEth > 0 && !claimChain.canClaim) {
         e.earningsNote.textContent = "Minimum claim is " + formatEth(minimumEth) +
           " — keep earning referrals to unlock claiming.";
-      } else if (displayCount > 0) {
+      } else if (claimedEth !== null && claimedEth > 0 && (!claimableEth || claimableEth <= 0)) {
+        e.earningsNote.textContent = "All earnings claimed.";
+      } else if (displayCount > 0 && claimableEth === null) {
         e.earningsNote.textContent = formatIndian(displayCount) +
-          " referral mints on-chain · " + formatEth(claimableEth) + " earned.";
-      } else if (!claimChain.ready) {
+          " referral mints · " + formatEth(totalEth) + " total earned.";
+      } else if (!claimChain.ready && claimableEth === null) {
         e.earningsNote.textContent = "Loading your claimable balance…";
       } else {
-        e.earningsNote.textContent = "Referral rewards are tracked on-chain for every mint that used your code.";
+        e.earningsNote.textContent = "Share your genesis code — earn " +
+          formatEth(REFERRAL_REWARD_ETH) + " every time someone mints with it.";
       }
     }
 
     if (e.claimButton) {
       const walletVerified = !!(window.verunWallet && window.verunWallet.getState().verified);
-      e.claimButton.disabled = claiming || !walletVerified || !claimChain.ready || !claimChain.canClaim;
+      const canClaimNow = !!(claimChain.ready && claimChain.canClaim);
+      e.claimButton.disabled = claiming || !walletVerified || !canClaimNow;
       if (!claiming) {
-        e.claimButton.textContent = "Claim";
+        if (claimedEth > 0 && (!claimableEth || claimableEth <= 0)) {
+          e.claimButton.textContent = "Already Claimed";
+        } else if (canClaimNow) {
+          e.claimButton.textContent = "Claim " + formatEth(claimableEth || 0);
+        } else {
+          e.claimButton.textContent = "Claim";
+        }
       }
     }
   }
