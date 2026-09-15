@@ -3380,7 +3380,8 @@
     }
 
     #genesisTotalEarnedAmount.genesis-stat-value,
-    #genesisClaimableAmount.genesis-stat-value.is-live {
+    #genesisClaimableAmount.genesis-stat-value.is-live,
+    #genesisReferralCount.genesis-stat-value {
       color: var(--green);
     }
 
@@ -3389,24 +3390,176 @@
       color: var(--muted);
     }
 
+    .genesis-stat--mints {
+      appearance: none;
+      background: none;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+      flex: 1;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      border-radius: 10px;
+    }
+
+    .genesis-stat--mints:focus-visible {
+      outline: 1px solid var(--green-border);
+      outline-offset: 4px;
+    }
+
+    .genesis-mints-hint {
+      color: var(--muted2);
+      font-size: 8.5px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      text-transform: none;
+      opacity: 0.85;
+    }
+
     .genesis-referral-list {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      margin-bottom: 16px;
+      gap: 8px;
       text-align: left;
     }
 
     .genesis-referral-item {
-      color: var(--muted);
-      font-size: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 12px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel2);
+    }
+
+    .genesis-referral-item-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .genesis-referral-item-pass {
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 800;
       font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .genesis-referral-item-date {
+      color: var(--muted2);
+      font-size: 10px;
+    }
+
+    .genesis-referral-item-wallet {
+      color: var(--muted);
+      font-size: 10.5px;
+      font-family: 'IBM Plex Mono', monospace;
+      word-break: break-all;
     }
 
     .genesis-referral-more,
     .genesis-referral-empty {
       color: var(--muted2);
+      font-size: 11px;
+      text-align: center;
+      padding: 18px 8px;
+    }
+
+    .genesis-mints-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .28s ease;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .genesis-mints-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .genesis-mints-sheet {
+      width: 100%;
+      max-width: 480px;
+      max-height: min(78vh, 640px);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-bottom: 0;
+      border-radius: 18px 18px 0 0;
+      box-shadow: 0 -18px 50px var(--shadow-color);
+      padding: 8px 18px 28px;
+      transform: translateY(24px);
+      opacity: 0;
+      transition: transform .32s cubic-bezier(.2,.8,.2,1), opacity .28s ease;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .genesis-mints-overlay.open .genesis-mints-sheet {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .genesis-mints-handle {
+      width: 36px;
+      height: 4px;
+      border-radius: 99px;
+      background: var(--border);
+      margin: 6px auto 12px;
+    }
+
+    .genesis-mints-sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .genesis-mints-sheet-head h3 {
+      margin: 0;
+      font-size: 14px;
+      letter-spacing: -0.2px;
+    }
+
+    .genesis-mints-sheet-sub {
+      color: var(--muted);
       font-size: 10px;
+      font-weight: 500;
+    }
+
+    .genesis-mints-close {
+      appearance: none;
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .genesis-mints-sheet-body {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 8px;
     }
 
     .genesis-claim-button {
@@ -4631,6 +4784,23 @@
   </div>
 </div>
 
+<!-- Who used your genesis code — opened from the Mints number -->
+<div id="genesisMintsOverlay" class="genesis-mints-overlay" aria-hidden="true">
+  <div class="genesis-mints-sheet" role="dialog" aria-modal="true" aria-labelledby="genesisMintsSheetTitle">
+    <div class="genesis-mints-handle" aria-hidden="true"></div>
+    <div class="genesis-mints-sheet-head">
+      <div>
+        <h3 id="genesisMintsSheetTitle">Who used your code</h3>
+        <div class="genesis-mints-sheet-sub" id="genesisMintsSheetSub">Wallets that minted with your genesis code</div>
+      </div>
+      <button type="button" class="genesis-mints-close" id="genesisMintsClose" aria-label="Close">✕</button>
+    </div>
+    <div class="genesis-mints-sheet-body">
+      <div class="genesis-referral-list" id="genesisReferralList"></div>
+    </div>
+  </div>
+</div>
+
 
 <!-- VERUN APP DRAWER -->
 <div id="verunMenuOverlay" class="verun-menu-overlay"></div>
@@ -5355,10 +5525,11 @@
     <div class="genesis-owned-block genesis-referral-panel" id="genesisReferralPanel" style="display:none;">
 
       <div class="genesis-stats-row">
-        <div class="genesis-stat">
+        <button type="button" class="genesis-stat genesis-stat--mints" id="genesisMintsButton" aria-haspopup="dialog" aria-controls="genesisMintsOverlay">
           <span class="genesis-stat-label">Mints</span>
           <strong class="genesis-stat-value" id="genesisReferralCount">0</strong>
-        </div>
+          <span class="genesis-mints-hint" id="genesisMintsHint">Tap to view</span>
+        </button>
         <div class="genesis-stat-divider"></div>
         <div class="genesis-stat">
           <span class="genesis-stat-label">Total Earned</span>
@@ -5377,8 +5548,6 @@
           <strong class="genesis-stat-value" id="genesisClaimedAmount">0 ETH</strong>
         </div>
       </div>
-
-      <div class="genesis-referral-list" id="genesisReferralList"></div>
 
       <button type="button" class="genesis-claim-button" id="genesisClaimButton" disabled>
         Claim
@@ -10842,7 +11011,7 @@ async function loadMiningLeaderboard(page) {
   // Once REFERRAL_CLAIM_DEPLOY_BLOCK is set, this is never consulted.
   const REFERRAL_HISTORY_FALLBACK_LOOKBACK_BLOCKS = 500000;
 
-  const REFERRAL_HISTORY_MAX_ITEMS = 5;
+  const REFERRAL_HISTORY_MAX_ITEMS = 50;
   const REFERRAL_HISTORY_INITIAL_CHUNK = 10000;
   const REFERRAL_HISTORY_MIN_CHUNK = 500;
   const REFERRAL_HISTORY_MAX_CHUNK = 50000;
@@ -11030,7 +11199,7 @@ async function loadMiningLeaderboard(page) {
       return null;
     }
     if (tokenNumber === null || mintedAt === null) return null;
-    return { token_number: tokenNumber, minted_at: mintedAt };
+    return { token_number: tokenNumber, minted_at: mintedAt, wallet: rawItem.referee || null };
   }
 
   // Loads (and caches) this wallet's referral history from on-chain
@@ -11092,6 +11261,7 @@ async function loadMiningLeaderboard(page) {
         const key = item.txHash + ":" + item.logIndex;
         const resolved = priorByKey[key] || await resolveReferralRawItem(item, genesisRead, provider);
         if (!resolved) continue; // skip unresolvable entries rather than show bad data
+        if (!resolved.wallet && item.referee) resolved.wallet = item.referee;
         mergedResolved.push(resolved);
         finalRaw.push(item);
       }
@@ -11168,6 +11338,11 @@ async function loadMiningLeaderboard(page) {
       referralPanel: document.getElementById("genesisReferralPanel"),
       referralCount: document.getElementById("genesisReferralCount"),
       referralList: document.getElementById("genesisReferralList"),
+      mintsButton: document.getElementById("genesisMintsButton"),
+      mintsHint: document.getElementById("genesisMintsHint"),
+      mintsOverlay: document.getElementById("genesisMintsOverlay"),
+      mintsClose: document.getElementById("genesisMintsClose"),
+      mintsSheetSub: document.getElementById("genesisMintsSheetSub"),
       totalEarnedAmount: document.getElementById("genesisTotalEarnedAmount"),
       claimableAmount: document.getElementById("genesisClaimableAmount"),
       claimedAmount: document.getElementById("genesisClaimedAmount"),
@@ -11420,6 +11595,18 @@ async function loadMiningLeaderboard(page) {
 
   function formatPadded(num, width) {
     return String(num).padStart(width, "0");
+  }
+
+  function shortReferralWallet(address) {
+    if (!address) return "";
+    try {
+      if (window.ethers && typeof ethers.getAddress === "function") {
+        address = ethers.getAddress(address);
+      }
+    } catch (err) {}
+    const s = String(address);
+    if (s.length <= 12) return s;
+    return s.slice(0, 6) + "…" + s.slice(-4);
   }
 
   function computePrice() {
@@ -11819,21 +12006,33 @@ async function loadMiningLeaderboard(page) {
         e.referralCount.textContent = formatIndian(displayCount);
       }
     }
+    if (e.mintsSheetSub) {
+      e.mintsSheetSub.textContent = displayCount
+        ? (formatIndian(displayCount) + " mint" + (displayCount === 1 ? "" : "s") + " with your genesis code")
+        : "Wallets that minted with your genesis code";
+    }
 
     if (e.referralList) {
       if (!stats.recent || stats.recent.length === 0) {
         if (!e.referralList.querySelector(".genesis-referral-item")) {
           e.referralList.innerHTML =
-            '<p class="genesis-referral-empty">No mints yet — share your name to start earning.</p>';
+            '<p class="genesis-referral-empty">No one has used your code yet. Share it to start earning.</p>';
         }
       } else {
-        let html = stats.recent.map(r => {
+        let html = stats.recent.map(function (r) {
           const d = new Date(r.minted_at);
-          const dateStr = d.toLocaleDateString(undefined, {
+          const dateStr = isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, {
             year: "numeric", month: "short", day: "numeric"
           });
-          return '<div class="genesis-referral-item">Genesis Pass #' +
-            formatPadded(r.token_number, 5) + " · " + dateStr + "</div>";
+          const wallet = r.wallet ? shortReferralWallet(r.wallet) : "";
+          return '<div class="genesis-referral-item">' +
+            '<div class="genesis-referral-item-top">' +
+              '<span class="genesis-referral-item-pass">Genesis Pass #' +
+                formatPadded(r.token_number, 5) + "</span>" +
+              (dateStr ? '<span class="genesis-referral-item-date">' + dateStr + "</span>" : "") +
+            "</div>" +
+            (wallet ? '<div class="genesis-referral-item-wallet">' + wallet + "</div>" : "") +
+          "</div>";
         }).join("");
         if (displayCount > stats.recent.length) {
           html += '<div class="genesis-referral-more">+' + (displayCount - stats.recent.length) + " more</div>";
@@ -12524,6 +12723,25 @@ async function loadMiningLeaderboard(page) {
     }
   }
 
+  function openGenesisMintsSheet() {
+    const e = cacheEls();
+    if (!e.mintsOverlay) return;
+    renderReferralPanel();
+    e.mintsOverlay.classList.add("open");
+    e.mintsOverlay.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeGenesisMintsSheet() {
+    const e = cacheEls();
+    if (!e.mintsOverlay) return;
+    e.mintsOverlay.classList.remove("open");
+    e.mintsOverlay.setAttribute("aria-hidden", "true");
+    if (!document.querySelector(".mint-success-overlay.open")) {
+      document.body.style.overflow = "";
+    }
+  }
+
   function copyPassName() {
     const e = cacheEls();
     if (!e.nameValue || !e.nameCopy) return;
@@ -12641,6 +12859,23 @@ async function loadMiningLeaderboard(page) {
     if (e.claimButton && !e.claimButton.dataset.genesisBound) {
       e.claimButton.dataset.genesisBound = "1";
       e.claimButton.addEventListener("click", claimReferralRewards);
+    }
+    if (e.mintsButton && !e.mintsButton.dataset.genesisBound) {
+      e.mintsButton.dataset.genesisBound = "1";
+      e.mintsButton.addEventListener("click", openGenesisMintsSheet);
+    }
+    if (e.mintsClose && !e.mintsClose.dataset.genesisBound) {
+      e.mintsClose.dataset.genesisBound = "1";
+      e.mintsClose.addEventListener("click", closeGenesisMintsSheet);
+    }
+    if (e.mintsOverlay && !e.mintsOverlay.dataset.genesisBound) {
+      e.mintsOverlay.dataset.genesisBound = "1";
+      e.mintsOverlay.addEventListener("click", function (event) {
+        if (event.target === e.mintsOverlay) closeGenesisMintsSheet();
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") closeGenesisMintsSheet();
+      });
     }
   }
 
