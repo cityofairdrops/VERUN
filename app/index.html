@@ -2102,13 +2102,6 @@
       min-height: 12px;
     }
 
-    .mining-tier-status.is-error {
-      color: #f07167;
-      text-transform: none;
-      letter-spacing: 0.15px;
-      font-weight: 700;
-    }
-
     .mining-tiers-lock-note {
       margin-top: 14px;
       padding: 11px 14px;
@@ -3724,10 +3717,6 @@
       margin-top: 14px;
       color: var(--muted2);
       font-size: 9.5px;
-    }
-
-    .genesis-mint-note.is-error {
-      color: #f07167;
     }
 
     .genesis-perks {
@@ -9993,18 +9982,10 @@ async function loadMiningLeaderboard(page) {
   let completing = false; // guards against double process_completed_mining calls
   let starting = false; // guards against double start_mining_session calls
   let buying = null; // tier key currently mid-purchase ("pro"/"ultra"), guards double-submit
-  let lastBuyError = { pro: "", ultra: "" };
 
   // ── VERUNHashrate contract (Robinhood Chain Testnet) ────────────────
   const HASHRATE_CONTRACT_ADDRESS = "0xdE734960Cfdd9937bB0a9dc50E630Ed10BB34df0";
   const ROBINHOOD_TESTNET_RPC = "https://rpc.mainnet.chain.robinhood.com";
-  const HASHRATE_READ_RPCS = [
-    "https://rpc-robinhood.blockmachine.io",
-    "https://robinhood-mainnet-rpc.blockreq.com/v1/rpc/public",
-    "https://robinhood.drpc.org",
-    "https://rpc.solidrpc.io/public/evm/4663",
-    "https://rpc.mainnet.chain.robinhood.com"
-  ];
   const HASHRATE_CONTRACT_ABI = [{"inputs":[],"name":"buyPro","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"buyUltra","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"address","name":"initialOwner","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"EnforcedPause","type":"error"},{"inputs":[],"name":"ExpectedPause","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"OwnableInvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"OwnableUnauthorizedAccount","type":"error"},{"inputs":[],"name":"ReentrancyGuardReentrantCall","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"FundsWithdrawn","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"enum VERUNHashrate.Plan","name":"plan","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"startedAt","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"expiresAt","type":"uint256"}],"name":"HashratePurchased","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"inputs":[],"name":"pause","outputs":[],"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"account","type":"address"}],"name":"Paused","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"enum VERUNHashrate.Plan","name":"oldPlan","type":"uint8"},{"indexed":true,"internalType":"enum VERUNHashrate.Plan","name":"newPlan","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"startedAt","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"expiresAt","type":"uint256"}],"name":"PlanSwitched","type":"event"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"unpause","outputs":[],"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"account","type":"address"}],"name":"Unpaused","type":"event"},{"inputs":[],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdrawAmount","outputs":[],"stateMutability":"nonpayable","type":"function"},{"stateMutability":"payable","type":"receive"},{"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getPlan","outputs":[{"internalType":"enum VERUNHashrate.Plan","name":"plan","type":"uint8"},{"internalType":"uint256","name":"expiresAt","type":"uint256"},{"internalType":"uint256","name":"rate","type":"uint256"},{"internalType":"bool","name":"active","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"isActive","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PLAN_DURATION","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PRO_PRICE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PRO_RATE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"ULTRA_PRICE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"ULTRA_RATE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}];
 
   // Fallback prices — shown before the live contract read resolves.
@@ -10035,57 +10016,15 @@ async function loadMiningLeaderboard(page) {
     return window.ethers || null;
   }
 
-  function getHashrateReadProvider() {
-    const ethers = getEthers();
-    if (!ethers) return null;
-    try {
-      const raw = window.verunWallet && typeof window.verunWallet.getProvider === "function"
-        ? window.verunWallet.getProvider()
-        : null;
-      if (raw) return new ethers.BrowserProvider(raw, 4663);
-    } catch (err) {}
-    if (getHashrateReadProvider._fallback) return getHashrateReadProvider._fallback;
-    try {
-      if (typeof ethers.FallbackProvider === "function") {
-        getHashrateReadProvider._fallback = new ethers.FallbackProvider(
-          HASHRATE_READ_RPCS.map(function (url, i) {
-            return {
-              provider: new ethers.JsonRpcProvider(url, 4663, { staticNetwork: true }),
-              priority: i,
-              stallTimeout: 1800,
-              weight: 1
-            };
-          })
-        );
-      } else {
-        getHashrateReadProvider._fallback = new ethers.JsonRpcProvider(HASHRATE_READ_RPCS[0], 4663, { staticNetwork: true });
-      }
-    } catch (err) {
-      getHashrateReadProvider._fallback = new ethers.JsonRpcProvider(HASHRATE_READ_RPCS[0], 4663);
-    }
-    return getHashrateReadProvider._fallback;
-  }
-
-  function friendlyHashrateError(err, fallback) {
-    const code = err && (err.code || (err.info && err.info.error && err.info.error.code));
-    const raw = String((err && (err.reason || err.shortMessage || err.message)) || "");
-    const lower = raw.toLowerCase();
-    if (code === "ACTION_REJECTED" || code === 4001 || lower.indexOf("user rejected") !== -1 || lower.indexOf("rejected") !== -1) {
-      return "Transaction rejected in wallet.";
-    }
-    if (code === "INSUFFICIENT_FUNDS" || code === -32000 ||
-        lower.indexOf("insufficient funds") !== -1 || lower.indexOf("insufficient balance") !== -1 ||
-        lower.indexOf("exceeds the balance") !== -1) {
-      return "Insufficient balance. Add ETH on Robinhood Chain and try again.";
-    }
-    return raw || fallback || "Purchase failed. Please try again.";
-  }
-
+  // Read-only contract instance against the public testnet RPC — used
+  // for price/pause/plan reads that don't require a connected wallet.
   function getHashrateReadContract() {
     const ethers = getEthers();
-    const provider = getHashrateReadProvider();
-    if (!ethers || !provider) return null;
-    return new ethers.Contract(HASHRATE_CONTRACT_ADDRESS, HASHRATE_CONTRACT_ABI, provider);
+    if (!ethers) return null;
+    if (!getHashrateReadContract._provider) {
+      getHashrateReadContract._provider = new ethers.JsonRpcProvider(ROBINHOOD_TESTNET_RPC);
+    }
+    return new ethers.Contract(HASHRATE_CONTRACT_ADDRESS, HASHRATE_CONTRACT_ABI, getHashrateReadContract._provider);
   }
 
   // Signer-backed contract instance for the actual buyPro()/buyUltra()
@@ -10113,9 +10052,10 @@ async function loadMiningLeaderboard(page) {
     const ethers = getEthers();
     if (!ethers || !address) return null;
     try {
-      const provider = getHashrateReadProvider();
-      if (!provider) return null;
-      const balance = await provider.getBalance(address);
+      if (!getHashrateReadContract._provider) {
+        getHashrateReadContract._provider = new ethers.JsonRpcProvider(ROBINHOOD_TESTNET_RPC);
+      }
+      const balance = await getHashrateReadContract._provider.getBalance(address);
       console.log("VERUN Mining: balance check", { address, balanceWei: balance.toString() });
       return balance;
     } catch (err) {
@@ -10221,15 +10161,11 @@ async function loadMiningLeaderboard(page) {
     const statusEl = card ? card.querySelector('[data-status-for="' + tierKey + '"]') : null;
 
     buying = tierKey;
-    lastBuyError[tierKey] = "";
     if (buyButton) {
       buyButton.disabled = true;
       buyButton.textContent = "Confirm in wallet…";
     }
-    if (statusEl) {
-      statusEl.textContent = "";
-      statusEl.classList.remove("is-error");
-    }
+    if (statusEl) statusEl.textContent = "";
 
     try {
       const priceWei = tierKey === "pro" ? hashrateChain.proPriceWei : hashrateChain.ultraPriceWei;
@@ -10245,7 +10181,7 @@ async function loadMiningLeaderboard(page) {
       const balanceWei = await getNativeBalanceWei(walletState.address);
       if (balanceWei !== null && balanceWei < priceWei) {
         console.warn("VERUN Mining: blocking purchase — balance", balanceWei.toString(), "< price", priceWei.toString());
-        throw new Error("Insufficient balance. Add ETH on Robinhood Chain and try again.");
+        throw new Error("Insufficient balance to complete this purchase.");
       }
 
       const write = await getHashrateWriteContract();
@@ -10343,13 +10279,11 @@ async function loadMiningLeaderboard(page) {
       }
       render();
     } catch (err) {
-      const message = friendlyHashrateError(err, "Purchase failed. Please try again.");
+      const message = (err && (err.code === "ACTION_REJECTED" || err.code === 4001))
+        ? "Transaction rejected in wallet."
+        : (err && err.reason) || (err && err.shortMessage) || (err && err.message) || "Purchase failed. Please try again.";
       console.error("VERUN Mining: buy" + tierKey + " failed:", message);
-      lastBuyError[tierKey] = message;
-      if (statusEl) {
-        statusEl.textContent = message;
-        statusEl.classList.add("is-error");
-      }
+      if (statusEl) statusEl.textContent = message;
     } finally {
       buying = null;
       render();
@@ -10606,16 +10540,10 @@ async function loadMiningLeaderboard(page) {
         if (statusEl) statusEl.textContent = "";
       } else {
         buyButton.dataset.tierAction = "buy";
-        buyButton.disabled = !!hashrateChain.paused;
+        buyButton.disabled = !hashrateChain.ready || !!hashrateChain.paused;
         buyButton.textContent = buyButton.dataset.defaultLabel || "Upgrade";
         if (statusEl) {
-          if (lastBuyError[tierKey]) {
-            statusEl.textContent = lastBuyError[tierKey];
-            statusEl.classList.add("is-error");
-          } else {
-            statusEl.classList.remove("is-error");
-            statusEl.textContent = hashrateChain.paused ? "Purchases are paused on the contract." : "";
-          }
+          statusEl.textContent = hashrateChain.paused ? "Purchases are paused on the contract." : "";
         }
       }
     });
@@ -12261,12 +12189,7 @@ async function loadMiningLeaderboard(page) {
                       : (whitelistEligible ? "Mint Genesis Pass (Free)" : "Mint Genesis Pass"))));
       }
       if (e.mintNote) {
-        if (lastMintError) {
-          e.mintNote.textContent = lastMintError;
-          e.mintNote.classList.add("is-error");
-        } else {
-          e.mintNote.classList.remove("is-error");
-          e.mintNote.textContent = !currentUserId
+        e.mintNote.textContent = !currentUserId
           ? "Connect your X account to mint a Genesis Pass."
           : (soldOut
               ? ("All " + formatIndian(totalSupply) + " Genesis Passes have been minted.")
@@ -12279,7 +12202,6 @@ async function loadMiningLeaderboard(page) {
                             ? "Your wallet is whitelisted for a free mint — confirm the transaction in your wallet (no ETH required)."
                             : "This sends a real transaction on Robinhood Chain — confirm the price shown in your wallet.")
                         : "Choose a genesis code (3–20 lowercase letters, numbers or hyphens) to enable minting.")));
-        }
       }
       if (e.walletConnectBtn && !currentUserId) {
         // Guest read-only mode: wallet connect is itself an
@@ -12298,22 +12220,6 @@ async function loadMiningLeaderboard(page) {
   // fire a second transaction if a user manages to click twice fast.
   let minting = false;
   let claiming = false;
-  let lastMintError = null;
-
-  function friendlyGenesisError(err, fallback) {
-    const code = err && (err.code || (err.info && err.info.error && err.info.error.code));
-    const raw = String((err && (err.reason || err.shortMessage || err.message)) || "");
-    const lower = raw.toLowerCase();
-    if (code === "ACTION_REJECTED" || code === 4001 || lower.indexOf("user rejected") !== -1) {
-      return "Transaction rejected in wallet.";
-    }
-    if (code === "INSUFFICIENT_FUNDS" || code === -32000 ||
-        lower.indexOf("insufficient funds") !== -1 || lower.indexOf("insufficient balance") !== -1 ||
-        lower.indexOf("exceeds the balance") !== -1) {
-      return "Insufficient balance. Add ETH on Robinhood Chain and try again.";
-    }
-    return raw || fallback || "Mint failed. Please try again.";
-  }
 
   // Celebration popup shown right after the mint transaction confirms
   // on-chain. Auto-closes on its own after a few seconds, but stays
@@ -12524,7 +12430,6 @@ async function loadMiningLeaderboard(page) {
     const whitelistEligible = isWhitelistEligible();
 
     minting = true;
-    lastMintError = null;
     if (e.mintButton) {
       e.mintButton.disabled = true;
       e.mintButton.textContent = "Confirm in wallet…";
@@ -12532,10 +12437,6 @@ async function loadMiningLeaderboard(page) {
     if (e.codeFeedback) {
       e.codeFeedback.textContent = "";
       e.codeFeedback.className = "genesis-discount-feedback";
-    }
-    if (e.mintNote) {
-      e.mintNote.textContent = "";
-      e.mintNote.classList.remove("is-error");
     }
 
     try {
@@ -12558,7 +12459,7 @@ async function loadMiningLeaderboard(page) {
         const balanceWei = await getNativeBalanceWei(walletAddress);
         if (balanceWei !== null && balanceWei < requiredWei) {
           console.warn("VERUN Genesis Pass: blocking mint — balance", balanceWei.toString(), "< required", requiredWei.toString());
-          throw new Error("Insufficient balance. Add ETH on Robinhood Chain and try again.");
+          throw new Error("Insufficient balance to mint. Add funds to your wallet and try again.");
         }
       }
 
@@ -12691,17 +12592,10 @@ async function loadMiningLeaderboard(page) {
       await refreshChainState(); // re-reads pool/price/whitelist and re-renders
     } catch (err) {
       minting = false;
-      const message = friendlyGenesisError(err, "Mint failed. Please try again.");
-      lastMintError = message;
+      const message = (err && (err.code === "ACTION_REJECTED" || err.code === 4001))
+        ? "Transaction rejected in wallet."
+        : (err && err.reason) || (err && err.shortMessage) || (err && err.message) || "Mint failed. Please try again.";
       console.error("VERUN Genesis Pass mint failed:", message);
-      if (e.mintNote) {
-        e.mintNote.textContent = message;
-        e.mintNote.classList.add("is-error");
-      }
-      if (e.codeFeedback) {
-        e.codeFeedback.textContent = message;
-        e.codeFeedback.className = "genesis-discount-feedback is-error";
-      }
       render();
     }
   }
@@ -12944,7 +12838,6 @@ async function loadMiningLeaderboard(page) {
       e.codeInput.dataset.genesisBound = "1";
       e.codeInput.addEventListener("input", () => {
         e.codeInput.value = e.codeInput.value.toLowerCase();
-        lastMintError = null;
         if (e.codeFeedback) {
           e.codeFeedback.textContent = "";
           e.codeFeedback.className = "genesis-discount-feedback";
@@ -13362,4 +13255,88 @@ showSection(
     link.addEventListener("click", async event => {
       event.preventDefault();
 
-      // Navigation itself needs no session check —
+      // Navigation itself needs no session check — guests can move
+      // freely between sections in read-only mode, same as an
+      // authenticated user. Each section's own loader (referral/
+      // leaderboard/mining/genesisPass, called below) independently
+      // checks the real session and renders the guest-safe public
+      // view when there isn't one; state-changing actions inside
+      // those sections stay gated on their own, separately.
+      const section = link.dataset.section;
+      showSection(section);
+      closeDrawer();
+
+      if (section === "referral" && typeof loadReferralDashboard === "function") {
+        await window.withTimeout(loadReferralDashboard(), 12000);
+      }
+
+      if (section === "leaderboard" && typeof loadVerunLeaderboard === "function") {
+        await window.withTimeout(loadVerunLeaderboard(), 12000);
+      }
+
+      if (section === "mining" && typeof loadMiningSection === "function") {
+        await window.withTimeout(loadMiningSection(), 12000);
+      }
+
+      if (section === "genesisPass" && typeof loadGenesisPassSection === "function") {
+        await window.withTimeout(loadGenesisPassSection(), 12000);
+      }
+
+      // Re-assert scroll-to-top now that the section's content has
+      // actually finished loading and settled — content height
+      // changing after the first scroll (while data was still
+      // loading) is what made these sections land mid-page.
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
+  });
+
+  disconnectButton?.addEventListener("click", async () => {
+    disconnectButton.disabled = true;
+    disconnectButton.textContent = "Disconnecting...";
+
+    const { error } = await supabaseClient.auth.signOut();
+
+    if (error) {
+      disconnectButton.disabled = false;
+      disconnectButton.textContent = "Disconnect";
+      console.error("Unable to disconnect X:", error);
+      return;
+    }
+
+    closeDrawer();
+    await updateAppAccess(null);
+  });
+
+  supabaseClient.auth.getSession().then(async ({ data: { session } }) => {
+    await updateAppAccess(session);
+  });
+
+  supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    // Skip background/no-op events (e.g. silent token refresh) and the
+    // initial session event, which is already handled by getSession()
+    // above — reacting to those too caused repeated re-renders and the
+    // side menu closing itself right after opening.
+    if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+      return;
+    }
+
+    if (session) {
+      setTimeout(() => updateAppAccess(session), 350);
+    } else {
+      await updateAppAccess(null);
+    }
+  });
+
+  // Make the navigation function available to the rest of VERUN if needed.
+  window.showVerunSection = showSection;
+})();
+
+</script>
+</body>
+</html>
+
+
+
+
