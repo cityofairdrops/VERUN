@@ -9982,6 +9982,7 @@ async function loadMiningLeaderboard(page) {
   let completing = false; // guards against double process_completed_mining calls
   let starting = false; // guards against double start_mining_session calls
   let buying = null; // tier key currently mid-purchase ("pro"/"ultra"), guards double-submit
+  const tierErrors = {}; // tierKey -> last failure message, shown until the next attempt on that tier
 
   // ── VERUNHashrate contract (Robinhood Chain Testnet) ────────────────
   const HASHRATE_CONTRACT_ADDRESS = "0xdE734960Cfdd9937bB0a9dc50E630Ed10BB34df0";
@@ -10161,6 +10162,7 @@ async function loadMiningLeaderboard(page) {
     const statusEl = card ? card.querySelector('[data-status-for="' + tierKey + '"]') : null;
 
     buying = tierKey;
+    delete tierErrors[tierKey];
     if (buyButton) {
       buyButton.disabled = true;
       buyButton.textContent = "Confirm in wallet…";
@@ -10283,6 +10285,7 @@ async function loadMiningLeaderboard(page) {
         ? "Transaction rejected in wallet."
         : (err && err.reason) || (err && err.shortMessage) || (err && err.message) || "Purchase failed. Please try again.";
       console.error("VERUN Mining: buy" + tierKey + " failed:", message);
+      tierErrors[tierKey] = message;
       if (statusEl) statusEl.textContent = message;
     } finally {
       buying = null;
@@ -10508,6 +10511,7 @@ async function loadMiningLeaderboard(page) {
         // wallet state. Expiry, when known, prefers a live on-chain
         // read for this exact tier and falls back to whatever
         // Supabase reports.
+        delete tierErrors[tierKey]; // this tier's last purchase attempt clearly succeeded
         buyButton.dataset.tierAction = "none";
         buyButton.disabled = true;
         buyButton.textContent = "Active";
@@ -10543,7 +10547,13 @@ async function loadMiningLeaderboard(page) {
         buyButton.disabled = !hashrateChain.ready || !!hashrateChain.paused;
         buyButton.textContent = buyButton.dataset.defaultLabel || "Upgrade";
         if (statusEl) {
-          statusEl.textContent = hashrateChain.paused ? "Purchases are paused on the contract." : "";
+          // A failure from the last attempt on this tier stays visible
+          // until the next attempt clears it (see buyTier) — otherwise
+          // this default branch would blank it out the instant the
+          // in-flight `finally { render() }` call runs.
+          statusEl.textContent = hashrateChain.paused
+            ? "Purchases are paused on the contract."
+            : (tierErrors[tierKey] || "");
         }
       }
     });
