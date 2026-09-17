@@ -9846,30 +9846,35 @@ async function loadMiningLeaderboard(page) {
   async function loadWalletModule() {
     bindEventsOnce();
 
-    // These three were previously awaited one after another even though
-    // none of them depends on another's result — fetchWalletLock() and
-    // fetchActiveServerVerification() hit different Supabase RPCs, and
-    // initializeAppKit() is a separate CDN import entirely. Running them
-    // concurrently cuts this module's load time from the sum of all
-    // three round trips down to whichever one is slowest. The only
-    // ordering that actually matters (wallet lock known before the
-    // verified state is shown) is preserved because updateUI() still
-    // only runs once, after all three have settled.
-    const [appKitResult, lockResult, verificationResult] = await Promise.allSettled([
-      initializeAppKit(),
+    // Order matters here: get_wallet_lock() and get_active_wallet_verification()
+    // run first and are awaited before AppKit is initialized. AppKit is what
+    // can silently auto-reconnect a cached wallet session the instant it
+    // loads — if that happened while the lock lookup was still in flight,
+    // isWrongWallet() would briefly read as false (lockedWalletAddress still
+    // `undefined`) and the Sign button could flash for a wallet that turns
+    // out to be locked to a different address, only for the server to
+    // reject the signature after the fact. Resolving the lock first closes
+    // that window completely — no visible "checking" state needed, since by
+    // the time a wallet can possibly connect, the lock answer already exists.
+    // These two run together since neither depends on the other.
+    const [lockResult, verificationResult] = await Promise.allSettled([
       fetchWalletLock(),
       fetchActiveServerVerification()
     ]);
 
-    if (appKitResult.status === "rejected") {
+    if (lockResult.status === "rejected") {
+      console.error("VERUN wallet: failed to fetch wallet lock:", lockResult.reason);
+    }
+
+    // AppKit — and the auto-reconnect it can trigger — only starts now,
+    // with the lock already known.
+    try {
+      await initializeAppKit();
+    } catch (reason) {
       // Do not break the rest of VERUN if the external AppKit CDN is
       // temporarily unreachable. The wallet buttons simply remain usable
       // once the connection library becomes reachable again.
-      console.error("VERUN wallet connector unavailable:", appKitResult.reason);
-    }
-
-    if (lockResult.status === "rejected") {
-      console.error("VERUN wallet: failed to fetch wallet lock:", lockResult.reason);
+      console.error("VERUN wallet connector unavailable:", reason);
     }
 
     // Restore a previously-verified session from the server. This only
