@@ -4520,7 +4520,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 56px;
   width: 100%;
 }
 
@@ -4562,21 +4562,6 @@
   50% { opacity: 1; transform: translateX(-50%) scale(1.15); }
 }
 
-/* Large, faint Verun mark watermarked behind the countdown content.
-   Sits above .airdrop-glow but below everything else in the card via
-   z-index; pointer-events off since it's purely decorative. */
-.airdrop-logo-bg {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 340px;
-  height: 340px;
-  transform: translate(-50%, -50%);
-  opacity: 0.07;
-  z-index: 0;
-  pointer-events: none;
-}
-
 .airdrop-badge {
   position: relative;
   z-index: 1;
@@ -4615,10 +4600,9 @@
   position: relative;
   z-index: 1;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   gap: 6px;
-  margin-bottom: 22px;
 }
 
 @media (max-width: 420px) {
@@ -4661,31 +4645,13 @@
   text-shadow: none;
 }
 
-.airdrop-label {
-  font-size: 8.5px;
-  font-weight: 700;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
 .airdrop-sep {
   position: relative;
   z-index: 1;
-  padding-bottom: 16px;
   font-size: clamp(18px, 5vw, 26px);
   font-weight: 800;
   color: var(--green);
   opacity: 0.6;
-}
-
-.airdrop-countdown-sub {
-  position: relative;
-  z-index: 1;
-  text-align: center;
-  font-size: 10px;
-  letter-spacing: 0.6px;
-  color: var(--muted2);
 }
 
 .airdrop-footer-note {
@@ -6185,43 +6151,29 @@
     <div class="airdrop-countdown-card">
       <div class="airdrop-glow" aria-hidden="true"></div>
 
-      <svg class="airdrop-logo-bg" viewBox="0 0 32 32" aria-hidden="true">
-        <g transform="translate(16 16) rotate(45) translate(-8 -8)">
-          <rect x="0.5" y="0.5" width="15" height="15" fill="none" stroke="var(--green)" stroke-width="1.6"/>
-          <rect x="5" y="5" width="5" height="5" fill="var(--green)"/>
-        </g>
-      </svg>
-
       <div class="airdrop-badge">$VERUN AIRDROP &middot; SEASON 1</div>
 
       <div class="airdrop-countdown" id="airdropCountdown" role="timer" aria-live="off">
         <div class="airdrop-unit">
           <span class="airdrop-value" id="airdropCdDays">00</span>
-          <span class="airdrop-label">Days</span>
         </div>
         <span class="airdrop-sep">.</span>
         <div class="airdrop-unit">
           <span class="airdrop-value" id="airdropCdHours">00</span>
-          <span class="airdrop-label">Hrs</span>
         </div>
         <span class="airdrop-sep">.</span>
         <div class="airdrop-unit">
           <span class="airdrop-value" id="airdropCdMinutes">00</span>
-          <span class="airdrop-label">Min</span>
         </div>
         <span class="airdrop-sep">.</span>
         <div class="airdrop-unit">
           <span class="airdrop-value" id="airdropCdSeconds">00</span>
-          <span class="airdrop-label">Sec</span>
         </div>
         <span class="airdrop-sep">.</span>
         <div class="airdrop-unit airdrop-unit-ms">
           <span class="airdrop-value" id="airdropCdMs">000</span>
-          <span class="airdrop-label">Ms</span>
         </div>
       </div>
-
-      <p class="airdrop-countdown-sub">(All times are in UTC)</p>
     </div>
 
     <p class="airdrop-footer-note">
