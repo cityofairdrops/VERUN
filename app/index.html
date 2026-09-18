@@ -4507,20 +4507,14 @@
   margin-bottom:15px;
   text-align:center;
 }
-#airdropSection {
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  min-height:calc(100dvh - 160px);
-}
-
 /* ============= AIRDROP COUNTDOWN ============= */
+/* No special centering override here anymore — #airdropSection now
+   behaves like every other section (Leaderboard/Referral/Mining):
+   content flows top-down and the footer disclaimer sits right after
+   it via the shared .section-footer-note style, instead of the whole
+   block being flex-centered inside an artificially tall container. */
 
 .airdrop-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 56px;
   width: 100%;
 }
 
@@ -4600,9 +4594,10 @@
   position: relative;
   z-index: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   gap: 6px;
+  margin-bottom: 4px;
 }
 
 @media (max-width: 420px) {
@@ -4645,24 +4640,22 @@
   text-shadow: none;
 }
 
+.airdrop-label {
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .airdrop-sep {
   position: relative;
   z-index: 1;
+  padding-bottom: 16px;
   font-size: clamp(18px, 5vw, 26px);
   font-weight: 800;
   color: var(--green);
   opacity: 0.6;
-}
-
-.airdrop-footer-note {
-  max-width: 420px;
-  margin: 0 auto;
-  padding: 0 10px;
-  text-align: center;
-  font-size: 9.5px;
-  line-height: 1.6;
-  letter-spacing: 0.2px;
-  color: var(--muted2);
 }
 
 @media (max-width:520px) {
@@ -6156,29 +6149,35 @@
       <div class="airdrop-countdown" id="airdropCountdown" role="timer" aria-live="off">
         <div class="airdrop-unit">
           <span class="airdrop-value" id="airdropCdDays">00</span>
+          <span class="airdrop-label">Days</span>
         </div>
         <span class="airdrop-sep">.</span>
         <div class="airdrop-unit">
           <span class="airdrop-value" id="airdropCdHours">00</span>
+          <span class="airdrop-label">Hrs</span>
         </div>
         <span class="airdrop-sep">.</span>
         <div class="airdrop-unit">
           <span class="airdrop-value" id="airdropCdMinutes">00</span>
+          <span class="airdrop-label">Min</span>
         </div>
         <span class="airdrop-sep">.</span>
         <div class="airdrop-unit">
           <span class="airdrop-value" id="airdropCdSeconds">00</span>
+          <span class="airdrop-label">Sec</span>
         </div>
         <span class="airdrop-sep">.</span>
         <div class="airdrop-unit airdrop-unit-ms">
           <span class="airdrop-value" id="airdropCdMs">000</span>
+          <span class="airdrop-label">Ms</span>
         </div>
       </div>
     </div>
+  </div>
 
-    <p class="airdrop-footer-note">
-      &copy; 2026 Verun Ecosystem. 100% community-driven with zero team or foundation allocations. All rights reserved.
-    </p>
+  <!-- FOOTER NOTE -->
+  <div class="section-footer-note">
+    © 2026 Verun Ecosystem. 100% community-driven with zero team or foundation allocations. All rights reserved.
   </div>
 </section>
 
