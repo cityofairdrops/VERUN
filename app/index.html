@@ -4514,6 +4514,170 @@
   min-height:calc(100dvh - 160px);
 }
 
+/* ============= AIRDROP COUNTDOWN ============= */
+
+.airdrop-countdown-card {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 44px 26px 34px;
+  text-align: center;
+  overflow: hidden;
+
+  border-radius: 20px;
+  border: 1px solid var(--green-border);
+  background:
+    radial-gradient(120% 140% at 50% -20%, rgba(141,255,183,0.14), transparent 60%),
+    linear-gradient(180deg, var(--panel), var(--panel2));
+  box-shadow:
+    0 0 0 1px rgba(141,255,183,0.05) inset,
+    0 20px 60px -20px rgba(141,255,183,0.25),
+    0 0 40px -10px var(--shadow-color);
+}
+
+.airdrop-glow {
+  position: absolute;
+  top: -60%;
+  left: 50%;
+  width: 320px;
+  height: 320px;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(141,255,183,0.35), rgba(141,255,183,0) 70%);
+  filter: blur(10px);
+  pointer-events: none;
+  animation: airdropPulse 3.2s ease-in-out infinite;
+}
+
+@keyframes airdropPulse {
+  0%, 100% { opacity: 0.55; transform: translateX(-50%) scale(1); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.15); }
+}
+
+.airdrop-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  margin-bottom: 18px;
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--green);
+
+  border: 1px solid var(--green-border);
+  border-radius: 999px;
+  background: var(--green-soft);
+}
+
+.airdrop-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px 1px var(--green);
+  animation: airdropDot 1.6s ease-in-out infinite;
+}
+
+@keyframes airdropDot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+.airdrop-countdown-header {
+  position: relative;
+  margin: 0 0 26px;
+
+  font-size: clamp(15px, 4.4vw, 19px);
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+
+  background: linear-gradient(100deg, var(--text) 10%, var(--green) 55%, var(--text) 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.airdrop-countdown {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 22px;
+}
+
+@media (max-width: 420px) {
+  .airdrop-countdown { gap: 3px; }
+}
+
+.airdrop-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+
+  min-width: 54px;
+  padding: 10px 4px 9px;
+
+  border-radius: 12px;
+  border: 1px solid var(--green-border);
+  background: linear-gradient(180deg, rgba(141,255,183,0.10), rgba(141,255,183,0.02));
+  box-shadow: 0 0 18px -6px rgba(141,255,183,0.35);
+}
+
+@media (max-width: 420px) {
+  .airdrop-unit { min-width: 42px; padding: 8px 2px 7px; }
+}
+
+.airdrop-unit-ms {
+  border-color: rgba(141,255,183,0.15);
+  opacity: 0.85;
+}
+
+.airdrop-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: clamp(20px, 6.2vw, 30px);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--green);
+  text-shadow: 0 0 18px rgba(141,255,183,0.45);
+  font-variant-numeric: tabular-nums;
+}
+
+.airdrop-unit-ms .airdrop-value {
+  font-size: clamp(14px, 4.4vw, 18px);
+  color: var(--muted);
+  text-shadow: none;
+}
+
+.airdrop-label {
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.airdrop-sep {
+  padding-bottom: 16px;
+  font-size: clamp(18px, 5vw, 26px);
+  font-weight: 800;
+  color: var(--green);
+  opacity: 0.6;
+}
+
+.airdrop-countdown-sub {
+  position: relative;
+  font-size: 10px;
+  letter-spacing: 0.6px;
+  color: var(--muted2);
+}
+
 @media (max-width:520px) {
   .verun-drawer { padding:18px; }
   .verun-guest-card { padding:35px 20px; }
@@ -5063,7 +5227,7 @@
                 </div>
 
                 <div class="task-description">
-                  Participate in an active community campaign.
+                  Like our latest campaign post on X.
                 </div>
 
               </div>
@@ -5996,22 +6160,43 @@
   class="section-card"
   style="display:none;"
 >
-  <div style="text-align:center;padding:38px 20px;border:1px solid var(--border);border-radius:14px;background:var(--panel);max-width:360px;margin:0 auto;">
-    <div style="margin:0 auto 16px;width:48px;height:48px;border-radius:50%;border:1px solid var(--border);background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="5" y="10.5" width="14" height="10" rx="2" stroke="var(--green)" stroke-width="1.6"/>
-        <path d="M8 10.5V7.8a4 4 0 0 1 8 0" stroke="var(--green)" stroke-width="1.6" stroke-linecap="round"/>
-        <circle cx="12" cy="15" r="1.6" fill="var(--green)"/>
-      </svg>
-    </div>
+  <div class="airdrop-countdown-card">
+    <div class="airdrop-glow" aria-hidden="true"></div>
 
-    <h2 style="margin-bottom:8px;font-size:16px;font-weight:600;">
-      $VERUN AIRDROP
+    <div class="airdrop-badge">$VERUN AIRDROP · SEASON 1</div>
+
+    <h2 class="airdrop-countdown-header">
+      Airdrop Season 1 ends in
     </h2>
 
-    <p style="color:var(--green);font-size:9px;letter-spacing:1.2px;text-transform:uppercase;">
-      Coming soon
-    </p>
+    <div class="airdrop-countdown" id="airdropCountdown" role="timer" aria-live="off">
+      <div class="airdrop-unit">
+        <span class="airdrop-value" id="airdropCdDays">00</span>
+        <span class="airdrop-label">Days</span>
+      </div>
+      <span class="airdrop-sep">.</span>
+      <div class="airdrop-unit">
+        <span class="airdrop-value" id="airdropCdHours">00</span>
+        <span class="airdrop-label">Hrs</span>
+      </div>
+      <span class="airdrop-sep">.</span>
+      <div class="airdrop-unit">
+        <span class="airdrop-value" id="airdropCdMinutes">00</span>
+        <span class="airdrop-label">Min</span>
+      </div>
+      <span class="airdrop-sep">.</span>
+      <div class="airdrop-unit">
+        <span class="airdrop-value" id="airdropCdSeconds">00</span>
+        <span class="airdrop-label">Sec</span>
+      </div>
+      <span class="airdrop-sep">.</span>
+      <div class="airdrop-unit airdrop-unit-ms">
+        <span class="airdrop-value" id="airdropCdMs">000</span>
+        <span class="airdrop-label">Ms</span>
+      </div>
+    </div>
+
+    <p class="airdrop-countdown-sub">All times UTC &middot; Ends Dec 15, 2026 &middot; 22:00 UTC</p>
   </div>
 </section>
 
@@ -13424,6 +13609,99 @@ showSection(
 
   // Make the navigation function available to the rest of VERUN if needed.
   window.showVerunSection = showSection;
+})();
+
+// ============================================
+// AIRDROP SEASON 1 — REVERSE COUNTDOWN
+// Counts down in UTC to Dec 15, 2026, 22:00 UTC.
+// Runs on requestAnimationFrame only while the
+// #airdropSection is actually visible (the rest of
+// the app shows/hides sections via inline
+// style.display rather than routing, so a
+// MutationObserver on that attribute is the hook
+// used here to start/stop the loop rather than
+// duplicating that show/hide logic).
+// ============================================
+(function () {
+  var AIRDROP_END_UTC = Date.UTC(2026, 11, 15, 22, 0, 0, 0);
+
+  var section = document.getElementById("airdropSection");
+  var daysEl = document.getElementById("airdropCdDays");
+  var hoursEl = document.getElementById("airdropCdHours");
+  var minutesEl = document.getElementById("airdropCdMinutes");
+  var secondsEl = document.getElementById("airdropCdSeconds");
+  var msEl = document.getElementById("airdropCdMs");
+
+  if (!section || !daysEl || !hoursEl || !minutesEl || !secondsEl || !msEl) {
+    return;
+  }
+
+  function pad(num, len) {
+    var s = String(Math.max(0, num));
+    while (s.length < len) s = "0" + s;
+    return s;
+  }
+
+  var running = false;
+
+  function render() {
+    var remaining = AIRDROP_END_UTC - Date.now();
+
+    if (remaining <= 0) {
+      daysEl.textContent = "00";
+      hoursEl.textContent = "00";
+      minutesEl.textContent = "00";
+      secondsEl.textContent = "00";
+      msEl.textContent = "000";
+      return false;
+    }
+
+    var days = Math.floor(remaining / 86400000);
+    remaining -= days * 86400000;
+    var hours = Math.floor(remaining / 3600000);
+    remaining -= hours * 3600000;
+    var minutes = Math.floor(remaining / 60000);
+    remaining -= minutes * 60000;
+    var seconds = Math.floor(remaining / 1000);
+    remaining -= seconds * 1000;
+    var ms = Math.floor(remaining);
+
+    daysEl.textContent = pad(days, 2);
+    hoursEl.textContent = pad(hours, 2);
+    minutesEl.textContent = pad(minutes, 2);
+    secondsEl.textContent = pad(seconds, 2);
+    msEl.textContent = pad(ms, 3);
+    return true;
+  }
+
+  function loop() {
+    if (section.style.display === "none") {
+      running = false;
+      return;
+    }
+    var stillCounting = render();
+    if (!stillCounting) {
+      running = false;
+      return;
+    }
+    window.requestAnimationFrame(loop);
+  }
+
+  function startIfVisible() {
+    if (running) return;
+    if (section.style.display === "none") return;
+    running = true;
+    window.requestAnimationFrame(loop);
+  }
+
+  // Section is hidden by default (inline style="display:none;"), but
+  // cover the case where it's ever the initial/restored section too.
+  startIfVisible();
+
+  new MutationObserver(startIfVisible).observe(section, {
+    attributes: true,
+    attributeFilter: ["style"]
+  });
 })();
 
 </script>
