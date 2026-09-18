@@ -4507,12 +4507,14 @@
   margin-bottom:15px;
   text-align:center;
 }
+#airdropSection {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:calc(100dvh - 160px);
+}
+
 /* ============= AIRDROP COUNTDOWN ============= */
-/* No special centering override here anymore — #airdropSection now
-   behaves like every other section (Leaderboard/Referral/Mining):
-   content flows top-down and the footer disclaimer sits right after
-   it via the shared .section-footer-note style, instead of the whole
-   block being flex-centered inside an artificially tall container. */
 
 .airdrop-wrap {
   width: 100%;
@@ -6173,11 +6175,6 @@
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- FOOTER NOTE -->
-  <div class="section-footer-note">
-    © 2026 Verun Ecosystem. 100% community-driven with zero team or foundation allocations. All rights reserved.
   </div>
 </section>
 
