@@ -4516,12 +4516,20 @@
 
 /* ============= AIRDROP COUNTDOWN ============= */
 
+.airdrop-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+}
+
 .airdrop-countdown-card {
   position: relative;
   width: 100%;
   max-width: 480px;
   margin: 0 auto;
-  padding: 44px 26px 34px;
+  padding: 40px 26px 34px;
   text-align: center;
   overflow: hidden;
 
@@ -4554,13 +4562,29 @@
   50% { opacity: 1; transform: translateX(-50%) scale(1.15); }
 }
 
+/* Large, faint Verun mark watermarked behind the countdown content.
+   Sits above .airdrop-glow but below everything else in the card via
+   z-index; pointer-events off since it's purely decorative. */
+.airdrop-logo-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 340px;
+  height: 340px;
+  transform: translate(-50%, -50%);
+  opacity: 0.07;
+  z-index: 0;
+  pointer-events: none;
+}
+
 .airdrop-badge {
   position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  margin-bottom: 18px;
+  margin-bottom: 26px;
 
   font-size: 10px;
   font-weight: 800;
@@ -4587,23 +4611,9 @@
   50% { opacity: 0.25; }
 }
 
-.airdrop-countdown-header {
-  position: relative;
-  margin: 0 0 26px;
-
-  font-size: clamp(15px, 4.4vw, 19px);
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-
-  background: linear-gradient(100deg, var(--text) 10%, var(--green) 55%, var(--text) 90%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
 .airdrop-countdown {
   position: relative;
+  z-index: 1;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -4615,28 +4625,24 @@
   .airdrop-countdown { gap: 3px; }
 }
 
+/* No border/background/box-shadow on individual units — a bordered
+   box per digit inside the already-bordered card read as "a box
+   inside a box", so units are now just spaced digit groups. */
 .airdrop-unit {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-
   min-width: 54px;
-  padding: 10px 4px 9px;
-
-  border-radius: 12px;
-  border: 1px solid var(--green-border);
-  background: linear-gradient(180deg, rgba(141,255,183,0.10), rgba(141,255,183,0.02));
-  box-shadow: 0 0 18px -6px rgba(141,255,183,0.35);
+  padding: 0 4px;
 }
 
 @media (max-width: 420px) {
-  .airdrop-unit { min-width: 42px; padding: 8px 2px 7px; }
+  .airdrop-unit { min-width: 42px; padding: 0 2px; }
 }
 
 .airdrop-unit-ms {
-  border-color: rgba(141,255,183,0.15);
-  opacity: 0.85;
+  opacity: 0.8;
 }
 
 .airdrop-value {
@@ -4664,6 +4670,8 @@
 }
 
 .airdrop-sep {
+  position: relative;
+  z-index: 1;
   padding-bottom: 16px;
   font-size: clamp(18px, 5vw, 26px);
   font-weight: 800;
@@ -4673,8 +4681,21 @@
 
 .airdrop-countdown-sub {
   position: relative;
+  z-index: 1;
+  text-align: center;
   font-size: 10px;
   letter-spacing: 0.6px;
+  color: var(--muted2);
+}
+
+.airdrop-footer-note {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 0 10px;
+  text-align: center;
+  font-size: 9.5px;
+  line-height: 1.6;
+  letter-spacing: 0.2px;
   color: var(--muted2);
 }
 
@@ -6160,45 +6181,56 @@
   class="section-card"
   style="display:none;"
 >
-  <div class="airdrop-countdown-card">
-    <div class="airdrop-glow" aria-hidden="true"></div>
+  <div class="airdrop-wrap">
+    <div class="airdrop-countdown-card">
+      <div class="airdrop-glow" aria-hidden="true"></div>
 
-    <div class="airdrop-badge">$VERUN AIRDROP · SEASON 1</div>
+      <svg class="airdrop-logo-bg" viewBox="0 0 32 32" aria-hidden="true">
+        <g transform="translate(16 16) rotate(45) translate(-8 -8)">
+          <rect x="0.5" y="0.5" width="15" height="15" fill="none" stroke="var(--green)" stroke-width="1.6"/>
+          <rect x="5" y="5" width="5" height="5" fill="var(--green)"/>
+        </g>
+      </svg>
 
-    <h2 class="airdrop-countdown-header">
-      Airdrop Season 1 ends in
-    </h2>
+      <div class="airdrop-badge">$VERUN AIRDROP &middot; SEASON 1</div>
 
-    <div class="airdrop-countdown" id="airdropCountdown" role="timer" aria-live="off">
-      <div class="airdrop-unit">
-        <span class="airdrop-value" id="airdropCdDays">00</span>
-        <span class="airdrop-label">Days</span>
+      <div class="airdrop-countdown" id="airdropCountdown" role="timer" aria-live="off">
+        <div class="airdrop-unit">
+          <span class="airdrop-value" id="airdropCdDays">00</span>
+          <span class="airdrop-label">Days</span>
+        </div>
+        <span class="airdrop-sep">.</span>
+        <div class="airdrop-unit">
+          <span class="airdrop-value" id="airdropCdHours">00</span>
+          <span class="airdrop-label">Hrs</span>
+        </div>
+        <span class="airdrop-sep">.</span>
+        <div class="airdrop-unit">
+          <span class="airdrop-value" id="airdropCdMinutes">00</span>
+          <span class="airdrop-label">Min</span>
+        </div>
+        <span class="airdrop-sep">.</span>
+        <div class="airdrop-unit">
+          <span class="airdrop-value" id="airdropCdSeconds">00</span>
+          <span class="airdrop-label">Sec</span>
+        </div>
+        <span class="airdrop-sep">.</span>
+        <div class="airdrop-unit airdrop-unit-ms">
+          <span class="airdrop-value" id="airdropCdMs">000</span>
+          <span class="airdrop-label">Ms</span>
+        </div>
       </div>
-      <span class="airdrop-sep">.</span>
-      <div class="airdrop-unit">
-        <span class="airdrop-value" id="airdropCdHours">00</span>
-        <span class="airdrop-label">Hrs</span>
-      </div>
-      <span class="airdrop-sep">.</span>
-      <div class="airdrop-unit">
-        <span class="airdrop-value" id="airdropCdMinutes">00</span>
-        <span class="airdrop-label">Min</span>
-      </div>
-      <span class="airdrop-sep">.</span>
-      <div class="airdrop-unit">
-        <span class="airdrop-value" id="airdropCdSeconds">00</span>
-        <span class="airdrop-label">Sec</span>
-      </div>
-      <span class="airdrop-sep">.</span>
-      <div class="airdrop-unit airdrop-unit-ms">
-        <span class="airdrop-value" id="airdropCdMs">000</span>
-        <span class="airdrop-label">Ms</span>
-      </div>
+
+      <p class="airdrop-countdown-sub">(All times are in UTC)</p>
     </div>
 
-    <p class="airdrop-countdown-sub">All times UTC &middot; Ends Dec 15, 2026 &middot; 22:00 UTC</p>
+    <p class="airdrop-footer-note">
+      &copy; 2026 Verun Ecosystem. 100% community-driven with zero team or foundation allocations. All rights reserved.
+    </p>
   </div>
 </section>
+
+
 
 
 </main>
