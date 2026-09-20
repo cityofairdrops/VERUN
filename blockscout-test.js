@@ -6,14 +6,8 @@ if (!API_KEY) {
   throw new Error("BLOCKSCOUT_API_KEY is missing");
 }
 
-const SNAPSHOT_BLOCK = 68086309;
-
-const url =
-  "https://api.blockscout.com/4663/api/v2/transactions" +
-  `?filter=validated` +
-  `&block_number=${SNAPSHOT_BLOCK}` +
-  `&index=999999999` +
-  "&items_count=50";
+const URL =
+  "https://api.blockscout.com/4663/api/v2/blocks/68086309/transactions";
 
 function request(url) {
   return new Promise((resolve, reject) => {
@@ -34,9 +28,7 @@ function request(url) {
         res.on("end", () => {
           if (res.statusCode < 200 || res.statusCode >= 300) {
             reject(
-              new Error(
-                `HTTP ${res.statusCode}: ${data}`
-              )
+              new Error(`HTTP ${res.statusCode}: ${data}`)
             );
             return;
           }
@@ -45,9 +37,7 @@ function request(url) {
             resolve(JSON.parse(data));
           } catch (error) {
             reject(
-              new Error(
-                `Invalid JSON response: ${data}`
-              )
+              new Error(`Invalid JSON response: ${data}`)
             );
           }
         });
@@ -60,53 +50,50 @@ function request(url) {
 
 async function main() {
   console.log("========================================");
-  console.log("BLOCKSCOUT HISTORICAL PAGINATION TEST");
+  console.log("BLOCKSCOUT TRANSACTION FIELD INSPECTION");
   console.log("========================================");
-
   console.log("Chain: Robinhood Mainnet");
   console.log("Chain ID: 4663");
-  console.log("Target block:", SNAPSHOT_BLOCK);
-
+  console.log("Block: 68086309");
   console.log("");
-  console.log("Requesting chain-wide transactions...");
 
-  const start = Date.now();
+  const data = await request(URL);
 
-  const data = await request(url);
-
-  const elapsed =
-    (Date.now() - start) / 1000;
-
-  if (!Array.isArray(data.items)) {
-    throw new Error(
-      `Unexpected response: ${JSON.stringify(data)}`
-    );
+  if (!data || !Array.isArray(data.items)) {
+    throw new Error("Unexpected Blockscout response");
   }
 
+  console.log("Transactions returned:", data.items.length);
   console.log("");
-  console.log("========== RESULT ==========");
 
-  console.log(
-    "Transactions returned:",
-    data.items.length
-  );
+  data.items.slice(0, 10).forEach((tx, index) => {
+    console.log(`========== TRANSACTION ${index + 1} ==========`);
 
-  if (data.items.length > 0) {
-    const blocks = data.items.map(
-      (tx) => Number(tx.block_number)
-    );
-
-    console.log(
-      "Newest returned block:",
-      Math.max(...blocks)
-    );
-
-    console.log(
-      "Oldest returned block:",
-      Math.min(...blocks)
-    );
+    console.log("hash:", tx.hash);
+    console.log("block_number:", tx.block_number);
+    console.log("status:", tx.status);
+    console.log("from:", tx.from);
+    console.log("to:", tx.to);
+    console.log("value:", tx.value);
+    console.log("method:", tx.method);
+    console.log("transaction_types:", tx.transaction_types);
+    console.log("fee:", tx.fee);
+    console.log("raw input:", tx.raw_input);
 
     console.log("");
+  });
+
+  console.log("========================================");
+  console.log("INSPECTION COMPLETE");
+  console.log("========================================");
+}
+
+main().catch((error) => {
+  console.error("");
+  console.error("INSPECTION FAILED");
+  console.error(error.message);
+  process.exit(1);
+});    console.log("");
     console.log(
       "First transaction block:",
       data.items[0].block_number
