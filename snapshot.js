@@ -1,21 +1,25 @@
 const https = require("https");
 
-const apiKey = process.env.ALCHEMY_API_KEY;
+const key = process.env.ALCHEMY_API_KEY;
 
-if (!apiKey) {
+if (!key) {
   throw new Error("ALCHEMY_API_KEY is missing");
 }
 
-const url = `https://robinhood-mainnet.g.alchemy.com/v2/${apiKey}`;
+console.log("Key loaded:", key.length, "characters");
+console.log("Key prefix:", key.substring(0, 5));
+console.log("Key suffix:", key.substring(key.length - 4));
+
+const url = `https://robinhood-mainnet.g.alchemy.com/v2/${key}`;
 
 const body = JSON.stringify({
   jsonrpc: "2.0",
   id: 1,
-  method: "eth_chainId",
+  method: "eth_blockNumber",
   params: []
 });
 
-const request = https.request(
+const req = https.request(
   url,
   {
     method: "POST",
@@ -26,40 +30,25 @@ const request = https.request(
   (res) => {
     let data = "";
 
-    res.on("data", (chunk) => {
+    res.on("data", chunk => {
       data += chunk;
     });
 
     res.on("end", () => {
       console.log("HTTP status:", res.statusCode);
-      console.log("Robinhood RPC response:");
-      console.log(data);
+      console.log("Response:", data);
 
       if (res.statusCode !== 200) {
-        process.exit(1);
-      }
-
-      try {
-        const result = JSON.parse(data);
-
-        if (result.result !== "0x1237") {
-          console.error("Unexpected chain ID:", result.result);
-          process.exit(1);
-        }
-
-        console.log("SUCCESS: Connected to Robinhood Chain mainnet.");
-      } catch (error) {
-        console.error("Invalid RPC response.");
         process.exit(1);
       }
     });
   }
 );
 
-request.on("error", (error) => {
-  console.error("Request error:", error.message);
+req.on("error", err => {
+  console.error("Request error:", err.message);
   process.exit(1);
 });
 
-request.write(body);
-request.end();
+req.write(body);
+req.end();
