@@ -24,7 +24,7 @@ function request(url) {
       (res) => {
         let data = "";
 
-        res.on("data", chunk => {
+        res.on("data", (chunk) => {
           data += chunk;
         });
 
@@ -42,7 +42,7 @@ function request(url) {
             }
 
             resolve(json);
-          } catch {
+          } catch (error) {
             reject(
               new Error(`Invalid response: ${data}`)
             );
@@ -70,9 +70,7 @@ async function main() {
 
   console.log("");
   console.log("Requesting:");
-  console.log(
-    `${BASE_URL}?filter=validated&block_number=${SNAPSHOT_BLOCK}&items_count=${PAGE_SIZE}`
-  );
+  console.log(url);
 
   const start = Date.now();
 
@@ -97,7 +95,7 @@ async function main() {
 
   if (json.items.length > 0) {
     const blocks =
-      json.items.map(tx => Number(tx.block_number));
+      json.items.map((tx) => Number(tx.block_number));
 
     console.log(
       "Newest returned block:",
@@ -107,6 +105,56 @@ async function main() {
     console.log(
       "Oldest returned block:",
       Math.min(...blocks)
+    );
+
+    console.log("");
+
+    console.log(
+      "First transaction block:",
+      json.items[0].block_number
+    );
+
+    console.log(
+      "Last transaction block:",
+      json.items[json.items.length - 1].block_number
+    );
+  }
+
+  console.log("");
+
+  console.log(
+    "Has next page:",
+    Boolean(json.next_page_params)
+  );
+
+  if (json.next_page_params) {
+    console.log(
+      "Next page parameters:",
+      JSON.stringify(
+        json.next_page_params,
+        null,
+        2
+      )
+    );
+  }
+
+  console.log("");
+
+  console.log(
+    "Request time:",
+    seconds.toFixed(2),
+    "seconds"
+  );
+
+  console.log("============================");
+}
+
+main().catch((error) => {
+  console.error("");
+  console.error("TEST FAILED");
+  console.error(error.message);
+  process.exit(1);
+});      Math.min(...blocks)
     );
 
     console.log("");
