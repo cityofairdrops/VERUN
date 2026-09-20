@@ -23,7 +23,7 @@ function request(url) {
       (res) => {
         let data = "";
 
-        res.on("data", chunk => {
+        res.on("data", (chunk) => {
           data += chunk;
         });
 
@@ -41,11 +41,9 @@ function request(url) {
             }
 
             resolve(json);
-          } catch {
+          } catch (error) {
             reject(
-              new Error(
-                `Invalid response: ${data}`
-              )
+              new Error(`Invalid response: ${data}`)
             );
           }
         });
@@ -79,7 +77,7 @@ async function main() {
 
     if (!Array.isArray(json.items)) {
       throw new Error(
-        "Unexpected response: items array missing"
+        `Unexpected response: ${JSON.stringify(json)}`
       );
     }
 
@@ -93,8 +91,7 @@ async function main() {
     totalTransactions += items.length;
 
     for (const tx of items) {
-      const blockNumber =
-        Number(tx.block_number);
+      const blockNumber = Number(tx.block_number);
 
       if (
         newestBlock === null ||
@@ -112,8 +109,11 @@ async function main() {
     }
 
     console.log(
-      `Page ${page}: ${items.length} transactions | ` +
-      `blocks ${oldestBlock} → ${newestBlock}`
+      `Page ${page}: ${items.length} transactions`
+    );
+
+    console.log(
+      `Current block range: ${oldestBlock} → ${newestBlock}`
     );
 
     if (!json.next_page_params) {
@@ -123,17 +123,13 @@ async function main() {
 
     const params = new URLSearchParams();
 
-    for (
-      const [key, value]
-      of Object.entries(json.next_page_params)
-    ) {
+    for (const [key, value] of Object.entries(json.next_page_params)) {
       if (value !== null && value !== undefined) {
         params.set(key, String(value));
       }
     }
 
-    url =
-      `${BASE_URL}?${params.toString()}`;
+    url = `${BASE_URL}?${params.toString()}`;
   }
 
   const seconds =
@@ -155,21 +151,7 @@ async function main() {
   console.log("============================");
 }
 
-main().catch(error => {
-  console.error("");
-  console.error("TEST FAILED");
-  console.error(error.message);
-  process.exit(1);
-});  console.log("");
-  console.log("========== RESULT ==========");
-  console.log("Transactions retrieved:", totalTransactions);
-  console.log("Newest block:", newestBlock);
-  console.log("Oldest block:", oldestBlock);
-  console.log("Time:", seconds.toFixed(2), "seconds");
-  console.log("============================");
-}
-
-main().catch(error => {
+main().catch((error) => {
   console.error("");
   console.error("TEST FAILED");
   console.error(error.message);
