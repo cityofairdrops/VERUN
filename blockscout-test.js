@@ -78,7 +78,7 @@ async function main() {
     console.log("method:", tx.method);
     console.log("transaction_types:", tx.transaction_types);
     console.log("fee:", tx.fee);
-    console.log("raw input:", tx.raw_input);
+    console.log("raw_input:", tx.raw_input);
 
     console.log("");
   });
@@ -91,52 +91,6 @@ async function main() {
 main().catch((error) => {
   console.error("");
   console.error("INSPECTION FAILED");
-  console.error(error.message);
-  process.exit(1);
-});    console.log("");
-    console.log(
-      "First transaction block:",
-      data.items[0].block_number
-    );
-
-    console.log(
-      "Last transaction block:",
-      data.items[data.items.length - 1].block_number
-    );
-  }
-
-  console.log("");
-
-  if (data.next_page_params) {
-    console.log("Has next page: YES");
-    console.log(
-      "Next page parameters:"
-    );
-    console.log(
-      JSON.stringify(
-        data.next_page_params,
-        null,
-        2
-      )
-    );
-  } else {
-    console.log("Has next page: NO");
-  }
-
-  console.log("");
-
-  console.log(
-    "Request time:",
-    elapsed.toFixed(2),
-    "seconds"
-  );
-
-  console.log("============================");
-}
-
-main().catch((error) => {
-  console.error("");
-  console.error("TEST FAILED");
   console.error(error.message);
   process.exit(1);
 });
