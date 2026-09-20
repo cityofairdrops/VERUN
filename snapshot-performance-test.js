@@ -1,120 +1,146 @@
 const https = require("https");
 
-const API_KEY = process.env.ALCHEMY_API_KEY;
+const API_KEY = process.env.BLOCKSCOUT_API_KEY;
 
 if (!API_KEY) {
-  throw new Error("ALCHEMY_API_KEY is missing");
+  throw new Error("BLOCKSCOUT_API_KEY is missing");
 }
 
-const RPC_URL =
-  `https://robinhood-mainnet.g.alchemy.com/v2/${API_KEY}`;
+const SNAPSHOT_BLOCK = 68086309;
+const ITEMS_COUNT = 100;
 
-function rpc(method, params = []) {
+const url =
+  "https://api.blockscout.com/4663/api/v2/transactions" +
+  "?filter=validated" +
+  `&block_number=${SNAPSHOT_BLOCK}` +
+  "&index=999999999" +
+  `&items_count=${ITEMS_COUNT}`;
+
+function request(url) {
   return new Promise((resolve, reject) => {
-    const body = JSON.stringify({
-      jsonrpc: "2.0",
-      id: 1,
-      method,
-      params
-    });
-
-    const req = https.request(
-      RPC_URL,
+    const req = https.get(
+      url,
       {
-        method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Content-Length": Buffer.byteLength(body)
+          Authorization: `Bearer ${API_KEY}`
         }
       },
       (res) => {
         let data = "";
 
-        res.on("data", chunk => {
+        res.on("data", (chunk) => {
           data += chunk;
         });
 
         res.on("end", () => {
+          if (res.statusCode < 200 || res.statusCode >= 300) {
+            reject(
+              new Error(
+                `HTTP ${res.statusCode}: ${data}`
+              )
+            );
+            return;
+          }
+
           try {
-            const json = JSON.parse(data);
-
-            if (json.error) {
-              reject(new Error(JSON.stringify(json.error)));
-              return;
-            }
-
-            resolve(json.result);
-          } catch {
-            reject(new Error(`Invalid response: ${data}`));
+            resolve(JSON.parse(data));
+          } catch (error) {
+            reject(
+              new Error(
+                `Invalid JSON response: ${data}`
+              )
+            );
           }
         });
       }
     );
 
     req.on("error", reject);
-    req.write(body);
-    req.end();
   });
 }
 
 async function main() {
-  const startBlock = 68000000;
-  const blocksToTest = 100;
+  console.log("========================================");
+  console.log("BLOCKSCOUT PAGE SIZE TEST");
+  console.log("========================================");
 
-  console.log("Starting performance test...");
-  console.log(`Testing ${blocksToTest} blocks`);
-  console.log(`From block ${startBlock}`);
+  console.log("Chain: Robinhood Mainnet");
+  console.log("Chain ID: 4663");
+  console.log("Snapshot block:", SNAPSHOT_BLOCK);
+  console.log("Requested items:", ITEMS_COUNT);
+
+  console.log("");
+  console.log("Requesting...");
 
   const start = Date.now();
 
-  let transactions = 0;
+  const data = await request(url);
 
-  for (let i = 0; i < blocksToTest; i++) {
-    const blockNumber = startBlock + i;
-    const hex =
-      "0x" + blockNumber.toString(16);
-
-    const block = await rpc(
-      "eth_getBlockByNumber",
-      [hex, true]
-    );
-
-    if (!block) {
-      throw new Error(
-        `Block ${blockNumber} unavailable`
-      );
-    }
-
-    transactions += block.transactions.length;
-
-    if ((i + 1) % 10 === 0) {
-      console.log(
-        `Processed ${i + 1}/${blocksToTest} blocks`
-      );
-    }
-  }
-
-  const seconds =
+  const elapsed =
     (Date.now() - start) / 1000;
+
+  if (!Array.isArray(data.items)) {
+    throw new Error(
+      `Unexpected response: ${JSON.stringify(data)}`
+    );
+  }
 
   console.log("");
   console.log("========== RESULT ==========");
-  console.log("Blocks:", blocksToTest);
-  console.log("Transactions:", transactions);
-  console.log("Time:", seconds.toFixed(2), "seconds");
+
   console.log(
-    "Blocks/sec:",
-    (blocksToTest / seconds).toFixed(2)
+    "Transactions returned:",
+    data.items.length
   );
+
+  if (data.items.length > 0) {
+    const blocks = data.items.map(
+      (tx) => Number(tx.block_number)
+    );
+
+    console.log(
+      "Newest returned block:",
+      Math.max(...blocks)
+    );
+
+    console.log(
+      "Oldest returned block:",
+      Math.min(...blocks)
+    );
+  }
+
+  console.log("");
+
+  if (data.next_page_params) {
+    console.log("Has next page: YES");
+    console.log(
+      "Next page parameters:"
+    );
+    console.log(
+      JSON.stringify(
+        data.next_page_params,
+        null,
+        2
+      )
+    );
+  } else {
+    console.log("Has next page: NO");
+  }
+
+  console.log("");
+
   console.log(
-    "Estimated hours for full chain:",
-    (
-      68086309 / (blocksToTest / seconds) / 3600
-    ).toFixed(2)
+    "Request time:",
+    elapsed.toFixed(2),
+    "seconds"
   );
+
+  console.log("============================");
 }
 
-main().catch(error => {
-  console.error(error);
+main().catch((error) => {
+  console.error("");
+  console.error("TEST FAILED");
+  console.error(error.message);
   process.exit(1);
 });
