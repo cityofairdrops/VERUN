@@ -9,7 +9,8 @@ if (!API_KEY) {
 const BASE_URL =
   "https://api.blockscout.com/4663/api/v2/transactions";
 
-const MAX_PAGES = 20;
+const SNAPSHOT_BLOCK = 68086309;
+const PAGE_SIZE = 50;
 
 function request(url) {
   return new Promise((resolve, reject) => {
@@ -23,7 +24,7 @@ function request(url) {
       (res) => {
         let data = "";
 
-        res.on("data", (chunk) => {
+        res.on("data", chunk => {
           data += chunk;
         });
 
@@ -41,7 +42,7 @@ function request(url) {
             }
 
             resolve(json);
-          } catch (error) {
+          } catch {
             reject(
               new Error(`Invalid response: ${data}`)
             );
@@ -54,59 +55,105 @@ function request(url) {
 
 async function main() {
   console.log("========================================");
-  console.log("BLOCKSCOUT CHAIN-WIDE TRANSACTION TEST");
+  console.log("BLOCKSCOUT SNAPSHOT-BLOCK TEST");
   console.log("========================================");
 
   console.log("Chain: Robinhood Mainnet");
   console.log("Chain ID: 4663");
-  console.log("Maximum pages:", MAX_PAGES);
+  console.log("Target snapshot block:", SNAPSHOT_BLOCK);
+
+  const url =
+    `${BASE_URL}` +
+    `?filter=validated` +
+    `&block_number=${SNAPSHOT_BLOCK}` +
+    `&items_count=${PAGE_SIZE}`;
+
+  console.log("");
+  console.log("Requesting:");
+  console.log(
+    `${BASE_URL}?filter=validated&block_number=${SNAPSHOT_BLOCK}&items_count=${PAGE_SIZE}`
+  );
 
   const start = Date.now();
 
-  let url =
-    `${BASE_URL}?filter=validated&items_count=50`;
+  const json = await request(url);
 
-  let totalTransactions = 0;
-  let oldestBlock = null;
-  let newestBlock = null;
+  const seconds =
+    (Date.now() - start) / 1000;
 
-  for (let page = 1; page <= MAX_PAGES; page++) {
-    console.log(`Requesting page ${page}...`);
+  if (!Array.isArray(json.items)) {
+    throw new Error(
+      `Unexpected response: ${JSON.stringify(json)}`
+    );
+  }
 
-    const json = await request(url);
+  console.log("");
+  console.log("========== RESULT ==========");
 
-    if (!Array.isArray(json.items)) {
-      throw new Error(
-        `Unexpected response: ${JSON.stringify(json)}`
-      );
-    }
+  console.log(
+    "Transactions returned:",
+    json.items.length
+  );
 
-    const items = json.items;
+  if (json.items.length > 0) {
+    const blocks =
+      json.items.map(tx => Number(tx.block_number));
 
-    if (items.length === 0) {
-      console.log("No more transactions.");
-      break;
-    }
+    console.log(
+      "Newest returned block:",
+      Math.max(...blocks)
+    );
 
-    totalTransactions += items.length;
+    console.log(
+      "Oldest returned block:",
+      Math.min(...blocks)
+    );
 
-    for (const tx of items) {
-      const blockNumber = Number(tx.block_number);
+    console.log("");
+    console.log("First transaction block:");
+    console.log(json.items[0].block_number);
 
-      if (
-        newestBlock === null ||
-        blockNumber > newestBlock
-      ) {
-        newestBlock = blockNumber;
-      }
+    console.log(
+      "Last transaction block:"
+    );
+    console.log(
+      json.items[json.items.length - 1].block_number
+    );
+  }
 
-      if (
-        oldestBlock === null ||
-        blockNumber < oldestBlock
-      ) {
-        oldestBlock = blockNumber;
-      }
-    }
+  console.log("");
+  console.log(
+    "Has next page:",
+    Boolean(json.next_page_params)
+  );
+
+  if (json.next_page_params) {
+    console.log(
+      "Next page parameters:",
+      JSON.stringify(
+        json.next_page_params,
+        null,
+        2
+      )
+    );
+  }
+
+  console.log("");
+  console.log(
+    "Request time:",
+    seconds.toFixed(2),
+    "seconds"
+  );
+
+  console.log("============================");
+}
+
+main().catch(error => {
+  console.error("");
+  console.error("TEST FAILED");
+  console.error(error.message);
+  process.exit(1);
+});    }
 
     console.log(
       `Page ${page}: ${items.length} transactions`
