@@ -20,4 +20,4 @@ jobs:
         env:
           ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
         run: |
-          node snapshot-performance-test.js
+          node blockscout-test.js
