@@ -11,7 +11,7 @@ const url = `https://robinhood-mainnet.g.alchemy.com/v2/${apiKey}`;
 const body = JSON.stringify({
   jsonrpc: "2.0",
   id: 1,
-  method: "eth_blockNumber",
+  method: "eth_chainId",
   params: []
 });
 
@@ -20,8 +20,7 @@ const request = https.request(
   {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      "Content-Length": Buffer.byteLength(body)
+      "Content-Type": "application/json"
     }
   },
   (res) => {
@@ -32,10 +31,25 @@ const request = https.request(
     });
 
     res.on("end", () => {
+      console.log("HTTP status:", res.statusCode);
       console.log("Robinhood RPC response:");
       console.log(data);
 
       if (res.statusCode !== 200) {
+        process.exit(1);
+      }
+
+      try {
+        const result = JSON.parse(data);
+
+        if (result.result !== "0x1237") {
+          console.error("Unexpected chain ID:", result.result);
+          process.exit(1);
+        }
+
+        console.log("SUCCESS: Connected to Robinhood Chain mainnet.");
+      } catch (error) {
+        console.error("Invalid RPC response.");
         process.exit(1);
       }
     });
@@ -43,7 +57,7 @@ const request = https.request(
 );
 
 request.on("error", (error) => {
-  console.error(error);
+  console.error("Request error:", error.message);
   process.exit(1);
 });
 
