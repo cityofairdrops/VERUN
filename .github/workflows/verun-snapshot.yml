@@ -16,8 +16,9 @@ jobs:
         with:
           node-version: 20
 
-      - name: Run snapshot
+      - name: Run Blockscout test
         env:
           ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+          BLOCKSCOUT_API_KEY: ${{ secrets.BLOCKSCOUT_API_KEY }}
         run: |
           node blockscout-test.js
