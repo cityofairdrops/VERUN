@@ -9,7 +9,11 @@ if (!API_KEY) {
 const SNAPSHOT_BLOCK = 68086309;
 
 const url =
-  `https://api.blockscout.com/4663/api/v2/blocks/${SNAPSHOT_BLOCK}/transactions`;
+  "https://api.blockscout.com/4663/api/v2/transactions" +
+  `?filter=validated` +
+  `&block_number=${SNAPSHOT_BLOCK}` +
+  `&index=999999999` +
+  "&items_count=50";
 
 function request(url) {
   return new Promise((resolve, reject) => {
@@ -41,7 +45,9 @@ function request(url) {
             resolve(JSON.parse(data));
           } catch (error) {
             reject(
-              new Error(`Invalid JSON response: ${data}`)
+              new Error(
+                `Invalid JSON response: ${data}`
+              )
             );
           }
         });
@@ -54,15 +60,15 @@ function request(url) {
 
 async function main() {
   console.log("========================================");
-  console.log("BLOCKSCOUT SNAPSHOT BLOCK TEST");
+  console.log("BLOCKSCOUT HISTORICAL PAGINATION TEST");
   console.log("========================================");
 
   console.log("Chain: Robinhood Mainnet");
   console.log("Chain ID: 4663");
-  console.log("Snapshot block:", SNAPSHOT_BLOCK);
+  console.log("Target block:", SNAPSHOT_BLOCK);
 
   console.log("");
-  console.log("Requesting block transactions...");
+  console.log("Requesting chain-wide transactions...");
 
   const start = Date.now();
 
@@ -71,27 +77,67 @@ async function main() {
   const elapsed =
     (Date.now() - start) / 1000;
 
+  if (!Array.isArray(data.items)) {
+    throw new Error(
+      `Unexpected response: ${JSON.stringify(data)}`
+    );
+  }
+
   console.log("");
   console.log("========== RESULT ==========");
 
   console.log(
     "Transactions returned:",
-    Array.isArray(data.items)
-      ? data.items.length
-      : "unknown"
+    data.items.length
   );
 
-  if (Array.isArray(data.items)) {
-    for (const tx of data.items.slice(0, 5)) {
-      console.log(
-        tx.hash,
-        "block:",
-        tx.block_number
-      );
-    }
+  if (data.items.length > 0) {
+    const blocks = data.items.map(
+      (tx) => Number(tx.block_number)
+    );
+
+    console.log(
+      "Newest returned block:",
+      Math.max(...blocks)
+    );
+
+    console.log(
+      "Oldest returned block:",
+      Math.min(...blocks)
+    );
+
+    console.log("");
+    console.log(
+      "First transaction block:",
+      data.items[0].block_number
+    );
+
+    console.log(
+      "Last transaction block:",
+      data.items[data.items.length - 1].block_number
+    );
   }
 
   console.log("");
+
+  if (data.next_page_params) {
+    console.log("Has next page: YES");
+    console.log(
+      "Next page parameters:"
+    );
+    console.log(
+      JSON.stringify(
+        data.next_page_params,
+        null,
+        2
+      )
+    );
+  } else {
+    console.log("Has next page: NO");
+  }
+
+  console.log("");
+
   console.log(
     "Request time:",
     elapsed.toFixed(2),
