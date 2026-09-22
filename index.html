@@ -1321,6 +1321,204 @@
   }
 }
 
+/* ================= AIRDROP CHECKER ================= */
+
+.home-airdrop-wrap {
+  width: 100%;
+  max-width: 480px;
+  margin: 28px auto 0;
+  text-align: left;
+}
+
+.airdrop-card {
+  position: relative;
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 85% 15%,
+      rgba(141,255,183,0.10),
+      transparent 35%
+    ),
+    var(--panel);
+
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  padding: 30px;
+}
+
+.airdrop-label {
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.airdrop-title {
+  margin-top: 8px;
+  font-size: 20px;
+  letter-spacing: -0.6px;
+}
+
+.airdrop-desc {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+  margin-top: 9px;
+}
+
+.airdrop-form {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.airdrop-input {
+  flex: 1 1 220px;
+  min-width: 0;
+
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+
+  padding: 12px 14px;
+  outline: none;
+
+  transition: border-color 0.15s ease;
+}
+
+html[data-theme="light"] .airdrop-input {
+  background: rgba(0,0,0,0.02);
+}
+
+.airdrop-input::placeholder {
+  color: var(--muted2);
+}
+
+.airdrop-input:focus {
+  border-color: var(--green-border);
+}
+
+.airdrop-btn {
+  flex: 0 0 auto;
+  min-width: 165px;
+  border: none;
+}
+
+.airdrop-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.airdrop-btn:disabled:hover {
+  background: transparent;
+  color: var(--green);
+}
+
+.airdrop-result {
+  margin-top: 20px;
+  padding: 16px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+
+.airdrop-result-success {
+  border-color: var(--green-border);
+  background: var(--green-soft);
+}
+
+.airdrop-result-error {
+  border-color: rgba(255,120,120,0.3);
+  background: rgba(255,120,120,0.06);
+}
+
+.airdrop-message {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.airdrop-result-error .airdrop-message {
+  color: #ff8a8a;
+}
+
+.airdrop-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+
+  font-size: 12px;
+}
+
+.airdrop-row:first-child {
+  padding-top: 0;
+}
+
+.airdrop-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.airdrop-row-label {
+  color: var(--muted2);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.airdrop-row-value {
+  color: var(--text);
+  font-weight: 700;
+  text-align: right;
+  word-break: break-all;
+}
+
+.airdrop-row-value.is-eligible {
+  color: var(--green);
+}
+
+.airdrop-row-value.is-not-eligible {
+  color: var(--muted);
+}
+
+@media (max-width: 520px) {
+  .airdrop-card {
+    padding: 22px;
+  }
+
+  .airdrop-form {
+    flex-direction: column;
+  }
+
+  .airdrop-btn {
+    width: 100%;
+  }
+
+  .airdrop-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+  }
+
+  .airdrop-row-value {
+    text-align: left;
+  }
+}
+
 .home-button {
   display:inline-flex; align-items:center; justify-content:center;
   min-width:145px; padding:12px 20px; border-radius:4px;
@@ -2051,59 +2249,43 @@
 <div class="home-shell">
 <section class="home-hero">
   <div>
-    <div id="homeGuestIntro" style="display:none;">
+    <div id="homeGuestHeading" style="display:none;">
       <h1 class="home-guest-heading">Enter The Verun Ecosystem</h1>
-      <button id="homeConnectX" class="home-button primary" type="button">Connect X</button>
     </div>
 
-    <div class="home-balance-wrap" id="homeBalanceWrap" style="display:none;">
-      <div class="balance-card">
+    <!--
+      VERUN Airdrop Checker — visible in both guest and connected
+      states. Users paste an EVM wallet address (no wallet connect
+      required) and it's checked against the private allocation
+      table via the check-airdrop Edge Function.
+    -->
+    <div class="home-airdrop-wrap" id="homeAirdropWrap">
+      <div class="airdrop-card">
+        <div class="airdrop-label">VERUN Airdrop</div>
+        <p class="airdrop-desc">
+          Check your $VERUN allocation by entering your wallet address below.
+          No wallet connection needed — just paste your public EVM address.
+        </p>
 
-        <div class="bal-top">
-          <div class="balance-label">
-            Your Balance
-          </div>
+        <form id="airdropForm" class="airdrop-form" autocomplete="off">
+          <input
+            type="text"
+            id="airdropWalletInput"
+            class="airdrop-input"
+            placeholder="0x..."
+            spellcheck="false"
+            autocomplete="off"
+            aria-label="Wallet address"
+          />
+          <button type="submit" id="airdropCheckBtn" class="home-button primary airdrop-btn">Check Allocation</button>
+        </form>
 
-          <div class="bal-top-right">
-
-            <div class="balance-today-reward">
-              <span class="balance-today-reward-label">#Today's Reward</span>
-              <span id="dailyRewardText">Connect X to see your reward</span>
-            </div>
-
-            <!--
-              Weekly-change chip — hidden until real "XP earned in the
-              last 7 days" data exists. Set its text and remove
-              style="display:none" once that value is available.
-            -->
-            <div class="bal-chip" id="xpWeeklyChip" style="display:none;"></div>
-
-          </div>
-        </div>
-            <div class="balance">
-  <span id="xpBalance" style="visibility:hidden;">0</span> <span>XP</span>
-</div>
-
-<div class="balance-note">
-  Complete tasks to earn XP, which will later be convertible into $VERUN.
-</div>
-
-<!--
-  Tier-progress bar — hidden until an XP tier system exists.
-  Your current rank badges (Ambassador/Legend) are based on
-  referral count, not XP, so this isn't wired to real data yet.
-  Set --xp-progress and the two labels below, then remove
-  style="display:none" once XP tiers are defined.
--->
-<div class="bar-track" id="xpBarTrack" style="display:none;">
-  <div class="bar-fill" id="xpBarFill"></div>
-</div>
-<div class="bar-caption" id="xpBarCaption" style="display:none;">
-  <span id="xpTierCurrent"></span>
-  <span id="xpTierNext"></span>
-</div>
-
+        <div class="airdrop-result" id="airdropResult" style="display:none;" aria-live="polite"></div>
       </div>
+    </div>
+
+    <div id="homeConnectWrap" style="display:none;">
+      <button id="homeConnectX" class="home-button primary" type="button">Connect X</button>
     </div>
   </div>
 </section>
@@ -2515,18 +2697,19 @@ document.getElementById("homeConnectX").addEventListener("click", async function
 });
 
 // ============================================
-// Only show the "Enter The Verun Ecosystem" intro
+// Only show the "Enter The Verun Ecosystem" heading
 // + "Connect X" button on Home when the user is
-// NOT already connected. If they're connected,
-// they see the balance card instead, and can reach
-// the app via "Enter App"/"Open Community App", or
-// disconnect from inside the app.
+// NOT already connected. The VERUN Airdrop Checker
+// (below) is shown either way — it doesn't require
+// a connected account, just a pasted wallet address.
 // ============================================
-const homeGuestIntro = document.getElementById("homeGuestIntro");
+const homeGuestHeading = document.getElementById("homeGuestHeading");
+const homeConnectWrap = document.getElementById("homeConnectWrap");
 
 function setHomeConnectVisibility(session) {
-  if (!homeGuestIntro) return;
-  homeGuestIntro.style.display = session ? "none" : "block";
+  const display = session ? "none" : "block";
+  if (homeGuestHeading) homeGuestHeading.style.display = display;
+  if (homeConnectWrap) homeConnectWrap.style.display = display;
 }
 
 supabaseClient.auth.getSession().then(function (result) {
@@ -2537,116 +2720,151 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
   // Ignore background/no-op events; only react to real sign-in/out.
   if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") return;
   setHomeConnectVisibility(session);
-  loadHomeBalanceCard(session);
 });
 
 // ============================================
-// Home balance card — only shown once the user
-// has connected X. Mirrors the same balance card
-// from the /app Tasks page (same markup, same
-// data source), just read-only here.
+// VERUN Airdrop Checker
+//
+// Users paste an EVM wallet address (no wallet
+// connection required) and it's checked against
+// the private allocation table via the
+// check-airdrop Edge Function. The browser never
+// talks to the allocation table directly — only
+// to this Edge Function, using the existing
+// anon/publishable key.
 // ============================================
-const homeBalanceWrap = document.getElementById("homeBalanceWrap");
-const homeXpBalance = document.getElementById("xpBalance");
-const homeDailyRewardText = document.getElementById("dailyRewardText");
+(function () {
+  const AIRDROP_ENDPOINT = "https://lhfgozlkeotxyzqowijz.supabase.co/functions/v1/check-airdrop";
+  const EVM_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 
-let homeTodaysRewardRequestId = 0;
+  const form = document.getElementById("airdropForm");
+  const input = document.getElementById("airdropWalletInput");
+  const button = document.getElementById("airdropCheckBtn");
+  const resultBox = document.getElementById("airdropResult");
 
-async function refreshHomeTodaysReward(userId) {
-  if (!homeDailyRewardText || !userId) return;
+  if (!form || !input || !button || !resultBox) return;
 
-  const requestId = ++homeTodaysRewardRequestId;
-  const todayStr = new Date().toISOString().slice(0, 10);
+  let isChecking = false;
 
-  try {
-    const [
-      { data: verifications },
-      { data: taskList },
-      { data: todayLogin }
-    ] = await Promise.all([
-      supabaseClient
-        .from("task_verifications")
-        .select("task_id,status,claimed_at")
-        .eq("user_id", userId)
-        .eq("status", "approved"),
-      supabaseClient
-        .from("tasks")
-        .select("id,xp_reward"),
-      supabaseClient
-        .from("daily_logins")
-        .select("xp_awarded,weekly_bonus")
-        .eq("user_id", userId)
-        .eq("login_date", todayStr)
-        .maybeSingle()
-    ]);
+  function truncateWallet(address) {
+    if (typeof address !== "string" || address.length < 14) return address || "";
+    return address.slice(0, 6) + "..." + address.slice(-5);
+  }
 
-    if (requestId !== homeTodaysRewardRequestId) return;
+  // Adds thousands separators without adding or rounding decimal digits.
+  function formatWithCommas(numberLike) {
+    const str = String(numberLike);
+    const parts = str.split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return parts.join(".");
+  }
 
-    let total = 0;
+  function setLoading(loading) {
+    isChecking = loading;
+    button.disabled = loading;
+    button.textContent = loading ? "Checking..." : "Check Allocation";
+  }
 
-    if (verifications && taskList) {
-      const xpByTaskId = {};
-      taskList.forEach(task => {
-        xpByTaskId[task.id] = Number(task.xp_reward || 0);
-      });
-      verifications.forEach(verification => {
-        if (
-          verification.claimed_at &&
-          verification.claimed_at.slice(0, 10) === todayStr
-        ) {
-          total += xpByTaskId[verification.task_id] || 0;
-        }
-      });
+  function showMessage(message, tone) {
+    resultBox.style.display = "block";
+    resultBox.className = "airdrop-result airdrop-result-" + (tone || "info");
+    resultBox.innerHTML = "";
+    const p = document.createElement("p");
+    p.className = "airdrop-message";
+    p.textContent = message;
+    resultBox.appendChild(p);
+  }
+
+  function addRow(label, value, valueClass) {
+    const row = document.createElement("div");
+    row.className = "airdrop-row";
+
+    const labelEl = document.createElement("span");
+    labelEl.className = "airdrop-row-label";
+    labelEl.textContent = label;
+
+    const valueEl = document.createElement("span");
+    valueEl.className = "airdrop-row-value" + (valueClass ? " " + valueClass : "");
+    valueEl.textContent = value;
+
+    row.appendChild(labelEl);
+    row.appendChild(valueEl);
+    resultBox.appendChild(row);
+  }
+
+  function showAllocation(data) {
+    resultBox.style.display = "block";
+    resultBox.className = "airdrop-result airdrop-result-success";
+    resultBox.innerHTML = "";
+
+    addRow("Wallet", truncateWallet(data.wallet));
+    addRow("Qualifying Transactions", formatWithCommas(data.qualifying_tx_count));
+    addRow("Your Allocation", formatWithCommas(data.allocation) + " VERUN");
+    addRow(
+      "Eligible",
+      data.eligible ? "✓ Yes" : "✗ No",
+      data.eligible ? "is-eligible" : "is-not-eligible"
+    );
+  }
+
+  async function checkAllocation() {
+    if (isChecking) return;
+
+    const wallet = input.value.trim();
+
+    if (!EVM_ADDRESS_RE.test(wallet)) {
+      showMessage("Please enter a valid EVM wallet address.", "error");
+      return;
     }
 
-    if (todayLogin) {
-      total +=
-        Number(todayLogin.xp_awarded || 0) +
-        Number(todayLogin.weekly_bonus || 0);
+    setLoading(true);
+    showMessage("Checking allocation...", "info");
+
+    try {
+      const response = await fetch(AIRDROP_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_PUBLISHABLE_KEY,
+          "Authorization": "Bearer " + SUPABASE_PUBLISHABLE_KEY
+        },
+        body: JSON.stringify({ wallet: wallet })
+      });
+
+      if (response.status === 400) {
+        showMessage("Please enter a valid EVM wallet address.", "error");
+        return;
+      }
+
+      if (!response.ok) {
+        showMessage("Something went wrong while checking your allocation. Please try again.", "error");
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data && data.error === "invalid_wallet") {
+        showMessage("Please enter a valid EVM wallet address.", "error");
+        return;
+      }
+
+      if (data && data.found) {
+        showAllocation(data);
+      } else {
+        showMessage("No VERUN airdrop allocation was found for this wallet.", "info");
+      }
+    } catch (err) {
+      showMessage("Network error — please check your connection and try again.", "error");
+    } finally {
+      setLoading(false);
     }
-
-    homeDailyRewardText.textContent = `+${total.toLocaleString()} XP`;
-
-  } catch (rewardError) {
-    console.error("Today's reward calculation error:", rewardError);
-  }
-}
-
-async function loadHomeBalanceCard(session) {
-  if (!homeBalanceWrap) return;
-
-  const user = session?.user;
-
-  if (!user) {
-    homeBalanceWrap.style.display = "none";
-    return;
   }
 
-  const { data: profile, error: profileError } =
-    await supabaseClient
-      .from("profiles")
-      .select("xp")
-      .eq("id", user.id)
-      .maybeSingle();
-
-  if (profileError || !profile) {
-    homeBalanceWrap.style.display = "none";
-    return;
-  }
-
-  if (homeXpBalance) {
-    homeXpBalance.textContent = profile.xp || 0;
-    homeXpBalance.style.visibility = "visible";
-  }
-
-  homeBalanceWrap.style.display = "block";
-
-  refreshHomeTodaysReward(user.id);
-}
-
-supabaseClient.auth.getSession().then(function (result) {
-  loadHomeBalanceCard(result.data.session);
-});
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    checkAllocation();
+  });
+})();
 
 // ============================================
 // Scroll reveal for info sections + scroll-spy
