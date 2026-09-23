@@ -1325,7 +1325,7 @@
 
 .home-airdrop-wrap {
   width: 100%;
-  max-width: 480px;
+  max-width: 520px;
   margin: 28px auto 0;
   text-align: left;
 }
@@ -1336,19 +1336,19 @@
 
   background:
     radial-gradient(
-      circle at 85% 15%,
-      rgba(141,255,183,0.10),
-      transparent 35%
+      circle at 88% 8%,
+      rgba(141,255,183,0.12),
+      transparent 40%
     ),
     var(--panel);
 
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 20px;
 
-  padding: 30px;
+  padding: 38px 36px;
 }
 
-.airdrop-label {
+.airdrop-kicker {
   color: var(--green);
   font-size: 10px;
   font-weight: 800;
@@ -1356,39 +1356,92 @@
   text-transform: uppercase;
 }
 
-.airdrop-title {
-  margin-top: 8px;
-  font-size: 20px;
-  letter-spacing: -0.6px;
+.airdrop-heading {
+  margin-top: 10px;
+  font-size: clamp(24px, 4.5vw, 32px);
+  line-height: 1.1;
+  letter-spacing: -1px;
+  font-weight: 500;
 }
 
 .airdrop-desc {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: 1.7;
-  margin-top: 9px;
+  margin-top: 12px;
+  max-width: 44ch;
+}
+
+.airdrop-desc + .airdrop-desc {
+  margin-top: 8px;
+}
+
+.airdrop-rail {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+
+  list-style: none;
+  margin: 26px 0 0;
+  padding: 0;
+}
+
+.airdrop-rail li {
+  border-top: 2px solid var(--border);
+  padding-top: 10px;
+}
+
+.airdrop-rail li.is-current {
+  border-color: var(--green);
+}
+
+.airdrop-rail-n {
+  display: block;
+  font-size: 11px;
+  color: var(--muted2);
+  margin-bottom: 2px;
+}
+
+.airdrop-rail li.is-current .airdrop-rail-n {
+  color: var(--green);
+}
+
+.airdrop-rail-label {
+  display: block;
+  font-size: 13px;
+}
+
+.airdrop-rail li:not(.is-current) .airdrop-rail-label {
+  color: var(--muted);
 }
 
 .airdrop-form {
+  margin-top: 26px;
+}
+
+.airdrop-field {
   display: flex;
-  gap: 10px;
-  margin-top: 20px;
-  flex-wrap: wrap;
+  flex-direction: column;
+}
+
+.airdrop-field-label {
+  font-size: 11px;
+  color: var(--text);
+  margin-bottom: 8px;
 }
 
 .airdrop-input {
-  flex: 1 1 220px;
-  min-width: 0;
+  width: 100%;
 
   background: rgba(255,255,255,0.03);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
 
   color: var(--text);
   font-family: inherit;
-  font-size: 12px;
+  font-size: 13px;
 
-  padding: 12px 14px;
+  padding: 13px 14px;
   outline: none;
 
   transition: border-color 0.15s ease;
@@ -1406,9 +1459,16 @@ html[data-theme="light"] .airdrop-input {
   border-color: var(--green-border);
 }
 
+.airdrop-field-hint {
+  color: var(--muted2);
+  font-size: 10.5px;
+  line-height: 1.6;
+  margin-top: 8px;
+}
+
 .airdrop-btn {
-  flex: 0 0 auto;
-  min-width: 165px;
+  width: 100%;
+  margin-top: 16px;
   border: none;
 }
 
@@ -1423,9 +1483,9 @@ html[data-theme="light"] .airdrop-input {
 }
 
 .airdrop-result {
-  margin-top: 20px;
-  padding: 16px 18px;
-  border-radius: 10px;
+  margin-top: 22px;
+  padding: 18px 20px;
+  border-radius: 12px;
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.02);
 }
@@ -1450,72 +1510,53 @@ html[data-theme="light"] .airdrop-input {
   color: #ff8a8a;
 }
 
-.airdrop-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 14px;
-
-  padding: 9px 0;
-  border-bottom: 1px solid var(--border);
-
-  font-size: 12px;
+.airdrop-figure {
+  font-size: 32px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
 }
 
-.airdrop-row:first-child {
-  padding-top: 0;
+.airdrop-figure span {
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 400;
+  margin-left: 8px;
 }
 
-.airdrop-row:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+.airdrop-meta {
+  color: var(--muted);
+  font-size: 12.5px;
+  margin-top: 8px;
 }
 
-.airdrop-row-label {
-  color: var(--muted2);
-  font-size: 9.5px;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  flex-shrink: 0;
-}
-
-.airdrop-row-value {
+.airdrop-meta b {
   color: var(--text);
   font-weight: 700;
-  text-align: right;
-  word-break: break-all;
 }
 
-.airdrop-row-value.is-eligible {
+.airdrop-meta .is-eligible {
   color: var(--green);
 }
 
-.airdrop-row-value.is-not-eligible {
-  color: var(--muted);
+.airdrop-fine {
+  color: var(--muted2);
+  font-size: 10.5px;
+  line-height: 1.6;
+  margin-top: 20px;
 }
 
 @media (max-width: 520px) {
   .airdrop-card {
-    padding: 22px;
+    padding: 26px 22px;
   }
 
-  .airdrop-form {
-    flex-direction: column;
+  .airdrop-rail {
+    gap: 8px;
   }
 
-  .airdrop-btn {
-    width: 100%;
-  }
-
-  .airdrop-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 3px;
-  }
-
-  .airdrop-row-value {
-    text-align: left;
+  .airdrop-rail-label {
+    font-size: 12px;
   }
 }
 
@@ -2261,26 +2302,47 @@ html[data-theme="light"] .airdrop-input {
     -->
     <div class="home-airdrop-wrap" id="homeAirdropWrap">
       <div class="airdrop-card">
-        <div class="airdrop-label">VERUN Airdrop</div>
-        <p class="airdrop-desc">
-          Check your $VERUN allocation by entering your wallet address below.
-          No wallet connection needed — just paste your public EVM address.
-        </p>
+        <div class="airdrop-kicker">Airdrop Snapshot</div>
+        <h2 class="airdrop-heading">Check Your $VERUN Allocation</h2>
+        <p class="airdrop-desc">Anyone can look up a Robinhood wallet. Nothing is connected and nothing is signed.</p>
+        <p class="airdrop-desc">If you are eligible, post the result on X. Then connect X and complete tasks to earn more. A Genesis Pass doubles that allocation on claim day.</p>
+
+        <ol class="airdrop-rail" aria-hidden="true">
+          <li class="is-current">
+            <span class="airdrop-rail-n">01</span>
+            <span class="airdrop-rail-label">Check</span>
+          </li>
+          <li>
+            <span class="airdrop-rail-n">02</span>
+            <span class="airdrop-rail-label">Post</span>
+          </li>
+          <li>
+            <span class="airdrop-rail-n">03</span>
+            <span class="airdrop-rail-label">Earn</span>
+          </li>
+        </ol>
 
         <form id="airdropForm" class="airdrop-form" autocomplete="off">
-          <input
-            type="text"
-            id="airdropWalletInput"
-            class="airdrop-input"
-            placeholder="0x..."
-            spellcheck="false"
-            autocomplete="off"
-            aria-label="Wallet address"
-          />
-          <button type="submit" id="airdropCheckBtn" class="home-button primary airdrop-btn">Check Allocation</button>
+          <div class="airdrop-field">
+            <label for="airdropWalletInput" class="airdrop-field-label">Wallet address</label>
+            <input
+              type="text"
+              id="airdropWalletInput"
+              class="airdrop-input"
+              placeholder="0x…"
+              spellcheck="false"
+              autocomplete="off"
+              autocapitalize="off"
+            />
+            <span class="airdrop-field-hint">Any EVM address. Checked against the VERUN allocation snapshot.</span>
+          </div>
+
+          <button type="submit" id="airdropCheckBtn" class="home-button primary airdrop-btn">Check allocation</button>
         </form>
 
         <div class="airdrop-result" id="airdropResult" style="display:none;" aria-live="polite"></div>
+
+        <p class="airdrop-fine">This reads the snapshot. It is not a claim. Claim day is announced separately. Genesis Pass holders receive 2× the snapshot allocation on that day.</p>
       </div>
     </div>
 
@@ -2747,8 +2809,8 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
   let isChecking = false;
 
   function truncateWallet(address) {
-    if (typeof address !== "string" || address.length < 14) return address || "";
-    return address.slice(0, 6) + "..." + address.slice(-5);
+    if (typeof address !== "string" || address.length < 12) return address || "";
+    return address.slice(0, 6) + "…" + address.slice(-4);
   }
 
   // Adds thousands separators without adding or rounding decimal digits.
@@ -2762,7 +2824,7 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
   function setLoading(loading) {
     isChecking = loading;
     button.disabled = loading;
-    button.textContent = loading ? "Checking..." : "Check Allocation";
+    button.textContent = loading ? "Checking…" : "Check allocation";
   }
 
   function showMessage(message, tone) {
@@ -2775,36 +2837,39 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
     resultBox.appendChild(p);
   }
 
-  function addRow(label, value, valueClass) {
-    const row = document.createElement("div");
-    row.className = "airdrop-row";
-
-    const labelEl = document.createElement("span");
-    labelEl.className = "airdrop-row-label";
-    labelEl.textContent = label;
-
-    const valueEl = document.createElement("span");
-    valueEl.className = "airdrop-row-value" + (valueClass ? " " + valueClass : "");
-    valueEl.textContent = value;
-
-    row.appendChild(labelEl);
-    row.appendChild(valueEl);
-    resultBox.appendChild(row);
-  }
-
   function showAllocation(data) {
     resultBox.style.display = "block";
     resultBox.className = "airdrop-result airdrop-result-success";
     resultBox.innerHTML = "";
 
-    addRow("Wallet", truncateWallet(data.wallet));
-    addRow("Qualifying Transactions", formatWithCommas(data.qualifying_tx_count));
-    addRow("Your Allocation", formatWithCommas(data.allocation) + " VERUN");
-    addRow(
-      "Eligible",
-      data.eligible ? "✓ Yes" : "✗ No",
-      data.eligible ? "is-eligible" : "is-not-eligible"
-    );
+    const figure = document.createElement("p");
+    figure.className = "airdrop-figure";
+    figure.textContent = formatWithCommas(data.allocation);
+    const figureSuffix = document.createElement("span");
+    figureSuffix.textContent = "$VERUN";
+    figure.appendChild(figureSuffix);
+
+    const meta = document.createElement("p");
+    meta.className = "airdrop-meta";
+
+    const walletEl = document.createElement("b");
+    walletEl.textContent = truncateWallet(data.wallet);
+
+    const txEl = document.createElement("b");
+    txEl.textContent = formatWithCommas(data.qualifying_tx_count) + " transactions";
+
+    const eligibleEl = document.createElement("span");
+    eligibleEl.className = data.eligible ? "is-eligible" : "";
+    eligibleEl.textContent = data.eligible ? "Eligible" : "Not eligible";
+
+    meta.appendChild(walletEl);
+    meta.appendChild(document.createTextNode(" · "));
+    meta.appendChild(txEl);
+    meta.appendChild(document.createTextNode(" · "));
+    meta.appendChild(eligibleEl);
+
+    resultBox.appendChild(figure);
+    resultBox.appendChild(meta);
   }
 
   async function checkAllocation() {
@@ -2813,12 +2878,12 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
     const wallet = input.value.trim();
 
     if (!EVM_ADDRESS_RE.test(wallet)) {
-      showMessage("Please enter a valid EVM wallet address.", "error");
+      showMessage("Enter a valid EVM address. It should start with 0x and be 42 characters.", "error");
       return;
     }
 
     setLoading(true);
-    showMessage("Checking allocation...", "info");
+    showMessage("Checking…", "info");
 
     try {
       const response = await fetch(AIRDROP_ENDPOINT, {
@@ -2832,19 +2897,19 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
       });
 
       if (response.status === 400) {
-        showMessage("Please enter a valid EVM wallet address.", "error");
+        showMessage("Enter a valid EVM address. It should start with 0x and be 42 characters.", "error");
         return;
       }
 
       if (!response.ok) {
-        showMessage("Something went wrong while checking your allocation. Please try again.", "error");
+        showMessage("The allocation check failed. Try again.", "error");
         return;
       }
 
       const data = await response.json();
 
       if (data && data.error === "invalid_wallet") {
-        showMessage("Please enter a valid EVM wallet address.", "error");
+        showMessage("Enter a valid EVM address. It should start with 0x and be 42 characters.", "error");
         return;
       }
 
@@ -2854,7 +2919,7 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
         showMessage("No VERUN airdrop allocation was found for this wallet.", "info");
       }
     } catch (err) {
-      showMessage("Network error — please check your connection and try again.", "error");
+      showMessage("Network error. Check your connection and try again.", "error");
     } finally {
       setLoading(false);
     }
