@@ -1361,7 +1361,6 @@
   font-size: clamp(24px, 4.5vw, 32px);
   line-height: 1.1;
   letter-spacing: -1px;
-  font-weight: 500;
 }
 
 .airdrop-desc {
@@ -1428,7 +1427,6 @@
 .airdrop-card-title {
   font-size: 20px;
   letter-spacing: -0.4px;
-  font-weight: 500;
 }
 
 .airdrop-blurb {
@@ -1539,7 +1537,7 @@ html[data-theme="light"] .airdrop-input {
 
 .airdrop-figure {
   font-size: 32px;
-  font-weight: 500;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.5px;
 }
@@ -2451,8 +2449,8 @@ html[data-theme="light"] .airdrop-input {
       <div class="airdrop-card">
         <div class="airdrop-kicker">Airdrop Snapshot</div>
         <h2 class="airdrop-heading">Check Your $VERUN Allocation</h2>
-        <p class="airdrop-desc">Anyone can look up a Robinhood wallet. Nothing is connected and nothing is signed.</p>
-        <p class="airdrop-desc">If you are eligible, post the result on X. Then connect X and complete tasks to earn more. A Genesis Pass doubles that allocation on claim day.</p>
+        <p class="airdrop-desc">Look up any Robinhood wallet — no connection, no signature.</p>
+        <p class="airdrop-desc">Eligible? Post it on X, then connect X to earn more. A Genesis Pass doubles it on claim day.</p>
 
         <ol class="airdrop-rail" id="airdropRail" aria-hidden="true">
           <li class="is-active" data-step="1">
@@ -2472,7 +2470,7 @@ html[data-theme="light"] .airdrop-input {
         <div class="airdrop-headrow">
           <div>
             <h3 class="airdrop-card-title" id="airdropTitle">Check an allocation</h3>
-            <p class="airdrop-blurb" id="airdropBlurb">Paste a Robinhood wallet. The lookup is anonymous — no connection and no signature.</p>
+            <p class="airdrop-blurb" id="airdropBlurb">Paste a wallet. Anonymous — no connection, no signature.</p>
           </div>
           <button class="airdrop-linkish" id="airdropResetBtn" type="button" hidden>New lookup</button>
         </div>
@@ -2489,7 +2487,7 @@ html[data-theme="light"] .airdrop-input {
               autocomplete="off"
               autocapitalize="off"
             />
-            <span class="airdrop-field-hint">Any EVM address. Checked against the VERUN allocation snapshot.</span>
+            <span class="airdrop-field-hint">Any EVM address, checked against the snapshot.</span>
           </div>
 
           <p class="airdrop-error" id="airdropFormErr" hidden></p>
@@ -2501,7 +2499,7 @@ html[data-theme="light"] .airdrop-input {
         <div id="airdropAnnounce" hidden></div>
         <div id="airdropEarn" hidden></div>
 
-        <p class="airdrop-fine">This reads the snapshot. It is not a claim. Claim day is announced separately. Genesis Pass holders receive 2× the snapshot allocation on that day.</p>
+        <p class="airdrop-fine">This reads the snapshot — it's not a claim. Claim day is announced separately; Genesis Pass holders get 2×.</p>
       </div>
     </div>
 
@@ -2974,10 +2972,10 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
   if (!form || !input || !button || !resultBox || !announceBox || !earnBox) return;
 
   const tasks = [
-    ["Connect X", "Sign in inside the Verun app. Tasks, referrals, and the claim desk stay locked until you do.", "Entry"],
-    ["Complete tasks", "Campaign tasks are checked manually. Approved work credits XP, which later converts toward more $VERUN.", "XP"],
-    ["Keep the daily streak", "Come back each day. Missing a day costs 1,000 XP to restore the streak.", "Streak"],
-    ["Mint a Genesis Pass", "On claim day the pass doubles the allocation shown here. It also doubles task XP and unlocks mining.", "2× claim"]
+    ["Connect X", "Sign in to unlock tasks, referrals, and the claim desk.", "Entry"],
+    ["Complete tasks", "Approved tasks credit XP, which converts toward more $VERUN.", "XP"],
+    ["Keep the daily streak", "Come back daily. Missing a day costs 1,000 XP to restore it.", "Streak"],
+    ["Mint a Genesis Pass", "Doubles your allocation and task XP, and unlocks mining.", "2× claim"]
   ];
 
   let isChecking = false;
@@ -3066,16 +3064,16 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
 
     if (phase === "announce" && found) {
       titleEl.textContent = "Your allocation";
-      blurbEl.textContent = "Post this result on X. The next step, connecting X and completing tasks, unlocks after you publish.";
+      blurbEl.textContent = "Post it on X to unlock connecting X and earning more.";
     } else if (phase === "earn" && found) {
       titleEl.textContent = "Earn more than the snapshot";
-      blurbEl.textContent = "The snapshot is the base. Connect X and complete tasks to earn more. A Genesis Pass doubles the figure on claim day.";
+      blurbEl.textContent = "Connect X and complete tasks to earn more. A Genesis Pass doubles it on claim day.";
     } else if (phase === "earn") {
       titleEl.textContent = "Nothing on this snapshot";
-      blurbEl.textContent = "This address is not on the snapshot. You can still earn before claim day by connecting X and completing tasks.";
+      blurbEl.textContent = "Not on the snapshot yet — you can still earn before claim day.";
     } else {
       titleEl.textContent = "Check an allocation";
-      blurbEl.textContent = "Paste a Robinhood wallet. The lookup is anonymous — no connection and no signature.";
+      blurbEl.textContent = "Paste a wallet. Anonymous — no connection, no signature.";
     }
   }
 
@@ -3084,7 +3082,7 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
     return (
       '<p class="airdrop-figure">' + escapeHtml(a.allocationDisplay) + '<span>$VERUN</span></p>' +
       '<p class="airdrop-meta"><b>' + escapeHtml(truncateWallet(a.wallet)) + '</b> · <b>' + escapeHtml(formatWithCommas(a.qualifyingTx)) + ' transactions</b> · <span class="' + (a.eligible ? "is-eligible" : "") + '">' + (a.eligible ? "Eligible" : "Not eligible") + '</span></p>' +
-      '<div class="airdrop-pass"><b>Genesis Pass on claim day: </b><b class="accent">' + escapeHtml(d || "2×") + (d ? " $VERUN" : "") + '</b><p>Minting a pass doubles this allocation. Without one, claim day pays the snapshot figure.</p></div>'
+      '<div class="airdrop-pass"><b>Genesis Pass on claim day: </b><b class="accent">' + escapeHtml(d || "2×") + (d ? " $VERUN" : "") + '</b><p>Minting a pass doubles this.</p></div>'
     );
   }
 
@@ -3092,14 +3090,14 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
     return (
       '<div class="airdrop-section">' +
         '<h3>Post this on X</h3>' +
-        '<p class="airdrop-blurb">Publish it, then continue. Connecting X and the task list open after the post.</p>' +
+        '<p class="airdrop-blurb">Publish it to unlock the next step.</p>' +
         '<div class="airdrop-row-btns">' +
           '<a class="home-button primary airdrop-btn" id="airdropPostLink" href="#" target="_blank" rel="noreferrer">Post on X</a>' +
           '<button class="home-button secondary airdrop-btn" id="airdropCopyBtn" type="button">Copy text</button>' +
           '<button class="home-button secondary airdrop-btn" id="airdropPublishedBtn" type="button">I published the post</button>' +
         '</div>' +
-        '<p class="airdrop-error" id="airdropBlockMsg" hidden>Open the post on X first. After it is live, continue to connect and earn.</p>' +
-        '<p class="airdrop-error" id="airdropCopyMsg" hidden>Copy was blocked by the browser. Select the text below instead.</p>' +
+        '<p class="airdrop-error" id="airdropBlockMsg" hidden>Post it on X first, then continue.</p>' +
+        '<p class="airdrop-error" id="airdropCopyMsg" hidden>Copy blocked — select the text below.</p>' +
         '<blockquote class="airdrop-quote" id="airdropQuote"></blockquote>' +
       '</div>'
     );
@@ -3114,7 +3112,7 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
         '<p class="airdrop-blurb">' + escapeHtml(lookup.message) + '</p>' +
         '<p class="airdrop-field-hint">' + escapeHtml(truncateWallet(lookup.wallet)) + '</p>' +
         '<div class="airdrop-pass"><b>A Genesis Pass still doubles claim day</b>' +
-        '<p>Earn an allocation through tasks, then mint a pass. On claim day the pass pays 2× that allocation.</p></div>';
+        '<p>Earn an allocation through tasks, then mint a pass for 2× on claim day.</p></div>';
     }
 
     const items = tasks.map(function (t, i) {
@@ -3132,10 +3130,10 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
       '<div class="airdrop-section">' +
         top +
         '<h3' + (missing ? ' style="margin-top:24px"' : '') + '>Connect X and complete tasks</h3>' +
-        '<p class="airdrop-blurb">XP from tasks converts toward more $VERUN. The work is done in the app, after X is connected, and reviewed before it counts.</p>' +
+        '<p class="airdrop-blurb">XP converts toward more $VERUN. Tasks are reviewed before they count.</p>' +
         '<ol class="airdrop-tasks">' + items + '</ol>' +
         '<a class="home-button primary airdrop-btn" href="' + APP_URL + '" target="_blank" rel="noreferrer">Connect X</a>' +
-        '<p class="airdrop-hint-center">Opens the Verun app, where X sign-in and tasks live.</p>' +
+        '<p class="airdrop-hint-center">Opens the Verun app.</p>' +
       '</div>'
     );
   }
@@ -3247,7 +3245,7 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
       return {
         status: "missing",
         wallet: typeof data.wallet === "string" ? data.wallet : wallet,
-        message: (typeof data.message === "string" && data.message) ? data.message : "No VERUN airdrop allocation was found for this wallet."
+        message: (typeof data.message === "string" && data.message) ? data.message : "No VERUN allocation found for this wallet."
       };
     } catch (err) {
       return { status: "error", message: "Network error. Check your connection and try again." };
