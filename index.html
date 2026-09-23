@@ -1389,9 +1389,10 @@
 .airdrop-rail li {
   border-top: 2px solid var(--border);
   padding-top: 10px;
+  transition: border-color 0.2s ease;
 }
 
-.airdrop-rail li.is-current {
+.airdrop-rail li.is-active {
   border-color: var(--green);
 }
 
@@ -1402,21 +1403,60 @@
   margin-bottom: 2px;
 }
 
-.airdrop-rail li.is-current .airdrop-rail-n {
+.airdrop-rail li.is-active .airdrop-rail-n {
   color: var(--green);
 }
 
 .airdrop-rail-label {
   display: block;
   font-size: 13px;
-}
-
-.airdrop-rail li:not(.is-current) .airdrop-rail-label {
   color: var(--muted);
 }
 
+.airdrop-rail li.is-active .airdrop-rail-label {
+  color: var(--text);
+}
+
+.airdrop-headrow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.airdrop-card-title {
+  font-size: 20px;
+  letter-spacing: -0.4px;
+  font-weight: 500;
+}
+
+.airdrop-blurb {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.6;
+  margin-top: 8px;
+  max-width: 44ch;
+}
+
+.airdrop-linkish {
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font-size: 10.5px;
+  letter-spacing: 0.4px;
+  padding: 4px 0;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.airdrop-linkish:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
 .airdrop-form {
-  margin-top: 26px;
+  margin-top: 20px;
 }
 
 .airdrop-field {
@@ -1466,6 +1506,13 @@ html[data-theme="light"] .airdrop-input {
   margin-top: 8px;
 }
 
+.airdrop-error {
+  color: #ff8a8a;
+  font-size: 11.5px;
+  line-height: 1.6;
+  margin-top: 10px;
+}
+
 .airdrop-btn {
   width: 100%;
   margin-top: 16px;
@@ -1486,28 +1533,8 @@ html[data-theme="light"] .airdrop-input {
   margin-top: 22px;
   padding: 18px 20px;
   border-radius: 12px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,0.02);
-}
-
-.airdrop-result-success {
-  border-color: var(--green-border);
+  border: 1px solid var(--green-border);
   background: var(--green-soft);
-}
-
-.airdrop-result-error {
-  border-color: rgba(255,120,120,0.3);
-  background: rgba(255,120,120,0.06);
-}
-
-.airdrop-message {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.airdrop-result-error .airdrop-message {
-  color: #ff8a8a;
 }
 
 .airdrop-figure {
@@ -1539,6 +1566,125 @@ html[data-theme="light"] .airdrop-input {
   color: var(--green);
 }
 
+.airdrop-pass {
+  margin-top: 16px;
+  border: 1px solid var(--green-border);
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.airdrop-pass b {
+  color: var(--text);
+}
+
+.airdrop-pass .accent {
+  color: var(--green);
+}
+
+.airdrop-pass p {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.airdrop-message {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.airdrop-section {
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+
+.airdrop-section h3 {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+}
+
+.airdrop-row-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.airdrop-row-btns .airdrop-btn {
+  margin-top: 0;
+}
+
+.airdrop-quote {
+  margin-top: 16px;
+  white-space: pre-wrap;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.airdrop-tasks {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.airdrop-tasks li {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 4px 12px;
+  align-items: start;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+
+.airdrop-tasks li:first-child {
+  border-top: 0;
+}
+
+.airdrop-tasks .n {
+  font-size: 11px;
+  color: var(--muted2);
+  padding-top: 1px;
+}
+
+.airdrop-tasks b {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.airdrop-tasks p {
+  grid-column: 2;
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.airdrop-tasks .reward {
+  grid-column: 2;
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: var(--green);
+}
+
+.airdrop-hint-center {
+  text-align: center;
+  color: var(--muted2);
+  font-size: 10.5px;
+  margin-top: 10px;
+}
+
 .airdrop-fine {
   color: var(--muted2);
   font-size: 10.5px;
@@ -1559,6 +1705,7 @@ html[data-theme="light"] .airdrop-input {
     font-size: 12px;
   }
 }
+
 
 .home-button {
   display:inline-flex; align-items:center; justify-content:center;
@@ -2307,20 +2454,28 @@ html[data-theme="light"] .airdrop-input {
         <p class="airdrop-desc">Anyone can look up a Robinhood wallet. Nothing is connected and nothing is signed.</p>
         <p class="airdrop-desc">If you are eligible, post the result on X. Then connect X and complete tasks to earn more. A Genesis Pass doubles that allocation on claim day.</p>
 
-        <ol class="airdrop-rail" aria-hidden="true">
-          <li class="is-current">
+        <ol class="airdrop-rail" id="airdropRail" aria-hidden="true">
+          <li class="is-active" data-step="1">
             <span class="airdrop-rail-n">01</span>
             <span class="airdrop-rail-label">Check</span>
           </li>
-          <li>
+          <li data-step="2">
             <span class="airdrop-rail-n">02</span>
             <span class="airdrop-rail-label">Post</span>
           </li>
-          <li>
+          <li data-step="3">
             <span class="airdrop-rail-n">03</span>
             <span class="airdrop-rail-label">Earn</span>
           </li>
         </ol>
+
+        <div class="airdrop-headrow">
+          <div>
+            <h3 class="airdrop-card-title" id="airdropTitle">Check an allocation</h3>
+            <p class="airdrop-blurb" id="airdropBlurb">Paste a Robinhood wallet. The lookup is anonymous — no connection and no signature.</p>
+          </div>
+          <button class="airdrop-linkish" id="airdropResetBtn" type="button" hidden>New lookup</button>
+        </div>
 
         <form id="airdropForm" class="airdrop-form" autocomplete="off">
           <div class="airdrop-field">
@@ -2337,10 +2492,14 @@ html[data-theme="light"] .airdrop-input {
             <span class="airdrop-field-hint">Any EVM address. Checked against the VERUN allocation snapshot.</span>
           </div>
 
+          <p class="airdrop-error" id="airdropFormErr" hidden></p>
+
           <button type="submit" id="airdropCheckBtn" class="home-button primary airdrop-btn">Check allocation</button>
         </form>
 
-        <div class="airdrop-result" id="airdropResult" style="display:none;" aria-live="polite"></div>
+        <div class="airdrop-result" id="airdropResult" hidden aria-live="polite"></div>
+        <div id="airdropAnnounce" hidden></div>
+        <div id="airdropEarn" hidden></div>
 
         <p class="airdrop-fine">This reads the snapshot. It is not a claim. Claim day is announced separately. Genesis Pass holders receive 2× the snapshot allocation on that day.</p>
       </div>
@@ -2797,16 +2956,40 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
 // ============================================
 (function () {
   const AIRDROP_ENDPOINT = "https://lhfgozlkeotxyzqowijz.supabase.co/functions/v1/check-airdrop";
+  const APP_URL = "/app/";
   const EVM_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 
   const form = document.getElementById("airdropForm");
   const input = document.getElementById("airdropWalletInput");
   const button = document.getElementById("airdropCheckBtn");
+  const formErr = document.getElementById("airdropFormErr");
   const resultBox = document.getElementById("airdropResult");
+  const announceBox = document.getElementById("airdropAnnounce");
+  const earnBox = document.getElementById("airdropEarn");
+  const railItems = document.querySelectorAll("#airdropRail li");
+  const titleEl = document.getElementById("airdropTitle");
+  const blurbEl = document.getElementById("airdropBlurb");
+  const resetBtn = document.getElementById("airdropResetBtn");
 
-  if (!form || !input || !button || !resultBox) return;
+  if (!form || !input || !button || !resultBox || !announceBox || !earnBox) return;
+
+  const tasks = [
+    ["Connect X", "Sign in inside the Verun app. Tasks, referrals, and the claim desk stay locked until you do.", "Entry"],
+    ["Complete tasks", "Campaign tasks are checked manually. Approved work credits XP, which later converts toward more $VERUN.", "XP"],
+    ["Keep the daily streak", "Come back each day. Missing a day costs 1,000 XP to restore the streak.", "Streak"],
+    ["Mint a Genesis Pass", "On claim day the pass doubles the allocation shown here. It also doubles task XP and unlocks mining.", "2× claim"]
+  ];
 
   let isChecking = false;
+  let phase = "form"; // "form" | "announce" | "earn"
+  let lookup = null;
+  let composerOpened = false;
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str == null ? "" : String(str);
+    return div.innerHTML;
+  }
 
   function truncateWallet(address) {
     if (typeof address !== "string" || address.length < 12) return address || "";
@@ -2815,10 +2998,47 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
 
   // Adds thousands separators without adding or rounding decimal digits.
   function formatWithCommas(numberLike) {
-    const str = String(numberLike);
+    const str = String(numberLike).replace(/,/g, "");
+    if (!/^\d+(\.\d+)?$/.test(str)) return String(numberLike);
     const parts = str.split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     return parts.join(".");
+  }
+
+  // Doubles a decimal string exactly (no float rounding) for the
+  // Genesis Pass claim-day preview.
+  function doubled(v) {
+    const s = String(v).replace(/,/g, "");
+    if (!/^\d+(\.\d+)?$/.test(s)) return null;
+    if (!s.includes(".")) return formatWithCommas((BigInt(s) * 2n).toString());
+    const parts = s.split(".");
+    const w = parts[0];
+    const f = parts[1];
+    const scale = 10n ** BigInt(f.length);
+    const base = BigInt(w) * scale + BigInt(f);
+    const d = base * 2n;
+    const nw = d / scale;
+    const nf = (d % scale).toString().padStart(f.length, "0").replace(/0+$/, "");
+    return formatWithCommas(nf ? nw + "." + nf : nw.toString());
+  }
+
+  function num(v) {
+    if (typeof v === "number" && Number.isFinite(v)) return Number.isInteger(v) ? v.toFixed(0) : String(v);
+    if (typeof v === "string") return v.replace(/,/g, "").trim();
+    return "";
+  }
+
+  function tweetText(display) {
+    return [
+      "My $VERUN airdrop allocation is " + display + " $VERUN.",
+      "",
+      "Checked the public snapshot. No wallet connection.",
+      "",
+      "Genesis Pass holders receive 2× this allocation on claim day.",
+      "",
+      "@VerunCrypto",
+      "https://veruncrypto.xyz"
+    ].join("\n");
   }
 
   function setLoading(loading) {
@@ -2827,63 +3047,170 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
     button.textContent = loading ? "Checking…" : "Check allocation";
   }
 
-  function showMessage(message, tone) {
-    resultBox.style.display = "block";
-    resultBox.className = "airdrop-result airdrop-result-" + (tone || "info");
-    resultBox.innerHTML = "";
-    const p = document.createElement("p");
-    p.className = "airdrop-message";
-    p.textContent = message;
-    resultBox.appendChild(p);
+  function updateRail() {
+    const found = lookup && lookup.status === "found";
+    const step = phase === "form" ? 1 : phase === "announce" ? 2 : 3;
+    railItems.forEach(function (li) {
+      const n = Number(li.dataset.step);
+      const active = n === 1 ? true : n === 2 ? Boolean(found && step >= 2) : step === 3;
+      li.classList.toggle("is-active", active);
+    });
   }
 
-  function showAllocation(data) {
-    resultBox.style.display = "block";
-    resultBox.className = "airdrop-result airdrop-result-success";
-    resultBox.innerHTML = "";
+  function updateTitles() {
+    const found = lookup && lookup.status === "found";
+    if (resetBtn) resetBtn.hidden = phase === "form";
+    form.hidden = phase !== "form";
 
-    const figure = document.createElement("p");
-    figure.className = "airdrop-figure";
-    figure.textContent = formatWithCommas(data.allocation);
-    const figureSuffix = document.createElement("span");
-    figureSuffix.textContent = "$VERUN";
-    figure.appendChild(figureSuffix);
+    if (!titleEl || !blurbEl) return;
 
-    const meta = document.createElement("p");
-    meta.className = "airdrop-meta";
-
-    const walletEl = document.createElement("b");
-    walletEl.textContent = truncateWallet(data.wallet);
-
-    const txEl = document.createElement("b");
-    txEl.textContent = formatWithCommas(data.qualifying_tx_count) + " transactions";
-
-    const eligibleEl = document.createElement("span");
-    eligibleEl.className = data.eligible ? "is-eligible" : "";
-    eligibleEl.textContent = data.eligible ? "Eligible" : "Not eligible";
-
-    meta.appendChild(walletEl);
-    meta.appendChild(document.createTextNode(" · "));
-    meta.appendChild(txEl);
-    meta.appendChild(document.createTextNode(" · "));
-    meta.appendChild(eligibleEl);
-
-    resultBox.appendChild(figure);
-    resultBox.appendChild(meta);
+    if (phase === "announce" && found) {
+      titleEl.textContent = "Your allocation";
+      blurbEl.textContent = "Post this result on X. The next step, connecting X and completing tasks, unlocks after you publish.";
+    } else if (phase === "earn" && found) {
+      titleEl.textContent = "Earn more than the snapshot";
+      blurbEl.textContent = "The snapshot is the base. Connect X and complete tasks to earn more. A Genesis Pass doubles the figure on claim day.";
+    } else if (phase === "earn") {
+      titleEl.textContent = "Nothing on this snapshot";
+      blurbEl.textContent = "This address is not on the snapshot. You can still earn before claim day by connecting X and completing tasks.";
+    } else {
+      titleEl.textContent = "Check an allocation";
+      blurbEl.textContent = "Paste a Robinhood wallet. The lookup is anonymous — no connection and no signature.";
+    }
   }
 
-  async function checkAllocation() {
-    if (isChecking) return;
+  function resultHTML(a) {
+    const d = a.doubledDisplay;
+    return (
+      '<p class="airdrop-figure">' + escapeHtml(a.allocationDisplay) + '<span>$VERUN</span></p>' +
+      '<p class="airdrop-meta"><b>' + escapeHtml(truncateWallet(a.wallet)) + '</b> · <b>' + escapeHtml(formatWithCommas(a.qualifyingTx)) + ' transactions</b> · <span class="' + (a.eligible ? "is-eligible" : "") + '">' + (a.eligible ? "Eligible" : "Not eligible") + '</span></p>' +
+      '<div class="airdrop-pass"><b>Genesis Pass on claim day: </b><b class="accent">' + escapeHtml(d || "2×") + (d ? " $VERUN" : "") + '</b><p>Minting a pass doubles this allocation. Without one, claim day pays the snapshot figure.</p></div>'
+    );
+  }
 
-    const wallet = input.value.trim();
+  function announceHTML() {
+    return (
+      '<div class="airdrop-section">' +
+        '<h3>Post this on X</h3>' +
+        '<p class="airdrop-blurb">Publish it, then continue. Connecting X and the task list open after the post.</p>' +
+        '<div class="airdrop-row-btns">' +
+          '<a class="home-button primary airdrop-btn" id="airdropPostLink" href="#" target="_blank" rel="noreferrer">Post on X</a>' +
+          '<button class="home-button secondary airdrop-btn" id="airdropCopyBtn" type="button">Copy text</button>' +
+          '<button class="home-button secondary airdrop-btn" id="airdropPublishedBtn" type="button">I published the post</button>' +
+        '</div>' +
+        '<p class="airdrop-error" id="airdropBlockMsg" hidden>Open the post on X first. After it is live, continue to connect and earn.</p>' +
+        '<p class="airdrop-error" id="airdropCopyMsg" hidden>Copy was blocked by the browser. Select the text below instead.</p>' +
+        '<blockquote class="airdrop-quote" id="airdropQuote"></blockquote>' +
+      '</div>'
+    );
+  }
 
-    if (!EVM_ADDRESS_RE.test(wallet)) {
-      showMessage("Enter a valid EVM address. It should start with 0x and be 42 characters.", "error");
-      return;
+  function earnHTML() {
+    const missing = lookup && lookup.status === "missing";
+    let top = "";
+
+    if (missing) {
+      top =
+        '<p class="airdrop-blurb">' + escapeHtml(lookup.message) + '</p>' +
+        '<p class="airdrop-field-hint">' + escapeHtml(truncateWallet(lookup.wallet)) + '</p>' +
+        '<div class="airdrop-pass"><b>A Genesis Pass still doubles claim day</b>' +
+        '<p>Earn an allocation through tasks, then mint a pass. On claim day the pass pays 2× that allocation.</p></div>';
     }
 
-    setLoading(true);
-    showMessage("Checking…", "info");
+    const items = tasks.map(function (t, i) {
+      return (
+        '<li>' +
+          '<span class="n">' + String(i + 1).padStart(2, "0") + '</span>' +
+          '<b>' + escapeHtml(t[0]) + '</b>' +
+          '<p>' + escapeHtml(t[1]) + '</p>' +
+          '<span class="reward">' + escapeHtml(t[2]) + '</span>' +
+        '</li>'
+      );
+    }).join("");
+
+    return (
+      '<div class="airdrop-section">' +
+        top +
+        '<h3' + (missing ? ' style="margin-top:24px"' : '') + '>Connect X and complete tasks</h3>' +
+        '<p class="airdrop-blurb">XP from tasks converts toward more $VERUN. The work is done in the app, after X is connected, and reviewed before it counts.</p>' +
+        '<ol class="airdrop-tasks">' + items + '</ol>' +
+        '<a class="home-button primary airdrop-btn" href="' + APP_URL + '" target="_blank" rel="noreferrer">Connect X</a>' +
+        '<p class="airdrop-hint-center">Opens the Verun app, where X sign-in and tasks live.</p>' +
+      '</div>'
+    );
+  }
+
+  function paint() {
+    updateTitles();
+    updateRail();
+
+    const found = lookup && lookup.status === "found" ? lookup : null;
+
+    if (found && phase !== "form") {
+      resultBox.hidden = false;
+      resultBox.innerHTML = resultHTML(found);
+    } else {
+      resultBox.hidden = true;
+      resultBox.innerHTML = "";
+    }
+
+    if (phase === "announce" && found) {
+      announceBox.hidden = false;
+      announceBox.innerHTML = announceHTML();
+
+      const text = tweetText(found.allocationDisplay);
+      const postLink = document.getElementById("airdropPostLink");
+      const copyBtn = document.getElementById("airdropCopyBtn");
+      const publishedBtn = document.getElementById("airdropPublishedBtn");
+      const quote = document.getElementById("airdropQuote");
+      const blockMsg = document.getElementById("airdropBlockMsg");
+      const copyMsg = document.getElementById("airdropCopyMsg");
+
+      quote.textContent = text;
+      postLink.href = "https://x.com/intent/tweet?text=" + encodeURIComponent(text);
+
+      postLink.addEventListener("click", function () {
+        composerOpened = true;
+        publishedBtn.className = "home-button primary airdrop-btn";
+        blockMsg.hidden = true;
+      });
+
+      copyBtn.addEventListener("click", async function () {
+        try {
+          await navigator.clipboard.writeText(text);
+          copyBtn.textContent = "Copied";
+          setTimeout(function () { copyBtn.textContent = "Copy text"; }, 1600);
+        } catch (e) {
+          copyMsg.hidden = false;
+        }
+      });
+
+      publishedBtn.addEventListener("click", function () {
+        if (!composerOpened) {
+          blockMsg.hidden = false;
+          return;
+        }
+        phase = "earn";
+        paint();
+      });
+    } else {
+      announceBox.hidden = true;
+      announceBox.innerHTML = "";
+    }
+
+    if (phase === "earn") {
+      earnBox.hidden = false;
+      earnBox.innerHTML = earnHTML();
+    } else {
+      earnBox.hidden = true;
+      earnBox.innerHTML = "";
+    }
+  }
+
+  async function lookupWallet(walletRaw) {
+    const wallet = walletRaw.trim();
+
+    if (!EVM_ADDRESS_RE.test(wallet)) return { status: "invalid" };
 
     try {
       const response = await fetch(AIRDROP_ENDPOINT, {
@@ -2896,39 +3223,78 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
         body: JSON.stringify({ wallet: wallet })
       });
 
-      if (response.status === 400) {
-        showMessage("Enter a valid EVM address. It should start with 0x and be 42 characters.", "error");
-        return;
-      }
-
-      if (!response.ok) {
-        showMessage("The allocation check failed. Try again.", "error");
-        return;
-      }
+      if (response.status === 400) return { status: "invalid" };
+      if (!response.ok) return { status: "error", message: "The allocation check failed. Try again." };
 
       const data = await response.json();
 
-      if (data && data.error === "invalid_wallet") {
-        showMessage("Enter a valid EVM address. It should start with 0x and be 42 characters.", "error");
-        return;
+      if (data && data.error === "invalid_wallet") return { status: "invalid" };
+
+      if (data && data.found === true) {
+        const allocation = num(data.allocation) || "0";
+        const tx = num(data.qualifying_tx_count) || "0";
+        return {
+          status: "found",
+          wallet: typeof data.wallet === "string" ? data.wallet : wallet,
+          qualifyingTx: tx,
+          allocation: allocation,
+          allocationDisplay: formatWithCommas(allocation),
+          doubledDisplay: doubled(allocation),
+          eligible: Boolean(data.eligible)
+        };
       }
 
-      if (data && data.found) {
-        showAllocation(data);
-      } else {
-        showMessage("No VERUN airdrop allocation was found for this wallet.", "info");
-      }
+      return {
+        status: "missing",
+        wallet: typeof data.wallet === "string" ? data.wallet : wallet,
+        message: (typeof data.message === "string" && data.message) ? data.message : "No VERUN airdrop allocation was found for this wallet."
+      };
     } catch (err) {
-      showMessage("Network error. Check your connection and try again.", "error");
-    } finally {
-      setLoading(false);
+      return { status: "error", message: "Network error. Check your connection and try again." };
     }
   }
 
-  form.addEventListener("submit", function (e) {
+  form.addEventListener("submit", async function (e) {
     e.preventDefault();
-    checkAllocation();
+    if (isChecking) return;
+
+    setLoading(true);
+    if (formErr) formErr.hidden = true;
+
+    lookup = await lookupWallet(input.value);
+    composerOpened = false;
+
+    if (lookup.status === "found") phase = "announce";
+    else if (lookup.status === "missing") phase = "earn";
+    else phase = "form";
+
+    setLoading(false);
+
+    if (formErr) {
+      if (lookup.status === "invalid") {
+        formErr.hidden = false;
+        formErr.textContent = "Enter a valid EVM address. It should start with 0x and be 42 characters.";
+      } else if (lookup.status === "error") {
+        formErr.hidden = false;
+        formErr.textContent = lookup.message;
+      }
+    }
+
+    paint();
   });
+
+  if (resetBtn) {
+    resetBtn.addEventListener("click", function () {
+      phase = "form";
+      lookup = null;
+      composerOpened = false;
+      input.value = "";
+      if (formErr) formErr.hidden = true;
+      paint();
+    });
+  }
+
+  paint();
 })();
 
 // ============================================
