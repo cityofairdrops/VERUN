@@ -1139,7 +1139,7 @@
   font-size: clamp(30px, 5vw, 46px);
   line-height: 1.05;
   letter-spacing: -1.5px;
-  margin-bottom: 28px;
+  margin-bottom: 44px;
 }
 .home-kicker {
   color:var(--green); font-size:10px; font-weight:900; letter-spacing:2px;
@@ -1357,10 +1357,11 @@
 }
 
 .airdrop-heading {
-  margin-top: 10px;
+  margin-top: 0;
   font-size: clamp(24px, 4.5vw, 32px);
   line-height: 1.1;
   letter-spacing: -1px;
+  text-align: center;
 }
 
 .airdrop-desc {
@@ -1369,6 +1370,16 @@
   line-height: 1.7;
   margin-top: 12px;
   max-width: 44ch;
+}
+
+.airdrop-inline-link {
+  color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.airdrop-inline-link:hover {
+  opacity: 0.85;
 }
 
 .airdrop-desc + .airdrop-desc {
@@ -2447,10 +2458,10 @@ html[data-theme="light"] .airdrop-input {
     -->
     <div class="home-airdrop-wrap" id="homeAirdropWrap">
       <div class="airdrop-card">
-        <div class="airdrop-kicker">Airdrop Snapshot</div>
-        <h2 class="airdrop-heading">Check Your $VERUN Allocation</h2>
+        <h2 class="airdrop-heading">Check Your $VERUN Airdrop Allocation</h2>
         <p class="airdrop-desc">Look up any Robinhood wallet — no connection, no signature.</p>
-        <p class="airdrop-desc">Eligible? Post it on X, then connect X to earn more. A Genesis Pass doubles it on claim day.</p>
+        <p class="airdrop-desc">Airdrop Snapshot Block: 68,086,309</p>
+        <p class="airdrop-desc">Eligible? Post it on X, then connect X to earn more $VERUN. A Verun Genesis Pass holder gets double of their base allocation. Airdrop claim available on 23rd of October in <a class="airdrop-inline-link" href="https://veruncrypto.xyz/app" target="_blank" rel="noreferrer">veruncrypto.xyz/app</a>.</p>
 
         <ol class="airdrop-rail" id="airdropRail" aria-hidden="true">
           <li class="is-active" data-step="1">
@@ -2467,10 +2478,10 @@ html[data-theme="light"] .airdrop-input {
           </li>
         </ol>
 
-        <div class="airdrop-headrow">
+        <div class="airdrop-headrow" id="airdropHeadrow" hidden>
           <div>
-            <h3 class="airdrop-card-title" id="airdropTitle">Check an allocation</h3>
-            <p class="airdrop-blurb" id="airdropBlurb">Paste a wallet. Anonymous — no connection, no signature.</p>
+            <h3 class="airdrop-card-title" id="airdropTitle"></h3>
+            <p class="airdrop-blurb" id="airdropBlurb"></p>
           </div>
           <button class="airdrop-linkish" id="airdropResetBtn" type="button" hidden>New lookup</button>
         </div>
@@ -2487,7 +2498,6 @@ html[data-theme="light"] .airdrop-input {
               autocomplete="off"
               autocapitalize="off"
             />
-            <span class="airdrop-field-hint">Any EVM address, checked against the snapshot.</span>
           </div>
 
           <p class="airdrop-error" id="airdropFormErr" hidden></p>
@@ -2498,12 +2508,10 @@ html[data-theme="light"] .airdrop-input {
         <div class="airdrop-result" id="airdropResult" hidden aria-live="polite"></div>
         <div id="airdropAnnounce" hidden></div>
         <div id="airdropEarn" hidden></div>
-
-        <p class="airdrop-fine">This reads the snapshot — it's not a claim. Claim day is announced separately; Genesis Pass holders get 2×.</p>
       </div>
     </div>
 
-    <div id="homeConnectWrap" style="display:none;">
+    <div id="homeConnectWrap" style="display:none; margin-top:26px;">
       <button id="homeConnectX" class="home-button primary" type="button">Connect X</button>
     </div>
   </div>
@@ -2544,7 +2552,7 @@ html[data-theme="light"] .airdrop-input {
       </div>
       <div class="token-stat-card">
         <div class="token-stat-label">LISTING PRICE</div>
-        <div class="token-stat-value">$0.25</div>
+        <div class="token-stat-value">$2.5</div>
       </div>
       <div class="token-stat-card">
         <div class="token-stat-label">CONTRACT ADDRESS</div>
@@ -2824,10 +2832,10 @@ html[data-theme="light"] .airdrop-input {
       <div class="faq-row">
         <button class="faq-row-head" type="button">
           <span class="faq-index">05</span>
-          <span class="faq-question">Is there a snapshot for the airdrop?</span>
+          <span class="faq-question">What was the community airdrop eligibility criteria?</span>
           <span class="faq-toggle">+</span>
         </button>
-        <div class="faq-answer"><p>Yes. Eligibility will be determined by a snapshot taken ahead of the token generation event. The exact date will be announced closer to launch.</p></div>
+        <div class="faq-answer"><p>Wallets with more than 10 transactions on Robinhood prior to the snapshot are eligible for the airdrop. Before claiming, eligible users can connect X to earn additional $VERUN as a bonus. Non-eligible users can also participate.</p></div>
       </div>
       <div class="faq-row">
         <button class="faq-row-head" type="button">
@@ -2967,6 +2975,7 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
   const railItems = document.querySelectorAll("#airdropRail li");
   const titleEl = document.getElementById("airdropTitle");
   const blurbEl = document.getElementById("airdropBlurb");
+  const headrow = document.getElementById("airdropHeadrow");
   const resetBtn = document.getElementById("airdropResetBtn");
 
   if (!form || !input || !button || !resultBox || !announceBox || !earnBox) return;
@@ -3063,17 +3072,21 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
     if (!titleEl || !blurbEl) return;
 
     if (phase === "announce" && found) {
+      if (headrow) headrow.hidden = false;
       titleEl.textContent = "Your allocation";
       blurbEl.textContent = "Post it on X to unlock connecting X and earning more.";
     } else if (phase === "earn" && found) {
+      if (headrow) headrow.hidden = false;
       titleEl.textContent = "Earn more than the snapshot";
       blurbEl.textContent = "Connect X and complete tasks to earn more. A Genesis Pass doubles it on claim day.";
     } else if (phase === "earn") {
+      if (headrow) headrow.hidden = false;
       titleEl.textContent = "Nothing on this snapshot";
       blurbEl.textContent = "Not on the snapshot yet — you can still earn before claim day.";
     } else {
-      titleEl.textContent = "Check an allocation";
-      blurbEl.textContent = "Paste a wallet. Anonymous — no connection, no signature.";
+      if (headrow) headrow.hidden = true;
+      titleEl.textContent = "";
+      blurbEl.textContent = "";
     }
   }
 
