@@ -1435,6 +1435,10 @@
   margin-top: 28px;
 }
 
+#airdropHeadrow[hidden] {
+  display: none;
+}
+
 .airdrop-card-title {
   font-size: 20px;
   letter-spacing: -0.4px;
@@ -2446,7 +2450,7 @@ html[data-theme="light"] .airdrop-input {
 <div class="home-shell">
 <section class="home-hero">
   <div>
-    <div id="homeGuestHeading" style="display:none;">
+    <div id="homeGuestHeading">
       <h1 class="home-guest-heading">Enter The Verun Ecosystem</h1>
     </div>
 
@@ -2924,18 +2928,17 @@ document.getElementById("homeConnectX").addEventListener("click", async function
 });
 
 // ============================================
-// Only show the "Enter The Verun Ecosystem" heading
-// + "Connect X" button on Home when the user is
-// NOT already connected. The VERUN Airdrop Checker
-// (below) is shown either way — it doesn't require
-// a connected account, just a pasted wallet address.
+// The "Enter The Verun Ecosystem" heading is always
+// visible. Only the "Connect X" button on Home is
+// hidden once the user is already connected. The
+// VERUN Airdrop Checker (below) is shown either way —
+// it doesn't require a connected account, just a
+// pasted wallet address.
 // ============================================
-const homeGuestHeading = document.getElementById("homeGuestHeading");
 const homeConnectWrap = document.getElementById("homeConnectWrap");
 
 function setHomeConnectVisibility(session) {
   const display = session ? "none" : "block";
-  if (homeGuestHeading) homeGuestHeading.style.display = display;
   if (homeConnectWrap) homeConnectWrap.style.display = display;
 }
 
