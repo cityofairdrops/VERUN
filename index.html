@@ -1452,6 +1452,35 @@
   max-width: 44ch;
 }
 
+.airdrop-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid var(--green-border);
+  background: var(--green-soft);
+  color: var(--green);
+  cursor: pointer;
+  transition: transform .35s ease, background .2s ease;
+}
+
+.airdrop-refresh[hidden] {
+  display: none;
+}
+
+.airdrop-refresh:hover {
+  transform: rotate(180deg);
+}
+
+.airdrop-refresh:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
 .airdrop-linkish {
   background: none;
   border: 0;
@@ -2529,7 +2558,9 @@ html[data-theme="light"] .airdrop-input {
             <h3 class="airdrop-card-title" id="airdropTitle"></h3>
             <p class="airdrop-blurb" id="airdropBlurb"></p>
           </div>
-          <button class="airdrop-linkish" id="airdropResetBtn" type="button" hidden>New lookup</button>
+          <button class="airdrop-refresh" id="airdropResetBtn" type="button" aria-label="Refresh and look up another wallet" title="Refresh" hidden>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
+          </button>
         </div>
 
         <form id="airdropForm" class="airdrop-form" autocomplete="off">
@@ -3082,11 +3113,9 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
 
   function tweetText(display) {
     return [
-      "My $VERUN airdrop allocation is " + display + " $VERUN.",
+      "My $VERUN airdrop allocation is " + display + " $VERUN on Robinhood. Airdrop snapshot block : 68,086,309",
       "",
-      "Checked the public snapshot. No wallet connection.",
-      "",
-      "Genesis Pass holders receive 2× this allocation on claim day.",
+      "Verun Genesis Pass holders will receive 2× of the base allocation on claim day. Connect X to earn more $VERUN. Claimable on 7th Nov.",
       "",
       "@VerunCrypto",
       "https://veruncrypto.xyz"
@@ -3164,7 +3193,7 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
     return (
       '<div class="airdrop-section">' +
         '<h3>Post this on X</h3>' +
-        '<p class="airdrop-blurb">Publish it to unlock the next step.</p>' +
+        '<p class="airdrop-blurb">Publish it to unlock the next step and earn more $VERUN.</p>' +
         '<div class="airdrop-row-btns">' +
           '<a class="home-button primary airdrop-btn" id="airdropPostLink" href="#" target="_blank" rel="noreferrer">Post on X</a>' +
           '<button class="home-button secondary airdrop-btn" id="airdropCopyBtn" type="button">Copy text</button>' +
