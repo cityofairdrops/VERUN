@@ -3159,8 +3159,8 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
       blurbEl.textContent = "";
     } else if (phase === "earn") {
       if (headrow) headrow.hidden = false;
-      titleEl.textContent = "Nothing on this snapshot";
-      blurbEl.textContent = "Not on the snapshot yet — you can still earn before claim day.";
+      titleEl.textContent = "Not Eligible";
+      blurbEl.textContent = "";
     } else {
       if (headrow) headrow.hidden = true;
       titleEl.textContent = "";
@@ -3213,10 +3213,9 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
 
     if (missing) {
       top =
-        '<p class="airdrop-blurb">' + escapeHtml(lookup.message) + '</p>' +
+        '<p class="airdrop-blurb">No $VERUN airdrop allocation was found for this wallet.</p>' +
         '<p class="airdrop-field-hint">' + escapeHtml(truncateWallet(lookup.wallet)) + '</p>' +
-        '<div class="airdrop-pass"><b>A Genesis Pass still doubles claim day</b>' +
-        '<p>Earn an allocation through tasks, then mint a pass for 2× on claim day.</p></div>';
+        '<div class="airdrop-pass"><p style="margin-top:0">Not eligible? Still you can earn $VERUN before the claim starts. Connect X and start to earn.</p></div>';
     }
 
     const items = tasks.map(function (t, i) {
