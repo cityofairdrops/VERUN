@@ -3057,10 +3057,11 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
   if (!form || !input || !button || !resultBox || !announceBox || !earnBox) return;
 
   const tasks = [
-    ["Connect X", "Sign in to unlock tasks, referrals, and the claim desk.", "Entry"],
-    ["Complete tasks", "Approved tasks credit XP, which converts toward more $VERUN.", "XP"],
-    ["Keep the daily streak", "Come back daily. Missing a day costs 1,000 XP to restore it.", "Streak"],
-    ["Mint a Genesis Pass", "Doubles your allocation and task XP, and unlocks mining.", "2× claim"]
+    ["Connect X", "Sign in to unlock tasks, referrals, and the claim desk."],
+    ["Complete tasks", "Approved tasks credit XP, which converts toward more $VERUN."],
+    ["Mint a Genesis Pass", "Doubles your allocation and task XP, and unlocks mining."],
+    ["$VERUN Mining", "Total 200000 Verun is available to mine. Only for the Verun Genesis Pass holders."],
+    ["Genesis Code", "To get a 50% flat discount on Verun Genesis Pass mint, use a genesis code. Share your customized genesis code to others and earn upto 1.5 $ETH."]
   ];
 
   let isChecking = false;
@@ -3154,8 +3155,8 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
       blurbEl.textContent = "";
     } else if (phase === "earn" && found) {
       if (headrow) headrow.hidden = false;
-      titleEl.textContent = "Earn more than the snapshot";
-      blurbEl.textContent = "Connect X and complete tasks to earn more. A Genesis Pass doubles it on claim day.";
+      titleEl.textContent = "Earn more $VERUN";
+      blurbEl.textContent = "";
     } else if (phase === "earn") {
       if (headrow) headrow.hidden = false;
       titleEl.textContent = "Nothing on this snapshot";
@@ -3224,7 +3225,6 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
           '<span class="n">' + String(i + 1).padStart(2, "0") + '</span>' +
           '<b>' + escapeHtml(t[0]) + '</b>' +
           '<p>' + escapeHtml(t[1]) + '</p>' +
-          '<span class="reward">' + escapeHtml(t[2]) + '</span>' +
         '</li>'
       );
     }).join("");
@@ -3232,8 +3232,7 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
     return (
       '<div class="airdrop-section">' +
         top +
-        '<h3' + (missing ? ' style="margin-top:24px"' : '') + '>Connect X and complete tasks</h3>' +
-        '<p class="airdrop-blurb">XP converts toward more $VERUN. Tasks are reviewed before they count.</p>' +
+        '<h3' + (missing ? ' style="margin-top:24px"' : '') + '>How To Earn More $VERUN</h3>' +
         '<ol class="airdrop-tasks">' + items + '</ol>' +
         '<a class="home-button primary airdrop-btn" href="' + APP_URL + '" target="_blank" rel="noreferrer">Connect X</a>' +
         '<p class="airdrop-hint-center">Opens the Verun app.</p>' +
