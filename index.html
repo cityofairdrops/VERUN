@@ -1555,6 +1555,7 @@ html[data-theme="light"] .airdrop-input {
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.5px;
+  margin-top: 4px;
 }
 
 .airdrop-figure span {
@@ -1562,6 +1563,47 @@ html[data-theme="light"] .airdrop-input {
   font-size: 13px;
   font-weight: 400;
   margin-left: 8px;
+}
+
+.airdrop-wallet {
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.airdrop-wallet b {
+  font-weight: 700;
+}
+
+.airdrop-claim {
+  margin-top: 12px;
+  line-height: 1.25;
+}
+
+.airdrop-claim-label {
+  display: block;
+  color: var(--green);
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.airdrop-claim-amount {
+  font-size: 32px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+}
+
+.airdrop-claim-unit {
+  color: var(--green);
+  font-size: 18px;
+  font-weight: 700;
+  margin-left: 8px;
+}
+
+.airdrop-claim-label.is-ineligible {
+  color: var(--muted);
 }
 
 .airdrop-meta {
@@ -3074,10 +3116,13 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
 
     if (!titleEl || !blurbEl) return;
 
+    // Hide the blurb element whenever it has no text so it leaves no empty gap
+    const syncBlurb = () => { blurbEl.hidden = !blurbEl.textContent; };
+
     if (phase === "announce" && found) {
       if (headrow) headrow.hidden = false;
       titleEl.textContent = "Your allocation";
-      blurbEl.textContent = "Post it on X to unlock connecting X and earning more.";
+      blurbEl.textContent = "";
     } else if (phase === "earn" && found) {
       if (headrow) headrow.hidden = false;
       titleEl.textContent = "Earn more than the snapshot";
@@ -3091,14 +3136,27 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
       titleEl.textContent = "";
       blurbEl.textContent = "";
     }
+    syncBlurb();
   }
 
   function resultHTML(a) {
     const d = a.doubledDisplay;
+    const wallet = escapeHtml(truncateWallet(a.wallet));
+    const txCount = escapeHtml(formatWithCommas(a.qualifyingTx));
+    const amount = escapeHtml(a.allocationDisplay);
+    const headline = a.eligible
+      ? '<p class="airdrop-claim"><span class="airdrop-claim-label">Eligible to claim</span> ' +
+        '<span class="airdrop-claim-amount">' + amount + '</span><span class="airdrop-claim-unit">$VERUN</span></p>'
+      : '<p class="airdrop-claim"><span class="airdrop-claim-label is-ineligible">Not eligible</span> ' +
+        '<span class="airdrop-claim-amount">' + amount + '</span><span class="airdrop-claim-unit">$VERUN</span></p>';
     return (
-      '<p class="airdrop-figure">' + escapeHtml(a.allocationDisplay) + '<span>$VERUN</span></p>' +
-      '<p class="airdrop-meta"><b>' + escapeHtml(truncateWallet(a.wallet)) + '</b> · <b>' + escapeHtml(formatWithCommas(a.qualifyingTx)) + ' transactions</b> · <span class="' + (a.eligible ? "is-eligible" : "") + '">' + (a.eligible ? "Eligible" : "Not eligible") + '</span></p>' +
-      '<div class="airdrop-pass"><b>Genesis Pass on claim day: </b><b class="accent">' + escapeHtml(d || "2×") + (d ? " $VERUN" : "") + '</b><p>Minting a pass doubles this.</p></div>'
+      '<p class="airdrop-wallet"><b>' + wallet + '</b> · <b>' + txCount + ' transactions</b></p>' +
+      headline +
+      '<div class="airdrop-pass">' +
+        '<b>With a Verun Genesis Pass </b><b class="accent">' + escapeHtml(d || "2×") + (d ? " $VERUN" : "") + '</b>' +
+        '<p>Only 11,111 Pass available to mint.</p>' +
+        '<p>Mint it here: <a class="airdrop-inline-link" href="https://veruncrypto.xyz/app" target="_blank" rel="noreferrer">veruncrypto.xyz/app</a></p>' +
+      '</div>'
     );
   }
 
