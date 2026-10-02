@@ -4660,6 +4660,36 @@
   opacity: 0.6;
 }
 
+
+/* ============= AIRDROP ROUND 1 REGISTRATION ============= */
+.adr1-card{width:100%;max-width:480px;margin:18px auto 0;padding:24px 22px;border-radius:20px;border:1px solid var(--green-border);background:linear-gradient(180deg,var(--panel),var(--panel2));text-align:left}
+.adr1-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.adr1-title{font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.2px}
+.adr1-tag{font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--green);border:1px solid var(--green-border);background:var(--green-soft);padding:4px 8px;border-radius:999px;white-space:nowrap}
+.adr1-sub{font-size:12.5px;line-height:1.55;color:var(--muted);margin-bottom:16px}
+.adr1-rules{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.adr1-rules span{font-size:11px;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:5px 8px}
+.adr1-label{display:block;font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.adr1-input{width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;outline:none;transition:border-color .15s}
+.adr1-input:focus{border-color:var(--green-border)}
+.adr1-input.is-invalid{border-color:rgba(255,107,107,.6)}
+.adr1-btn{width:100%;margin-top:12px;padding:14px;border:0;border-radius:12px;background:var(--green);color:#04120a;font-weight:800;font-size:14px;cursor:pointer;transition:opacity .15s,transform .1s}
+.adr1-btn:hover:not(:disabled){transform:translateY(-1px)}
+.adr1-btn:disabled{opacity:.45;cursor:not-allowed}
+.adr1-status{margin-top:12px;padding:11px 13px;border-radius:12px;font-size:12.5px;line-height:1.5;border:1px solid var(--border);color:var(--muted);background:var(--green-soft)}
+.adr1-status.is-ok{color:var(--green);border-color:var(--green-border)}
+.adr1-status.is-bad{color:#ff8a8a;border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.07)}
+.adr1-status.is-warn{color:#ffd37a;border-color:rgba(255,211,122,.35);background:rgba(255,211,122,.07)}
+.adr1-reserved-badge{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;color:var(--green);margin-bottom:14px}
+.adr1-grid{display:grid;gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.adr1-row{display:flex;justify-content:space-between;gap:14px;padding:11px 13px;font-size:12.5px;border-bottom:1px solid var(--border)}
+.adr1-row:last-child{border-bottom:0}
+.adr1-row span:first-child{color:var(--muted)}
+.adr1-row span:last-child{color:var(--text);font-weight:600;text-align:right;word-break:break-all}
+.adr1-row.is-final span:last-child{color:var(--green);font-weight:800}
+.adr1-pool{margin-top:12px;font-size:11.5px;color:var(--muted);text-align:center}
+.adr1-hidden{display:none!important}
+
 @media (max-width:520px) {
   .verun-drawer { padding:18px; }
   .verun-guest-card { padding:35px 20px; }
@@ -6173,6 +6203,63 @@
           <span class="airdrop-value" id="airdropCdMs">000</span>
           <span class="airdrop-label">Ms</span>
         </div>
+      </div>
+    </div>
+
+
+    <!-- ROUND 1 REGISTRATION -->
+    <div class="adr1-card" id="adr1Card" aria-live="polite">
+      <div class="adr1-head">
+        <div class="adr1-title">Round 1 Registration</div>
+        <span class="adr1-tag">FCFS &middot; 2,222,000 VERUN</span>
+      </div>
+      <p class="adr1-sub">Connect X, paste your Robinhood Chain wallet address and reserve your full allocation. No wallet connection or signature needed.</p>
+
+      <!-- Loading / checking -->
+      <div id="adr1Loading" class="adr1-status">Checking registration&hellip;</div>
+
+      <!-- Connect X -->
+      <div id="adr1ConnectX" class="adr1-hidden">
+        <div class="adr1-status is-warn">Connect your X account to register for the airdrop.</div>
+        <button type="button" class="adr1-btn" id="adr1ConnectXBtn">Connect X</button>
+      </div>
+
+      <!-- Registration form -->
+      <div id="adr1Form" class="adr1-hidden">
+        <div class="adr1-rules">
+          <span>Robinhood Chain</span>
+          <span>Snapshot block 68,086,309</span>
+          <span>Min. 11 qualifying txs</span>
+          <span>1.1 VERUN / tx</span>
+          <span>Genesis Pass 2&times;</span>
+        </div>
+        <label class="adr1-label" for="adr1Wallet">Robinhood Chain Wallet Address</label>
+        <input class="adr1-input" id="adr1Wallet" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="0x..." maxlength="42">
+        <div id="adr1Status" class="adr1-status adr1-hidden"></div>
+        <button type="button" class="adr1-btn" id="adr1Submit" disabled>Reserve My Allocation</button>
+      </div>
+
+      <!-- Allocation Reserved -->
+      <div id="adr1Reserved" class="adr1-hidden">
+        <div class="adr1-reserved-badge">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12.5l3 3 5-6"/></svg>
+          <span id="adr1ReservedTitle">Allocation Reserved</span>
+        </div>
+        <div class="adr1-grid">
+          <div class="adr1-row"><span>Wallet</span><span id="adr1RWallet">&mdash;</span></div>
+          <div class="adr1-row"><span>Qualifying transactions</span><span id="adr1RTx">&mdash;</span></div>
+          <div class="adr1-row"><span>Base allocation</span><span id="adr1RBase">&mdash;</span></div>
+          <div class="adr1-row"><span>Genesis Pass</span><span id="adr1RGenesis">&mdash;</span></div>
+          <div class="adr1-row"><span>Multiplier</span><span id="adr1RMult">&mdash;</span></div>
+          <div class="adr1-row is-final"><span>Final Round 1 allocation</span><span id="adr1RFinal">&mdash;</span></div>
+          <div class="adr1-row"><span>Registered</span><span id="adr1RTime">&mdash;</span></div>
+        </div>
+        <div class="adr1-pool adr1-hidden" id="adr1RPool"></div>
+      </div>
+
+      <!-- Registration closed -->
+      <div id="adr1Closed" class="adr1-hidden">
+        <div class="adr1-status is-bad">Registration Closed. Round 1 registration is no longer open.</div>
       </div>
     </div>
 
@@ -13689,10 +13776,267 @@ showSection(
   });
 })();
 
+// ============================================
+// AIRDROP ROUND 1 REGISTRATION
+// X auth only. NO wallet connection, signature, or
+// wallet-verification. The wallet address is pasted
+// manually. The backend is authoritative for
+// eligibility, Genesis Pass multiplier, allocation
+// and the 2,222,000 VERUN FCFS pool. Nothing about
+// the allocation is calculated here.
+// ============================================
+(function () {
+  // Backend contract — adjust here if the RPC argument name differs.
+  var RPC_GET = "get_my_airdrop_round1_registration";
+  var RPC_REGISTER = "register_airdrop_round1";
+  var WALLET_PARAM = "p_wallet_address";
+
+  var $ = function (id) { return document.getElementById(id); };
+  var el = {
+    section: $("airdropSection"),
+    loading: $("adr1Loading"), connectX: $("adr1ConnectX"), connectBtn: $("adr1ConnectXBtn"),
+    form: $("adr1Form"), wallet: $("adr1Wallet"), status: $("adr1Status"), submit: $("adr1Submit"),
+    reserved: $("adr1Reserved"), reservedTitle: $("adr1ReservedTitle"), closed: $("adr1Closed"),
+    rWallet: $("adr1RWallet"), rTx: $("adr1RTx"), rBase: $("adr1RBase"), rGenesis: $("adr1RGenesis"),
+    rMult: $("adr1RMult"), rFinal: $("adr1RFinal"), rTime: $("adr1RTime"), rPool: $("adr1RPool")
+  };
+  if (!el.section || !el.form || !window.supabaseClient) return;
+  var sb = window.supabaseClient;
+
+  var busy = false;
+  var loadedForUser = null;
+
+  function show(name) {
+    ["loading", "connectX", "form", "reserved", "closed"].forEach(function (k) {
+      el[k].classList.toggle("adr1-hidden", k !== name);
+    });
+  }
+
+  function setStatus(kind, text) {
+    if (!text) { el.status.classList.add("adr1-hidden"); el.status.textContent = ""; return; }
+    el.status.className = "adr1-status" + (kind ? " is-" + kind : "");
+    el.status.textContent = text;
+  }
+
+  function isValidEvmAddress(a) { return /^0x[0-9a-fA-F]{40}$/.test(a); }
+
+  function pick(o, keys) {
+    for (var i = 0; i < keys.length; i++) {
+      if (o && o[keys[i]] !== undefined && o[keys[i]] !== null) return o[keys[i]];
+    }
+    return null;
+  }
+
+  function fmtNum(v) {
+    if (v === null || v === undefined || v === "") return "\u2014";
+    var n = Number(v);
+    if (!isFinite(n)) return String(v);
+    return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  }
+
+  function fmtVerun(v) {
+    var f = fmtNum(v);
+    return f === "\u2014" ? f : f + " VERUN";
+  }
+
+  function fmtTime(v) {
+    if (!v) return "\u2014";
+    var d = new Date(v);
+    return isNaN(d.getTime()) ? String(v) : d.toLocaleString();
+  }
+
+  // RPCs may return an object, a one-row array, or a JSON string.
+  function normalize(data) {
+    if (typeof data === "string") { try { data = JSON.parse(data); } catch (e) { return null; } }
+    if (Array.isArray(data)) data = data[0];
+    return data && typeof data === "object" ? data : null;
+  }
+
+  function isRegistered(r) {
+    if (!r) return false;
+    var flag = pick(r, ["registered", "is_registered", "already_registered"]);
+    if (flag === false) return false;
+    return flag === true || !!pick(r, ["wallet_address", "wallet", "registered_at", "created_at", "final_allocation"]);
+  }
+
+  function renderReserved(r, justNow) {
+    var mult = pick(r, ["multiplier", "genesis_multiplier"]);
+    var holder = pick(r, ["genesis_pass", "genesis_pass_holder", "has_genesis_pass", "is_genesis_holder"]);
+    if (holder === null && mult !== null) holder = Number(mult) > 1;
+
+    el.reservedTitle.textContent = "Allocation Reserved";
+    el.rWallet.textContent = pick(r, ["wallet_address", "wallet"]) || "\u2014";
+    el.rTx.textContent = fmtNum(pick(r, ["qualifying_transactions", "qualifying_txs", "tx_count", "qualifying_tx_count"]));
+    el.rBase.textContent = fmtVerun(pick(r, ["base_allocation"]));
+    el.rGenesis.textContent = holder === null ? "\u2014" : (holder ? "Holder" : "Not a holder");
+    el.rMult.textContent = mult === null ? "\u2014" : fmtNum(mult) + "\u00d7";
+    el.rFinal.textContent = fmtVerun(pick(r, ["final_allocation", "final_round1_allocation", "allocation", "reserved_allocation"]));
+    el.rTime.textContent = fmtTime(pick(r, ["registered_at", "created_at", "reserved_at"]));
+
+    var remaining = pick(r, ["remaining_pool", "pool_remaining", "remaining"]);
+    if (remaining !== null) {
+      el.rPool.textContent = "Remaining Round 1 pool: " + fmtVerun(remaining);
+      el.rPool.classList.remove("adr1-hidden");
+    } else {
+      el.rPool.classList.add("adr1-hidden");
+    }
+    show("reserved");
+  }
+
+  // Map backend errors/status to the required UI states.
+  function classify(text) {
+    var t = (text || "").toLowerCase();
+    if (/already.*regist|regist.*already|duplicate|unique/.test(t)) return "already";
+    if (/closed|ended|not open|not started/.test(t)) return "closed";
+    if (/pool|remaining|does not fit|insufficient|exhaust|sold out|fully allocated/.test(t)) return "pool";
+    if (/invalid.*(wallet|address)|(wallet|address).*invalid/.test(t)) return "invalid";
+    if (/not eligible|ineligible|not.*snapshot|minimum|qualif|not found/.test(t)) return "noteligible";
+    if (/x account|not authenticated|auth|jwt|login|sign in/.test(t)) return "auth";
+    return "error";
+  }
+
+  function applyOutcome(kind, rawMsg) {
+    if (kind === "already") { loadRegistration(true); return; }
+    if (kind === "closed") { show("closed"); return; }
+    show("form");
+    if (kind === "pool") {
+      setStatus("bad", "Allocation does not fit the remaining pool. Nothing was reserved \u2014 allocations are never partially reserved.");
+    } else if (kind === "invalid") {
+      el.wallet.classList.add("is-invalid");
+      setStatus("bad", "Invalid wallet address.");
+    } else if (kind === "noteligible") {
+      setStatus("bad", "Not eligible. This wallet does not meet the snapshot requirements (Robinhood Chain, block 68,086,309, at least 11 qualifying transactions).");
+    } else if (kind === "auth") {
+      setStatus("warn", "Your X session has expired. Please reconnect X.");
+    } else {
+      setStatus("bad", "Registration Error. " + (rawMsg ? rawMsg : "Please try again."));
+    }
+  }
+
+  function updateFormState() {
+    var v = el.wallet.value.trim();
+    var valid = isValidEvmAddress(v);
+    el.wallet.classList.toggle("is-invalid", v.length > 0 && !valid);
+    el.submit.disabled = busy || !valid;
+    if (busy) return;
+    if (!v) setStatus("", "Enter your Robinhood Chain wallet address.");
+    else if (!valid) setStatus("bad", "Invalid wallet address. It must be a 0x address with 40 hex characters.");
+    else setStatus("ok", "Eligible to submit. The backend will verify this wallet against the snapshot when you reserve.");
+  }
+
+  async function loadRegistration(force) {
+    var sessionRes = await sb.auth.getSession();
+    var session = sessionRes && sessionRes.data && sessionRes.data.session;
+    if (!session) { loadedForUser = null; show("connectX"); return; }
+    if (!force && loadedForUser === session.user.id) return;
+
+    show("loading");
+    el.loading.textContent = "Checking registration\u2026";
+    try {
+      var res = await sb.rpc(RPC_GET);
+      if (res.error) throw res.error;
+      var reg = normalize(res.data);
+      loadedForUser = session.user.id;
+      if (isRegistered(reg)) { renderReserved(reg, false); return; }
+      show("form");
+      updateFormState();
+    } catch (err) {
+      console.error("Airdrop Round 1 lookup failed:", err);
+      var msg = (err && err.message) || "";
+      var kind = classify(msg);
+      if (kind === "closed") { show("closed"); return; }
+      show("form");
+      setStatus("bad", "Registration Error. Could not load your registration status.");
+    }
+  }
+
+  async function submit() {
+    if (busy) return;
+    var address = el.wallet.value.trim();
+    if (!isValidEvmAddress(address)) { updateFormState(); return; }
+
+    // Re-check right before submitting: never offer a second registration.
+    busy = true;
+    el.submit.disabled = true;
+    el.wallet.disabled = true;
+    el.submit.textContent = "Reserving\u2026";
+    setStatus("", "Checking wallet against the snapshot\u2026");
+
+    try {
+      var pre = await sb.rpc(RPC_GET);
+      if (!pre.error && isRegistered(normalize(pre.data))) {
+        renderReserved(normalize(pre.data), false);
+        return;
+      }
+
+      var args = {};
+      args[WALLET_PARAM] = address; // wallet only — NO allocation amount
+      var res = await sb.rpc(RPC_REGISTER, args);
+      if (res.error) throw res.error;
+
+      var out = normalize(res.data);
+      // Backend may report rejection in the payload instead of raising.
+      var okFlag = pick(out, ["success", "ok", "registered"]);
+      var errText = pick(out, ["error", "message", "reason", "status"]);
+      if (out && okFlag === false) {
+        applyOutcome(classify(String(errText || "")), String(errText || ""));
+        return;
+      }
+
+      if (out && isRegistered(out) && pick(out, ["final_allocation", "final_round1_allocation", "allocation", "reserved_allocation"]) !== null) {
+        loadedForUser = null;
+        renderReserved(out, true);
+      } else {
+        await loadRegistration(true); // authoritative re-read
+      }
+    } catch (err) {
+      console.error("Airdrop Round 1 registration failed:", err);
+      applyOutcome(classify((err && (err.message || err.details || err.hint)) || ""), (err && err.message) || "");
+    } finally {
+      busy = false;
+      el.wallet.disabled = false;
+      el.submit.textContent = "Reserve My Allocation";
+      if (!el.form.classList.contains("adr1-hidden")) el.submit.disabled = !isValidEvmAddress(el.wallet.value.trim());
+    }
+  }
+
+  el.wallet.addEventListener("input", updateFormState);
+  el.wallet.addEventListener("paste", function () { setTimeout(updateFormState, 0); });
+  el.submit.addEventListener("click", submit);
+
+  // Use the app's existing X OAuth flow.
+  el.connectBtn.addEventListener("click", async function () {
+    el.connectBtn.disabled = true;
+    el.connectBtn.textContent = "Connecting\u2026";
+    var p = window.location.pathname;
+    var b = p.includes("/app") ? p.split("/app")[0] : "";
+    var res = await sb.auth.signInWithOAuth({
+      provider: "x",
+      options: { redirectTo: window.location.origin + b + "/app/" }
+    });
+    if (res.error) {
+      console.error("Unable to connect X:", res.error);
+      el.connectBtn.disabled = false;
+      el.connectBtn.textContent = "Connect X";
+    }
+  });
+
+  // Load when the Airdrop section becomes visible (sections toggle via inline display).
+  function onVisibility() {
+    if (el.section.style.display === "none") return;
+    loadRegistration(false);
+  }
+  new MutationObserver(onVisibility).observe(el.section, { attributes: true, attributeFilter: ["style"] });
+
+  sb.auth.onAuthStateChange(function (event, session) {
+    if (event === "TOKEN_REFRESHED") return;
+    if (!session) { loadedForUser = null; show("connectX"); return; }
+    if (el.section.style.display !== "none") setTimeout(function () { loadRegistration(false); }, 0);
+  });
+
+  onVisibility();
+})();
+
 </script>
 </body>
 </html>
-
-
-
-
