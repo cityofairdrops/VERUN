@@ -4663,7 +4663,7 @@
 
 /* ============= AIRDROP ROUND 1 REGISTRATION ============= */
 .adr1-card{width:100%;max-width:480px;margin:18px auto 0;padding:24px 22px;border-radius:20px;border:1px solid var(--green-border);background:linear-gradient(180deg,var(--panel),var(--panel2));text-align:left}
-.adr1-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.adr1-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}
 .adr1-title{font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.2px}
 .adr1-tag{font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--green);border:1px solid var(--green-border);background:var(--green-soft);padding:4px 8px;border-radius:999px;white-space:nowrap}
 .adr1-sub{font-size:12.5px;line-height:1.55;color:var(--muted);margin-bottom:16px}
@@ -4685,9 +4685,25 @@
 .adr1-row{display:flex;justify-content:space-between;gap:14px;padding:11px 13px;font-size:12.5px;border-bottom:1px solid var(--border)}
 .adr1-row:last-child{border-bottom:0}
 .adr1-row span:first-child{color:var(--muted)}
-.adr1-row span:last-child{color:var(--text);font-weight:600;text-align:right;word-break:break-all}
+.adr1-row span:last-child{color:var(--text);font-weight:600;text-align:right;white-space:nowrap}
+.adr1-row #adr1RWallet,.adr1-row #adr1CWallet{white-space:normal;word-break:break-all;flex-shrink:1;min-width:0}
+.adr1-row span:first-child{flex-shrink:1}
+.adr1-row span:last-child{flex-shrink:0}
 .adr1-row.is-final span:last-child{color:var(--green);font-weight:800}
 .adr1-pool{margin-top:12px;font-size:11.5px;color:var(--muted);text-align:center}
+.adr1-hint{font-size:13px;color:var(--muted);margin-bottom:8px}
+.adr1-poolbox{margin-bottom:16px;padding:14px;border-radius:14px;border:1px solid var(--green-border);background:var(--green-soft)}
+.adr1-poolrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.adr1-poollabel{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
+.adr1-poolstate{display:inline-flex;align-items:center;gap:6px;font-size:9px;font-weight:800;letter-spacing:1.2px;color:var(--green)}
+.adr1-poolstate::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green);animation:adr1pulse 1.6s ease-in-out infinite}
+.adr1-poolstate.is-off::before{animation:none;background:var(--muted)}
+@keyframes adr1pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.adr1-poolnum{font-size:24px;font-weight:800;color:var(--green);letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.adr1-poolunit{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px}
+.adr1-bar{height:6px;border-radius:999px;background:var(--border);overflow:hidden;margin:10px 0 8px}
+.adr1-barfill{height:100%;width:100%;border-radius:999px;background:var(--green);transition:width .8s ease}
+.adr1-poolfoot{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
 .adr1-note{margin-top:12px;font-size:11.5px;line-height:1.55;color:var(--muted)}
 .adr1-btn.is-secondary{background:transparent;color:var(--green);border:1px solid var(--green-border)}
 .adr1-result{margin-top:14px}
@@ -6217,9 +6233,17 @@
     <div class="adr1-card" id="adr1Card" aria-live="polite">
       <div class="adr1-head">
         <div class="adr1-title">Round 1 Registration</div>
-        <span class="adr1-tag">FCFS &middot; 2,222,000 VERUN</span>
       </div>
-      <p class="adr1-sub">Connect X, paste your Robinhood Chain wallet address, check your allocation, then reserve it. No wallet connection or signature needed.</p>
+
+      <div class="adr1-poolbox" id="adr1PoolBox">
+        <div class="adr1-poolrow">
+          <span class="adr1-poollabel">Round 1 Pool Remaining</span>
+          <span class="adr1-poolstate" id="adr1PoolState">LIVE</span>
+        </div>
+        <div class="adr1-poolnum"><span id="adr1PoolRemaining">2,222,000</span><span class="adr1-poolunit"> VERUN</span></div>
+        <div class="adr1-bar"><div class="adr1-barfill" id="adr1PoolBar"></div></div>
+        <div class="adr1-poolfoot"><span id="adr1PoolReserved">0 reserved</span><span id="adr1PoolTotal">of 2,222,000 &middot; FCFS</span></div>
+      </div>
 
       <div id="adr1Loading" class="adr1-status">Checking registration&hellip;</div>
 
@@ -6229,16 +6253,12 @@
       </div>
 
       <div id="adr1Form" class="adr1-hidden">
-        <div class="adr1-rules">
-          <span>Robinhood Chain</span>
-          <span>Snapshot block 68,086,309</span>
-          <span>Min. 11 qualifying txs</span>
-          <span>1.1 VERUN / tx</span>
-        </div>
-        <label class="adr1-label" for="adr1Wallet">Robinhood Chain Wallet Address</label>
+        <div id="adr1Pre">
+        <div class="adr1-hint">Paste your Robinhood Chain wallet address.</div>
         <input class="adr1-input" id="adr1Wallet" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="0x..." maxlength="42">
         <div id="adr1Status" class="adr1-status adr1-hidden"></div>
         <button type="button" class="adr1-btn" id="adr1CheckBtn" disabled>Check Allocation</button>
+        </div>
 
         <div class="adr1-result adr1-hidden" id="adr1Result">
           <div class="adr1-elig is-ok" id="adr1Elig">Eligible for Round 1</div>
@@ -6247,7 +6267,6 @@
             <div class="adr1-row"><span>Qualifying transactions</span><span id="adr1CTx">&mdash;</span></div>
             <div class="adr1-row"><span>Base allocation</span><span id="adr1CBase">&mdash;</span></div>
             <div class="adr1-row is-final"><span>Round 1 allocation</span><span id="adr1CAlloc">&mdash;</span></div>
-            <div class="adr1-row"><span>Round 1 pool</span><span id="adr1CPool">FCFS &middot; 2,222,000 VERUN</span></div>
           </div>
           <p class="adr1-note">This base allocation is what gets reserved. Genesis Pass holders receive 2&times; their registered allocation at claim time; everyone else claims 1&times;.</p>
           <button type="button" class="adr1-btn" id="adr1Submit">Reserve My Allocation</button>
@@ -6266,7 +6285,6 @@
           <div class="adr1-row"><span>Status</span><span id="adr1RStatus">&mdash;</span></div>
           <div class="adr1-row"><span>Registered</span><span id="adr1RTime">&mdash;</span></div>
         </div>
-        <div class="adr1-pool adr1-hidden" id="adr1RPool"></div>
         <p class="adr1-note">At claim time: Genesis Pass holders claim 2&times; this registered allocation, everyone else claims 1&times;.</p>
       </div>
 
@@ -13813,12 +13831,12 @@ showSection(
   var el = {
     section: $("airdropSection"),
     loading: $("adr1Loading"), connectX: $("adr1ConnectX"), connectBtn: $("adr1ConnectXBtn"),
-    form: $("adr1Form"), wallet: $("adr1Wallet"), status: $("adr1Status"), checkBtn: $("adr1CheckBtn"),
+    form: $("adr1Form"), pre: $("adr1Pre"), wallet: $("adr1Wallet"), status: $("adr1Status"), checkBtn: $("adr1CheckBtn"),
     result: $("adr1Result"), elig: $("adr1Elig"), cWallet: $("adr1CWallet"), cTx: $("adr1CTx"),
-    cBase: $("adr1CBase"), cAlloc: $("adr1CAlloc"), cPool: $("adr1CPool"), submit: $("adr1Submit"),
+    cBase: $("adr1CBase"), cAlloc: $("adr1CAlloc"), submit: $("adr1Submit"),
     reserved: $("adr1Reserved"), reservedTitle: $("adr1ReservedTitle"), closed: $("adr1Closed"),
     rWallet: $("adr1RWallet"), rTx: $("adr1RTx"), rBase: $("adr1RBase"), rStatus: $("adr1RStatus"),
-    rTime: $("adr1RTime"), rPool: $("adr1RPool")
+    rTime: $("adr1RTime")
   };
   if (!el.section || !el.form || !window.supabaseClient) return;
   var sb = window.supabaseClient;
@@ -13837,7 +13855,7 @@ showSection(
     el.status.className = "adr1-status" + (kind ? " is-" + kind : "");
     el.status.textContent = text;
   }
-  function hideResult() { checked = null; el.result.classList.add("adr1-hidden"); }
+  function hideResult() { checked = null; el.result.classList.add("adr1-hidden"); el.pre.classList.remove("adr1-hidden"); }
 
   function pick(o, keys) {
     for (var i = 0; i < keys.length; i++) {
@@ -13876,13 +13894,74 @@ showSection(
     el.rBase.textContent = fmtVerun(pick(r, ["base_allocation", "allocation"]));
     el.rStatus.textContent = String(pick(r, ["status", "registration_status"]) || "reserved");
     el.rTime.textContent = fmtTime(pick(r, ["registered_at", "created_at"]));
-    var remaining = pick(r, ["remaining_pool", "pool_remaining"]);
-    if (remaining !== null) {
-      el.rPool.textContent = "Remaining Round 1 pool: " + fmtVerun(remaining);
-      el.rPool.classList.remove("adr1-hidden");
-    } else el.rPool.classList.add("adr1-hidden");
     show("reserved");
   }
+
+
+  // ---- live Round 1 pool (public, works before X login) ----
+  var RPC_POOL = "get_airdrop_round1_pool";
+  var POOL_POLL_MS = 10000;
+  var poolEl = {
+    remaining: $("adr1PoolRemaining"), bar: $("adr1PoolBar"), state: $("adr1PoolState"),
+    reserved: $("adr1PoolReserved"), total: $("adr1PoolTotal")
+  };
+  var shownRemaining = null;
+  var poolTimer = null;
+  var poolFetching = false;
+
+  function fmtPool(n) { return Number(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
+
+  function tweenPool(to) {
+    var from = shownRemaining === null ? to : shownRemaining;
+    shownRemaining = to;
+    if (from === to) { poolEl.remaining.textContent = fmtPool(to); return; }
+    var start = performance.now(), dur = 900;
+    (function step(now) {
+      var t = Math.min(1, (now - start) / dur);
+      poolEl.remaining.textContent = fmtPool(from + (to - from) * (1 - Math.pow(1 - t, 3)));
+      if (t < 1 && shownRemaining === to) requestAnimationFrame(step);
+      else poolEl.remaining.textContent = fmtPool(to);
+    })(start);
+  }
+
+  async function refreshPool() {
+    if (poolFetching) return;
+    poolFetching = true;
+    try {
+      var res = await sb.rpc(RPC_POOL);
+      if (res.error) throw res.error;
+      var d = normalize(res.data);
+      if (!d) return;
+      var total = Number(pick(d, ["pool_total", "total"]));
+      var remaining = Number(pick(d, ["remaining", "remaining_pool"]));
+      if (!isFinite(total) || !isFinite(remaining)) return;
+      remaining = Math.max(0, Math.min(total, remaining));
+      tweenPool(remaining);
+      poolEl.bar.style.width = (total > 0 ? (remaining / total) * 100 : 0) + "%";
+      poolEl.reserved.textContent = fmtPool(total - remaining) + " reserved";
+      poolEl.total.textContent = "of " + fmtPool(total) + " \u00b7 FCFS";
+      var open = pick(d, ["registration_open"]) !== false;
+      var full = remaining <= 0;
+      poolEl.state.textContent = !open ? "CLOSED" : (full ? "FULLY ALLOCATED" : "LIVE");
+      poolEl.state.classList.toggle("is-off", !open || full);
+      // Backend says closed: stop offering registration (never hides an existing reservation).
+      if (!open && !el.form.classList.contains("adr1-hidden")) show("closed");
+    } catch (e) {
+      console.error("Round 1 pool refresh failed:", e);
+    } finally {
+      poolFetching = false;
+    }
+  }
+
+  function startPoolPolling() {
+    if (poolTimer) return;
+    refreshPool();
+    poolTimer = setInterval(function () {
+      if (document.hidden || el.section.style.display === "none") return;
+      refreshPool();
+    }, POOL_POLL_MS);
+  }
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) refreshPool(); });
 
   // ---- public checker (same endpoint/payload/response as veruncrypto.xyz) ----
   async function lookupWallet(wallet) {
@@ -13927,7 +14006,7 @@ showSection(
     el.checkBtn.disabled = busy || !valid;
     if (checked && checked.wallet.toLowerCase() !== v.toLowerCase()) hideResult(); // edited after check
     if (busy || checked) return;
-    if (!v) setStatus("", "Paste your Robinhood Chain wallet address.");
+    if (!v) setStatus("", "");
     else if (!valid) setStatus("bad", "Invalid wallet. It must start with 0x and be 42 characters.");
     else setStatus("", "Press Check Allocation to see your eligibility.");
   }
@@ -13959,10 +14038,8 @@ showSection(
         el.cTx.textContent = fmtNum(r.qualifyingTx);
         el.cBase.textContent = fmtVerun(r.allocation);
         el.cAlloc.textContent = fmtVerun(r.allocation);
-        el.cPool.textContent = r.remainingPool !== null
-          ? "FCFS \u00b7 " + fmtVerun(r.remainingPool) + " remaining"
-          : "FCFS \u00b7 2,222,000 VERUN";
         el.result.classList.remove("adr1-hidden");
+        el.pre.classList.add("adr1-hidden"); // results + reserve only
         checked = { wallet: v };
       }
     } finally {
@@ -14032,27 +14109,32 @@ showSection(
     el.wallet.disabled = true;
     el.submit.textContent = "Reserving\u2026";
     try {
-      var pre = await sb.rpc(RPC_GET);
-      if (!pre.error && isRegistered(normalize(pre.data))) { renderReserved(normalize(pre.data)); return; }
-
+      // Single round trip: the RPC itself rejects duplicates, so no pre-check
+      // and no re-read are needed. The success payload is rendered directly.
       var args = {};
       args[WALLET_PARAM] = address; // wallet only — NO allocation amount
       var res = await sb.rpc(RPC_REGISTER, args);
       if (res.error) throw res.error;
 
       var out = normalize(res.data);
-      var okFlag = pick(out, ["success", "ok"]);
-      if (out && okFlag === false) {
+      if (out && pick(out, ["success", "ok"]) === false) {
         var code = String(pick(out, ["error", "reason", "message", "status"]) || "");
         applyOutcome(classify(code), code);
         return;
       }
-      loadedForUser = null;
-      await loadRegistration(true); // authoritative re-read of the stored record
+      if (out && isRegistered(out)) {
+        loadedForUser = (await sb.auth.getSession()).data.session.user.id;
+        if (!out.registered_at) out.registered_at = new Date().toISOString();
+        renderReserved(out); // instant
+        refreshPool();
+      } else {
+        await loadRegistration(true); // fallback only
+      }
     } catch (err) {
       console.error("Airdrop Round 1 registration failed:", err);
       applyOutcome(classify((err && (err.message || err.details || err.hint)) || ""), (err && err.message) || "");
     } finally {
+      refreshPool();
       busy = false;
       el.wallet.disabled = false;
       el.submit.textContent = "Reserve My Allocation";
@@ -14096,6 +14178,7 @@ showSection(
   });
 
   onVisibility();
+  startPoolPolling();
 })();
 
 </script>
