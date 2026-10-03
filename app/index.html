@@ -4692,18 +4692,16 @@
 .adr1-row.is-final span:last-child{color:var(--green);font-weight:800}
 .adr1-pool{margin-top:12px;font-size:11.5px;color:var(--muted);text-align:center}
 .adr1-hint{font-size:13px;color:var(--muted);margin-bottom:8px}
-.adr1-poolbox{margin-bottom:16px;padding:14px;border-radius:14px;border:1px solid var(--green-border);background:var(--green-soft)}
-.adr1-poolrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
-.adr1-poollabel{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
-.adr1-poolstate{display:inline-flex;align-items:center;gap:6px;font-size:9px;font-weight:800;letter-spacing:1.2px;color:var(--green)}
+.adr1-poolcard{width:100%;max-width:480px;margin:18px auto 0}
+.adr1-poolcard + .adr1-card{margin-top:12px}
+.adr1-poolcard .mining-pool-top{flex-wrap:wrap;gap:6px 18px}
+.adr1-poolcard .mining-pool-amount{white-space:normal}
+.adr1-poolcard .mining-pool-caption{justify-content:space-between;align-items:center}
+.adr1-poolstate{display:inline-flex;align-items:center;gap:6px;color:var(--green);font-weight:800;letter-spacing:.8px}
 .adr1-poolstate::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green);animation:adr1pulse 1.6s ease-in-out infinite}
-.adr1-poolstate.is-off::before{animation:none;background:var(--muted)}
+.adr1-poolstate.is-off{color:var(--muted2)}
+.adr1-poolstate.is-off::before{animation:none;background:var(--muted2)}
 @keyframes adr1pulse{0%,100%{opacity:1}50%{opacity:.25}}
-.adr1-poolnum{font-size:24px;font-weight:800;color:var(--green);letter-spacing:-.5px;font-variant-numeric:tabular-nums}
-.adr1-poolunit{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px}
-.adr1-bar{height:6px;border-radius:999px;background:var(--border);overflow:hidden;margin:10px 0 8px}
-.adr1-barfill{height:100%;width:100%;border-radius:999px;background:var(--green);transition:width .8s ease}
-.adr1-poolfoot{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
 .adr1-note{margin-top:12px;font-size:11.5px;line-height:1.55;color:var(--muted)}
 .adr1-btn.is-secondary{background:transparent;color:var(--green);border:1px solid var(--green-border)}
 .adr1-result{margin-top:14px}
@@ -6230,19 +6228,26 @@
 
 
     <!-- ROUND 1 REGISTRATION -->
+    <!-- ROUND 1 LIVE POOL (same look as the Mining pool card) -->
+    <div class="mining-pool-card adr1-poolcard" id="adr1PoolBox">
+      <div class="mining-pool-top">
+        <span class="mining-pool-label">Remaining Round 1 Pool</span>
+        <span class="mining-pool-amount">
+          <strong id="adr1PoolRemaining">22,22,000</strong> / <span id="adr1PoolTotal">22,22,000</span> $VERUN
+        </span>
+      </div>
+      <div class="mining-pool-bar">
+        <div class="mining-pool-fill" id="adr1PoolBar" style="width:100%;"></div>
+      </div>
+      <div class="mining-pool-caption">
+        <span class="adr1-poolstate" id="adr1PoolState">LIVE</span>
+        <span id="adr1PoolPercent">100.00% remaining</span>
+      </div>
+    </div>
+
     <div class="adr1-card" id="adr1Card" aria-live="polite">
       <div class="adr1-head">
         <div class="adr1-title">Round 1 Registration</div>
-      </div>
-
-      <div class="adr1-poolbox" id="adr1PoolBox">
-        <div class="adr1-poolrow">
-          <span class="adr1-poollabel">Round 1 Pool Remaining</span>
-          <span class="adr1-poolstate" id="adr1PoolState">LIVE</span>
-        </div>
-        <div class="adr1-poolnum"><span id="adr1PoolRemaining">2,222,000</span><span class="adr1-poolunit"> VERUN</span></div>
-        <div class="adr1-bar"><div class="adr1-barfill" id="adr1PoolBar"></div></div>
-        <div class="adr1-poolfoot"><span id="adr1PoolReserved">0 reserved</span><span id="adr1PoolTotal">of 2,222,000 &middot; FCFS</span></div>
       </div>
 
       <div id="adr1Loading" class="adr1-status">Checking registration&hellip;</div>
@@ -13903,13 +13908,14 @@ showSection(
   var POOL_POLL_MS = 10000;
   var poolEl = {
     remaining: $("adr1PoolRemaining"), bar: $("adr1PoolBar"), state: $("adr1PoolState"),
-    reserved: $("adr1PoolReserved"), total: $("adr1PoolTotal")
+    percent: $("adr1PoolPercent"), total: $("adr1PoolTotal")
   };
   var shownRemaining = null;
   var poolTimer = null;
   var poolFetching = false;
 
-  function fmtPool(n) { return Number(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
+  // Same digit grouping as the Mining pool card (2,00,000 style).
+  function fmtPool(n) { return Number(n).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
 
   function tweenPool(to) {
     var from = shownRemaining === null ? to : shownRemaining;
@@ -13937,9 +13943,10 @@ showSection(
       if (!isFinite(total) || !isFinite(remaining)) return;
       remaining = Math.max(0, Math.min(total, remaining));
       tweenPool(remaining);
-      poolEl.bar.style.width = (total > 0 ? (remaining / total) * 100 : 0) + "%";
-      poolEl.reserved.textContent = fmtPool(total - remaining) + " reserved";
-      poolEl.total.textContent = "of " + fmtPool(total) + " \u00b7 FCFS";
+      var pct = total > 0 ? (remaining / total) * 100 : 0;
+      poolEl.bar.style.width = pct.toFixed(2) + "%";
+      poolEl.percent.textContent = pct.toFixed(2) + "% remaining";
+      poolEl.total.textContent = fmtPool(total);
       var open = pick(d, ["registration_open"]) !== false;
       var full = remaining <= 0;
       poolEl.state.textContent = !open ? "CLOSED" : (full ? "FULLY ALLOCATED" : "LIVE");
@@ -14008,7 +14015,7 @@ showSection(
     if (busy || checked) return;
     if (!v) setStatus("", "");
     else if (!valid) setStatus("bad", "Invalid wallet. It must start with 0x and be 42 characters.");
-    else setStatus("", "Press Check Allocation to see your eligibility.");
+    else setStatus("", "");
   }
 
   async function checkWallet() {
