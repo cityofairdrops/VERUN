@@ -4664,7 +4664,7 @@
 /* ============= AIRDROP ROUND 1 REGISTRATION ============= */
 .adr1-card{width:100%;max-width:480px;margin:18px auto 0;padding:24px 22px;border-radius:20px;border:1px solid var(--green-border);background:linear-gradient(180deg,var(--panel),var(--panel2));text-align:left}
 .adr1-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}
-.adr1-title{font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.2px}
+.adr1-title{font-size:clamp(11px,3.6vw,16px);font-weight:800;color:var(--text);letter-spacing:-.2px;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .adr1-tag{font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--green);border:1px solid var(--green-border);background:var(--green-soft);padding:4px 8px;border-radius:999px;white-space:nowrap}
 .adr1-sub{font-size:12.5px;line-height:1.55;color:var(--muted);margin-bottom:16px}
 .adr1-rules{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
@@ -4702,6 +4702,7 @@
 .adr1-poolstate.is-off{color:var(--muted2)}
 .adr1-poolstate.is-off::before{animation:none;background:var(--muted2)}
 @keyframes adr1pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.adr1-footnote{width:100%;max-width:480px;margin:14px auto 0;padding:0 6px;text-align:center;font-size:11.5px;line-height:1.55;color:var(--muted)}
 .adr1-note{margin-top:12px;font-size:11.5px;line-height:1.55;color:var(--muted)}
 .adr1-btn.is-secondary{background:transparent;color:var(--green);border:1px solid var(--green-border)}
 .adr1-result{margin-top:14px}
@@ -6193,45 +6194,11 @@
   style="display:none;"
 >
   <div class="airdrop-wrap">
-    <div class="airdrop-countdown-card">
-      <div class="airdrop-glow" aria-hidden="true"></div>
-
-      <div class="airdrop-badge">$VERUN AIRDROP &middot; SEASON 1</div>
-
-      <div class="airdrop-countdown" id="airdropCountdown" role="timer" aria-live="off">
-        <div class="airdrop-unit">
-          <span class="airdrop-value" id="airdropCdDays">00</span>
-          <span class="airdrop-label">Days</span>
-        </div>
-        <span class="airdrop-sep">.</span>
-        <div class="airdrop-unit">
-          <span class="airdrop-value" id="airdropCdHours">00</span>
-          <span class="airdrop-label">Hrs</span>
-        </div>
-        <span class="airdrop-sep">.</span>
-        <div class="airdrop-unit">
-          <span class="airdrop-value" id="airdropCdMinutes">00</span>
-          <span class="airdrop-label">Min</span>
-        </div>
-        <span class="airdrop-sep">.</span>
-        <div class="airdrop-unit">
-          <span class="airdrop-value" id="airdropCdSeconds">00</span>
-          <span class="airdrop-label">Sec</span>
-        </div>
-        <span class="airdrop-sep">.</span>
-        <div class="airdrop-unit airdrop-unit-ms">
-          <span class="airdrop-value" id="airdropCdMs">000</span>
-          <span class="airdrop-label">Ms</span>
-        </div>
-      </div>
-    </div>
-
-
     <!-- ROUND 1 REGISTRATION -->
     <!-- ROUND 1 LIVE POOL (same look as the Mining pool card) -->
     <div class="mining-pool-card adr1-poolcard" id="adr1PoolBox">
       <div class="mining-pool-top">
-        <span class="mining-pool-label">Remaining Round 1 Pool</span>
+        <span class="mining-pool-label">Remaining Phase 1 Airdrop Pool</span>
         <span class="mining-pool-amount">
           <strong id="adr1PoolRemaining">22,22,000</strong> / <span id="adr1PoolTotal">22,22,000</span> $VERUN
         </span>
@@ -6247,7 +6214,7 @@
 
     <div class="adr1-card" id="adr1Card" aria-live="polite">
       <div class="adr1-head">
-        <div class="adr1-title">Round 1 Registration</div>
+        <div class="adr1-title">Phase 1 Airdrop Registration</div>
       </div>
 
       <div id="adr1Loading" class="adr1-status">Checking registration&hellip;</div>
@@ -6266,12 +6233,12 @@
         </div>
 
         <div class="adr1-result adr1-hidden" id="adr1Result">
-          <div class="adr1-elig is-ok" id="adr1Elig">Eligible for Round 1</div>
+          <div class="adr1-elig is-ok" id="adr1Elig">Eligible for Phase 1</div>
           <div class="adr1-grid">
             <div class="adr1-row"><span>Wallet</span><span id="adr1CWallet">&mdash;</span></div>
             <div class="adr1-row"><span>Qualifying transactions</span><span id="adr1CTx">&mdash;</span></div>
             <div class="adr1-row"><span>Base allocation</span><span id="adr1CBase">&mdash;</span></div>
-            <div class="adr1-row is-final"><span>Round 1 allocation</span><span id="adr1CAlloc">&mdash;</span></div>
+            <div class="adr1-row is-final"><span>Phase 1 allocation</span><span id="adr1CAlloc">&mdash;</span></div>
           </div>
           <p class="adr1-note">This base allocation is what gets reserved. Genesis Pass holders receive 2&times; their registered allocation at claim time; everyone else claims 1&times;.</p>
           <button type="button" class="adr1-btn" id="adr1Submit">Reserve My Allocation</button>
@@ -6294,9 +6261,11 @@
       </div>
 
       <div id="adr1Closed" class="adr1-hidden">
-        <div class="adr1-status is-bad">Registration Closed. Round 1 registration is no longer open.</div>
+        <div class="adr1-status is-bad">Registration Closed. Phase 1 registration is no longer open.</div>
       </div>
     </div>
+
+    <p class="adr1-footnote">Claims will open immediately once the phase 1 airdrop pool has been fully reserved.</p>
 
     <!-- FOOTER NOTE -->
     <div class="section-footer-note">
@@ -14040,7 +14009,7 @@ showSection(
         // eligible
         setStatus("", "");
         el.elig.className = "adr1-elig is-ok";
-        el.elig.textContent = "Eligible for Round 1";
+        el.elig.textContent = "Eligible for Phase 1";
         el.cWallet.textContent = r.wallet;
         el.cTx.textContent = fmtNum(r.qualifyingTx);
         el.cBase.textContent = fmtVerun(r.allocation);
@@ -14074,7 +14043,7 @@ showSection(
     if (kind === "closed") { show("closed"); return; }
     show("form");
     hideResult();
-    if (kind === "pool") setStatus("bad", "This allocation no longer fits in the remaining Round 1 pool. Nothing was reserved.");
+    if (kind === "pool") setStatus("bad", "This allocation no longer fits in the remaining Phase 1 pool. Nothing was reserved.");
     else if (kind === "walletTaken") setStatus("bad", "This wallet is already registered by another X account.");
     else if (kind === "invalid") { el.wallet.classList.add("is-invalid"); setStatus("bad", "Invalid wallet address."); }
     else if (kind === "noteligible") setStatus("bad", notEligibleText());
