@@ -2753,6 +2753,19 @@
       margin: -10px 0 18px;
     }
 
+    .genesis-discount-help {
+      color: var(--muted2);
+      font-size: 11px;
+      text-align: center;
+      margin: -8px 0 18px;
+    }
+    .genesis-discount-help a {
+      color: var(--green);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .genesis-discount-help a:hover { text-decoration: underline; }
+
     /* ================= WALLET CONNECT (Genesis Pass + Mining) ================= */
     .genesis-wallet-card,
     .mining-wallet-card {
@@ -5563,6 +5576,9 @@
     <p class="genesis-discount-feedback" id="genesisDiscountFeedback"></p>
     <p class="genesis-discount-hint">
       Have a Genesis Pass holder's code? Apply it for 50% off the mint price. It's verified on-chain the moment you mint.
+    </p>
+    <p class="genesis-discount-help" id="genesisDiscountHelp">
+      Need a discount code? <a href="https://discord.gg/cFZfkNzJNS" target="_blank" rel="noopener noreferrer">Click here</a>.
     </p>
 
     <!-- Shown once minting is live -->
@@ -12528,6 +12544,15 @@ async function loadMiningLeaderboard(page) {
         e.discountInput.closest(".genesis-discount-row").style.display = whitelistEligible ? "none" : "";
       }
       if (e.discountFeedback) e.discountFeedback.style.display = whitelistEligible ? "none" : "";
+
+      // "Need a discount code?" link: shown only while no code is applied.
+      // Hidden as soon as a code is applied (and whenever the discount row
+      // itself is hidden); it returns if the code is cleared. Once a pass
+      // is minted the whole mint card is hidden, so it stays gone for good.
+      const helpEl = document.getElementById("genesisDiscountHelp");
+      if (helpEl) {
+        helpEl.style.display = ((appliedCode && appliedGenesisAuth) || whitelistEligible) ? "none" : "";
+      }
 
       if (e.mintButton) {
         e.mintButton.disabled = !currentUserId || soldOut || contractMintOff || !walletVerified || !codeValid;
