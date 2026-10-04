@@ -2753,11 +2753,28 @@
       margin: -10px 0 18px;
     }
 
-    .genesis-discount-help {
+    .genesis-code-label {
+      max-width: 320px;
+      margin: 0 auto 6px;
+      text-align: left;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .4px;
+    }
+    .genesis-code-caption {
+      max-width: 320px;
+      margin: -2px auto 16px;
+      text-align: left;
       color: var(--muted2);
       font-size: 11px;
+      line-height: 1.5;
+    }
+    .genesis-discount-help {
+      color: var(--muted);
+      font-size: 12px;
       text-align: center;
-      margin: -8px 0 18px;
+      margin: -4px 0 20px;
     }
     .genesis-discount-help a {
       color: var(--green);
@@ -5563,22 +5580,20 @@
          hide it behind the same gate as the actual mint transaction
          below. Requires a connected + verified wallet, since the
          authorization is bound to your minter address. -->
+    <p class="genesis-code-label" id="genesisDiscountLabel">Have a Genesis Code?</p>
     <div class="genesis-discount-row">
       <input
         type="text"
         id="genesisDiscountInput"
         class="genesis-discount-input"
-        placeholder="Discount code (optional)"
+        placeholder="Enter Genesis Code for 50% off"
         autocomplete="off"
       >
       <button type="button" class="genesis-discount-apply" id="genesisDiscountApply">Apply</button>
     </div>
     <p class="genesis-discount-feedback" id="genesisDiscountFeedback"></p>
-    <p class="genesis-discount-hint">
-      Have a Genesis Pass holder's code? Apply it for 50% off the mint price. It's verified on-chain the moment you mint.
-    </p>
     <p class="genesis-discount-help" id="genesisDiscountHelp">
-      Need a discount code? <a href="https://discord.gg/cFZfkNzJNS" target="_blank" rel="noopener noreferrer">Click here</a>.
+      Don't have one? <a href="https://discord.gg/cFZfkNzJNS" target="_blank" rel="noopener noreferrer">Get a code</a>
     </p>
 
     <!-- Shown once minting is live -->
@@ -5588,6 +5603,7 @@
            contract — it's saved server-side (record_genesis_pass_mint)
            right after your mint transaction confirms, and becomes the
            code others apply above for a discount. -->
+      <p class="genesis-code-label">Your own Genesis Code</p>
       <div class="genesis-discount-row">
         <input
           type="text"
@@ -5599,6 +5615,7 @@
         >
       </div>
       <p class="genesis-discount-feedback" id="genesisCodeFeedback"></p>
+      <p class="genesis-code-caption">Friends who apply it get 50% off their mint.</p>
 
       <button type="button" class="genesis-mint-button" id="genesisMintButton">
         Mint Genesis Pass
@@ -12544,6 +12561,8 @@ async function loadMiningLeaderboard(page) {
         e.discountInput.closest(".genesis-discount-row").style.display = whitelistEligible ? "none" : "";
       }
       if (e.discountFeedback) e.discountFeedback.style.display = whitelistEligible ? "none" : "";
+      const discountLabelEl = document.getElementById("genesisDiscountLabel");
+      if (discountLabelEl) discountLabelEl.style.display = whitelistEligible ? "none" : "";
 
       // "Need a discount code?" link: shown only while no code is applied.
       // Hidden as soon as a code is applied (and whenever the discount row
