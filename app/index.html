@@ -5205,117 +5205,6 @@
           </div>
 
 
-          <div class="task">
-
-            <div class="task-top">
-
-              <div class="task-bullet">•</div>
-
-              <div class="task-info">
-
-                <div class="task-name">
-                  Repost on X
-                </div>
-
-                <div class="task-description">
-                  Repost an eligible campaign post.
-                </div>
-
-              </div>
-
-            </div>
-
-            <div class="task-actions">
-
-              <div class="task-reward">
-                +XP
-              </div>
-
-              <div class="task-buttons">
-                <button class="task-button">
-                  Start
-                </button>
-              </div>
-
-            </div>
-
-          </div>
-
-
-          <div class="task">
-
-            <div class="task-top">
-
-              <div class="task-bullet">•</div>
-
-              <div class="task-info">
-
-                <div class="task-name">
-                  Like the post
-                </div>
-
-                <div class="task-description">
-                  Like an eligible campaign post on X.
-                </div>
-
-              </div>
-
-            </div>
-
-            <div class="task-actions">
-
-              <div class="task-reward">
-                +XP
-              </div>
-
-              <div class="task-buttons">
-                <button class="task-button">
-                  Start
-                </button>
-              </div>
-
-            </div>
-
-          </div>
-
-
-          <div class="task">
-
-            <div class="task-top">
-
-              <div class="task-bullet">•</div>
-
-              <div class="task-info">
-
-                <div class="task-name">
-                  Join the campaign
-                </div>
-
-                <div class="task-description">
-                  Like our latest campaign post on X.
-                </div>
-
-              </div>
-
-            </div>
-
-            <div class="task-actions">
-
-              <div class="task-reward">
-                +XP
-              </div>
-
-              <div class="task-buttons">
-                <button class="task-button">
-                  Start
-                </button>
-              </div>
-
-            </div>
-
-          </div>
-
-
         </div>
 
       </section>
@@ -8613,6 +8502,17 @@ function startDailyCountdown() {
 // that's what was showing an XP number that didn't match the real streak.
 // This token makes every call check it's still the most recent one
 // before touching the DOM.
+// The Restore button's visibility always follows the data (profiles.streak_restored
+// and the login history), never a one-off DOM write that a later refresh can undo.
+function setRestoreButtonVisible(visible) {
+  if (!restoreStreakButton) return;
+  restoreStreakButton.style.display = visible ? "block" : "none";
+  if (!visible) {
+    restoreStreakButton.disabled = false;
+    restoreStreakButton.textContent = "Restore Streak — 1,000 XP";
+  }
+}
+
 let dailyLoginRequestId = 0;
 
 async function loadDailyLoginStatus() {
@@ -8632,6 +8532,8 @@ async function loadDailyLoginStatus() {
         "Connect X First";
     }
 
+    setRestoreButtonVisible(false);
+
     return;
   }
 
@@ -8639,7 +8541,7 @@ async function loadDailyLoginStatus() {
   const { data: profile, error } =
     await supabaseClient
       .from("profiles")
-      .select("xp,current_streak,longest_streak")
+      .select("xp,current_streak,longest_streak,streak_restored")
       .eq("id", session.user.id)
       .maybeSingle();
 
@@ -8696,6 +8598,7 @@ async function loadDailyLoginStatus() {
 
   startDailyCountdown();
 console.log("COUNTDOWN STARTED");
+  setRestoreButtonVisible(false);
 
     if (dailyLoginText) {
       dailyLoginText.textContent =
@@ -8719,6 +8622,11 @@ console.log("COUNTDOWN STARTED");
       .limit(1)
       .maybeSingle();
 
+  // A newer call (or a just-finished restore) owns the DOM now — a stale
+  // response must not be able to bring the Restore button back.
+  if (requestId !== dailyLoginRequestId) return;
+
+  let streakBroken = false;
 
   if (lastLogin) {
 
@@ -8738,20 +8646,30 @@ console.log("COUNTDOWN STARTED");
         (1000 * 60 * 60 * 24)
       );
 
+    streakBroken = difference > 1;
 
-    if (difference > 1) {
+  }
 
-      if (dailyLoginText) {
-        dailyLoginText.textContent =
-          "Your streak was broken.";
-      }
+  if (streakBroken && !profile.streak_restored) {
 
-      if (restoreStreakButton) {
-        restoreStreakButton.style.display =
-          "block";
-      }
-
+    if (dailyLoginText) {
+      dailyLoginText.textContent =
+        "Your streak was broken.";
     }
+
+    setRestoreButtonVisible(true);
+
+  } else {
+
+    // Restore already paid for (profiles.streak_restored): the last login
+    // date is still old until today's claim, so the date gap alone can't
+    // be trusted here — the flag is the source of truth.
+    if (streakBroken && profile.streak_restored && dailyLoginText) {
+      dailyLoginText.textContent =
+        "Streak restored. Claim today's Daily XP to continue.";
+    }
+
+    setRestoreButtonVisible(false);
 
   }
 
@@ -8902,14 +8820,19 @@ async function restoreStreak() {
   }
 
 
+  // Invalidate any in-flight status load so a stale response can't
+  // re-show the button, and hide it immediately.
+  dailyLoginRequestId++;
+
+  setRestoreButtonVisible(false);
+
   showDailyMessage(
     "Streak restored for 1,000 XP!"
   );
 
-
-  restoreStreakButton.style.display =
-    "none";
-
+  if (dailyLoginText) {
+    dailyLoginText.textContent = "Streak restored.";
+  }
 
   await loadUserProfile();
   await loadDailyLoginStatus();
